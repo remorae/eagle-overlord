@@ -1,0 +1,14 @@
+{
+  "name": "eagle-overlord",
+  "version": "0.1.0",
+  "description": "Your friendly neighborhood killer avian robot",
+  "main": "bot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Natrastellar",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^11.0.0"
+  }
+}
