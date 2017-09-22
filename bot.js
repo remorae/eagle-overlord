@@ -10,6 +10,7 @@ const botCreatorID = settingsFile.botCreatorID;
 const commandPrefix = settingsFile.commandPrefix;
 const validClassPrefixes = settingsFile.validClassPrefixes;
 const commands = settingsFile.commands;
+const defaultChannels = settingsFile.defaultChannels;
 
 var changeClassForMember = function (member, message, args, adding, isForOther) { 
     if (message.guild == null || message.guild.channels.get(message.channel.id).name === "general") {
@@ -63,11 +64,7 @@ var changeClassForMember = function (member, message, args, adding, isForOther) 
                                     message.channel.sendMessage("An error occurred. I probably don't have permissions to remove roles :'(");
                                 });
                             } else {
-                                if (!changingForOther && settingsFile.alwaysVisibleClasses.find(vclass => { return vclass.toUpperCase() === classToChange.toUpperCase(); }) != null) {
-                                    message.reply(`you are not in the class "${classToChange}". Please note that the channel for ${classToChange} is visible to everyone.`);
-                                } else {
-                                    message.channel.sendMessage(`User ${member.user} is not in class "${classToChange}".`);
-                                }
+                                message.channel.sendMessage(`User ${member.user} is not in class "${classToChange}".`);
                             }
                         }
                     } else {
@@ -166,150 +163,6 @@ var getUserFromArgs = function (message, args) {
     return message.guild.members.find(`displayName`, memberName);
 }
 
-var addQuote = function (message, args) {
-    if (args.length == 0) {
-        message.channel.fetchMessages("before", message.id).then(results => {
-            let filtered = results.filter(function (item) { 
-                return item.author.id != botID && item.id != message.id; 
-            }).array();
-            filtered.sort(function compare(o1, o2) { 
-                if (o1.createdTimestamp > o2.createdTimestamp) {
-                    return 1;
-                }
-                if (o1.createdTimestamp < o2.createdTimestamp) {
-                    return -1;
-                }
-                return 0;
-            });
-            let toQuote = filtered[filtered.length - 1];
-            logQuote(message, toQuote);
-        }).catch(error => {
-            console.log(error);
-        });
-    } else {
-        let messageID = args[0];
-        message.channel.fetchMessage(messageID).then(result => {
-            let toQuote = result;
-            logQuote(message, toQuote);
-        }).catch(error => {
-            message.channel.sendMessage("Invalid message ID.");
-        });
-    }
-}
-
-var logQuote = function (message, toQuote) {
-    if (toQuote === null) {
-        message.channel.sendMessage("Invalid quote!");
-    } else {
-        fs.readFile(`./quotes.json`, function (err, content) {
-            if (err) console.log(err);
-            let obj = JSON.parse(content);
-            try {
-                obj.quotes.push({
-                    id: toQuote.id,
-                    author: toQuote.author.id,
-                    time: toQuote.createdAt,
-                    text: toQuote.content
-                });
-                fs.writeFile(`./quotes.json`, JSON.stringify(obj), function (err) {
-                    if (err) console.log(err);
-                });
-                message.channel.sendMessage("Quote " + toQuote.id + " added!");
-            } catch (err) {
-                console.log(err);
-            }
-        });
-    }
-}
-
-var displayQuote = function (message, args) {
-    fs.readFile(`./quotes.json`, function (err, content) {
-        if (err) console.log(err);
-        let obj = JSON.parse(content);
-
-        if (args.length >= 1) {
-            let author = getUserFromArgs(message, args);
-            if (author != null) {
-                var authorID = author.id;
-            } else {
-                message.channel.sendMessage("Invalid user!");
-                return;
-            }
-            var quoteResults = obj.quotes.filter(function (item) { return item.author === authorID; });
-        } else {
-            var quoteResults = obj.quotes;
-        }
-
-        if (quoteResults.length == 0) {
-            message.channel.sendMessage("Sorry, no quotes available :(");
-        } else {
-            let i = Math.floor(Math.random() * quoteResults.length);
-            let quote = quoteResults[i];
-            let author = message.guild.members.get(quote.author);
-            let time = new Date(Date.parse(quote.time));
-            let minutes = (time.getMinutes() >= 10) ? time.getMinutes() : ("0" + time.getMinutes());
-            message.channel.sendMessage("```" + author.displayName + 
-                " at " + time.getHours() + ":" + minutes +
-                " on " + (time.getMonth() + 1) + "/" + time.getDate() + "/" + time.getFullYear() + 
-                ": " + quote.text + "```");
-        }
-    });
-}
-
-var listQuotes = function (message, args) {
-    fs.readFile(`./quotes.json`, function (err, content) {
-        if (err) console.log(err);
-        let obj = JSON.parse(content);
-
-        if (args.length >= 1) {
-            let authorID = getUserFromArgs(message, args).id;
-            var quoteResults = obj.quotes.filter(function (item) { return item.author === authorID; });
-        } else {
-            var quoteResults = obj.quotes;
-        }
-
-        if (quoteResults.length == 0) {
-            message.author.sendMessage("Sorry, no quotes available :(");
-        } else {
-            quoteResults.forEach(quote => {
-            let author = message.guild.members.get(quote.author);
-            let time = new Date(Date.parse(quote.time));
-            let minutes = (time.getMinutes() >= 10) ? time.getMinutes() : ("0" + time.getMinutes());
-            message.author.sendMessage("```" + quote.id + " - " + author.displayName + 
-                " at " + time.getHours() + ":" + minutes +
-                " on " + (time.getMonth() + 1) + "/" + time.getDate() + "/" + time.getFullYear() + 
-                ": " + quote.text + "```");
-            });
-        }
-    });
-}
-
-var removeQuote = function (message, args) {
-    if (args.length < 1) {
-        message.channel.reply("You must enter a quote ID!");
-    }
-    let toRemoveID = args[0];
-    fs.readFile(`./quotes.json`, function (err, content) {
-        if (err) console.log(err);
-        let obj = JSON.parse(content);
-        try {
-            let removed = obj.quotes.splice(obj.quotes.findIndex(item => item.id === toRemoveID), 1);
-            fs.writeFile(`./quotes.json`, JSON.stringify(obj), function (err) {
-                if (err) console.log(err);
-            });
-            if (removed.length == 0) {
-                message.channel.sendMessage("Invalid quote ID.");
-            } else {
-                removed.forEach(quote => {
-                    message.channel.sendMessage("Quote " + quote.id + " removed!");
-                })
-            }
-        } catch (err) {
-            console.log(err);
-        }
-    });
-}
-
 client.on("ready", () => {
     console.log("Boot sequence complete.");
     client.user.setGame("Banhammer 40k");
@@ -395,22 +248,6 @@ client.on("message", message => {
                                             `\n${member.user.username}, please read through the rules.` + 
                                             `\nIf you have any questions, please feel free to mention ${moderatorRole} in #help and we can assist you.`);
             }
-
-            // else if (givenCommand.symbol === `addQuote`) {
-            //     addQuote(message, args);
-            // }
-
-            // else if (givenCommand.symbol === `quote`) {
-            //     displayQuote(message, args);
-            // }
-
-            // else if (givenCommand.symbol === `listQuotes`) {
-            //     listQuotes(message, args);
-            // }
-
-            // else if (givenCommand.symbol === `removeQuote`) {
-            //     removeQuote(message, args);
-            // }
         }
     } catch (err) {
         console.log("Error on message event:\n" + err.message + " " + err.fileName + " " + err.lineNumber);
@@ -426,6 +263,9 @@ client.on("guildMemberAdd", member => {
         guild.channels.find("name", "general").sendMessage(`Please welcome ${member.user} to the server!` +
                                                            `\n${member.user.username}, please read through the rules` + ((welcomeChannel != null) ? ` in ${welcomeChannel}.` : `.`) + 
                                                            `\nIf you have any questions, please feel free to mention ${moderatorRole} in ${helpChannel} and we can assist you.`);
+        for (let i = 0; i < defaultChannels.length; ++i) {
+            member.addRole(guild.roles.find("name", defaultChannels[i]));
+        }
     } catch (err) {
         console.log("Error on guildMemberAdd event:\n" + err.message + " " + err.fileName + " " + err.lineNumber);
     }
