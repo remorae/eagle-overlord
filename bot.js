@@ -10,7 +10,7 @@ const botCreatorID = settingsFile.botCreatorID;
 const commandPrefix = settingsFile.commandPrefix;
 const validClassPrefixes = settingsFile.validClassPrefixes;
 const commands = settingsFile.commands;
-const defaultChannels = settingsFile.defaultChannels;
+const defaultRoles = settingsFile.defaultRoles;
 
 var changeClassForMember = function (member, message, args, adding, isForOther) { 
     if (message.guild == null || message.guild.channels.get(message.channel.id).name === "general") {
@@ -263,8 +263,9 @@ client.on("guildMemberAdd", member => {
         guild.channels.find("name", "general").sendMessage(`Please welcome ${member.user} to the server!` +
                                                            `\n${member.user.username}, please read through the rules` + ((welcomeChannel != null) ? ` in ${welcomeChannel}.` : `.`) + 
                                                            `\nIf you have any questions, please feel free to mention ${moderatorRole} in ${helpChannel} and we can assist you.`);
-        for (let i = 0; i < defaultChannels.length; ++i) {
-            member.addRole(guild.roles.find("name", defaultChannels[i]));
+        for (let i = 0; i < defaultRoles.length; ++i) {
+            member.addRole(defaultRoles[i]);
+            console.log("Added default role " + guild.roles.get(defaultRoles[i]) + " to " + member.user);
         }
     } catch (err) {
         console.log("Error on guildMemberAdd event:\n" + err.message + " " + err.fileName + " " + err.lineNumber);
