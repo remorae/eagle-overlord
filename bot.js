@@ -164,7 +164,7 @@ var getUserFromArgs = function (message, args) {
     memberName = memberName.substr(1, memberName.length - 2);
     let gm = message.guild.members.find(`displayName`, memberName);
     if (gm == null)
-        gm = message.guild.members.find(member => { return (member.user.username === args[1]); });
+        gm = message.guild.members.find(member => { return (member.user.username === args[0]); });
     return gm;
 }
 
@@ -248,10 +248,11 @@ client.on("message", message => {
 
             else if (givenCommand.symbol === `welcome`) {
                 let member = getUserFromArgs(message, args);
-                let moderatorRole = message.guild.roles.find(role => role.name.toLowerCase() === "moderators");
+                let moderatorRole = message.guild.roles.find(role => role.name.toLowerCase() === `moderators`);
+                let helpChannel = serverChannels.find(ch => { return (ch.name === `help`); });
                 message.channel.send(`Please welcome ${member.user} to the server!` +
                                             `\n${member.user.username}, please read through the rules.` + 
-                                            `\nIf you have any questions, please feel free to mention ${moderatorRole} in #help and we can assist you.`);
+                                            `\nIf you have any questions, please feel free to mention ${moderatorRole} in ${message.guild.channels.get(helpChannel.id)} and we can assist you.`);
             }
             else if (givenCommand.symbol === `acm`) {
                 if (message.guild == null) {
