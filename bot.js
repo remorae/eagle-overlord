@@ -341,11 +341,9 @@ client.on("guildMemberAdd", member => {
         generalChannel.send(`Please welcome ${member.user} to the server!` +
                                                            `\n${member.user.username}, please read through the rules` + ((welcomeChannel != null) ? ` in ${welcomeChannel}.` : `.`) + 
                                                            `\nIf you have any questions, please feel free to mention ${moderatorRole} in ${helpChannel} and we can assist you.`);
-        if (member.user.email != null) {
-            for (let i = 0; i < defaultRoles.length; ++i) {
-                member.addRole(defaultRoles[i]);
-                console.log("Added default role " + guild.roles.get(defaultRoles[i]) + ` to ` + member.user);
-            }
+        for (let i = 0; i < defaultRoles.length; ++i) {
+            member.addRole(defaultRoles[i]);
+            console.log("Added default role " + guild.roles.get(defaultRoles[i]) + ` to ` + member.user);
         }
     } catch (err) {
         console.log(`Error on guildMemberAdd event:\n` + err.message + ` ` + err.fileName + ` ` + err.lineNumber);
