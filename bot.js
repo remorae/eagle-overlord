@@ -213,7 +213,7 @@ client.on("message", message => {
         if (givenCommand == null) {
             // No valid command was found; check if the message didn't match casing
             commands.forEach(com => {
-                if (messageCommandText === `${commandPrefix}${com.symbol}`.toLowerCase()) {
+                if (messageCommandText.toLowerCase() === `${com.symbol}`.toLowerCase()) {
                     giveCaseWarning(message, com.symbol);
                 }
             });
