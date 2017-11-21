@@ -265,7 +265,7 @@ client.on("message", message => {
                 }
                 
                 let member = message.guild.member(message.author);
-                let role = message.guild.roles.get(acmMembersRole);
+                let role = message.guild.roles.get(serverRoles.find(role => { return role.name === `ACM Members`; }).id);
                 switch (args[0].toLowerCase()) {
                     case `info`:
                         message.channel.send(`ACM stands for Association for Computing Machinery. See ${message.guild.channels.get(`360933694443094016`)} for more info.`);
@@ -324,6 +324,11 @@ client.on("message", message => {
                         break;
                     }
                 }
+            }
+            else if (givenCommand.symbol === `shrug`) {
+                let channel = message.channel;
+                //message.delete();
+                channel.send(`¯\\\_(ツ)\_/¯`);
             }
         }
     } catch (err) {
