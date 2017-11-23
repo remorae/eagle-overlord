@@ -335,7 +335,7 @@ client.on("message", message => {
                     message.channel.send(`Missing message. See "!help say" for more info.`)
                     return;
                 }
-                let msg = args[0].replace("\"", "");
+                let msg = args[0].replace(/\"/g, "");
                 let channel = message.channel;
                 if (args.length > 1) {
                     if (message.guild == null) {
