@@ -1,7 +1,7 @@
 const Discord = require("discord.js");
 const client = new Discord.Client({autoReconnect: true});
 const infoFile = require("./package.json");
-const settingsFile = require("./settings.json");
+const settingsFile = require("./Settings/settings.json");
 const fs = require(`fs`);
 
 const token = settingsFile.token;
@@ -329,6 +329,22 @@ client.on("message", message => {
                 let channel = message.channel;
                 //message.delete();
                 channel.send(`¯\\\_(ツ)\_/¯`);
+            }
+            else if (givenCommand.symbol === `say`) {
+                if (args.length == 0) {
+                    message.channel.send(`Missing message. See "!help say" for more info.`)
+                    return;
+                }
+                let msg = args[0];
+                let channel = message.channel;
+                if (args.length > 1) {
+                    if (message.guild == null) {
+                        channel.send(`Sending a message to another channel requires a guild.`)
+                        return;
+                    }
+                    channel = message.guild.channels.get(args[1]);
+                }
+                channel.send(msg);
             }
         }
     } catch (err) {
