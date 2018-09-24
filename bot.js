@@ -390,7 +390,17 @@ client.on("message", message => {
                     }
                     channel = message.guild.channels.get(args[1]);
                 }
-                channel.send(msg);
+                if (channel && msg) {
+                    channel.send(msg);
+                }
+            }
+            else if (givenCommand.symbol === `hung`) {
+                if (message.author.id === settingsFile.hungID) {
+                    message.author.send(`Hello there.`);
+                }
+                else {
+                    message.channel.send(`No.`);
+                }
             }
             else if (givenCommand.symbol === `compile`) {
                 if (args.length === 0) {
