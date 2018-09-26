@@ -112,7 +112,7 @@ function listCommands(message) {
 }
 
 function giveCaseWarning(message, commandSymbol) {
-    message.reply(`did you mean "${commandSymbol}"? Commands are case-sensitive.`);
+    message.reply(`did you mean "${commandSymbol}"? Commands are cASe-SeNsiTIvE.`);
 }
 
 function displayHelpMessage(message, args, botCreatorUser) {
