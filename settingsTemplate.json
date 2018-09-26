@@ -1,0 +1,46 @@
+{
+    "token": "",
+    "botID": "",
+    "botCreatorID": "",
+    "serverRoles": [{
+        "name": "",
+        "id": ""
+    }],
+    "serverChannels": [{
+        "name": "",
+        "id": ""
+    }],
+    "validClassPrefixes": ["CSCD", "MATH", "EENG", "PHYS", "CHEM", "GEOL", "PHIL", "DESN"],
+    "defaultRoles": [],
+    "commandPrefix": "!",
+    "commands": [{
+        "name": "helpCommand",
+        "symbol": "help",
+        "usage": "!help [command]",
+        "info": "Displays helpful information about command usage.",
+        "visible": true,
+        "requiresGuild": false,
+        "permissions": []
+    }, {
+        "name": "aboutCommand",
+        "symbol": "about",
+        "usage": "!about",
+        "info": "Displays information about, well, me.",
+        "visible": true,
+        "requiresGuild": false,
+        "permissions": []
+    }, {
+        "name": "listCommandsCommand",
+        "symbol": "commands",
+        "usage": "!commands",
+        "info": "Lists all available commands that I recognize. Usage is case-sensitive.",
+        "visible": true,
+        "requiresGuild": false,
+        "permissions": []
+    }],
+    "compileLangs": [{
+        "id": "java",
+        "full": "Java",
+        "index": 1
+    }]
+}
