@@ -219,7 +219,13 @@ client.on(`ready`, () => {
     client.user.setActivity(`Banhammer 40k`);
 });
 
-client.on("message", message => {
+client.on("messageUpdate", (oldMessage, newMessage) => {
+    process(newMessage);
+});
+
+client.on("message", process);
+
+function process(message) {
     try {
         if (message.author.bot) {
             return;
@@ -441,7 +447,7 @@ client.on("message", message => {
     } catch (err) {
         reportError(`Error on message event:\n` + err.message + ` ` + err.fileName + ` ` + err.lineNumber);
     }
-});
+}
 
 client.on("guildMemberAdd", member => {
     let guild = member.guild;
