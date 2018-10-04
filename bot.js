@@ -437,9 +437,11 @@ function process(message) {
                     if (results.error != null) {
                         reportError(`Error: ${results.error}\nStatusCode: ${results.statusCode}`);
                         message.channel.send(`<@${botCreatorID}> messed up, go poke him!`);
-                    } else {
+                    } else if (results.output) {
                         message.channel.send(`Results for <@${message.author.id}>: \`\`\`${results.output.escape()}\`\`\``
                         + `\nMemory: ${results.memory}, CPU Time: ${results.cpuTime}`);
+                    } else {
+                        botCreatorUser.send(`Bad compile:\n${message.content}`);
                     }
                 });
             }
