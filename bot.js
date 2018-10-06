@@ -82,7 +82,6 @@ function changeRolesForMember(member, message, args, adding, isForOther, checkPr
             message.channel.send(`"${roleName}" is not a valid role.`);
             continue;
         }
-        console.log(role);
 
         function addOrRemove(channel, member, role, roleName, allowPings) {
             if (adding) {
