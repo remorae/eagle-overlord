@@ -18,40 +18,40 @@ const compileLangs = settingsFile.compileLangs;
 const maxCompileResultLength = 1900;
 const hungID = settingsFile.hungID;
 
-function isValidPrefix(roleToChange) {
+function isValidPrefix(roleName) {
     validClassPrefixes.forEach(prefix => {
-        if (roleToChange.toUpperCase().startsWith(prefix)) {
+        if (roleName.toUpperCase().startsWith(prefix)) {
             return true;
         }
     });
     return false;
 }
 
-function addRole(member, role, allowPings) {
-    if (member.roles.get(role.id) == null) {
+function addRole(channel, member, role, roleName, allowPings) {
+    if (!member.roles.some(toFind => toFind.id === role.id)) {
         member.addRole(role).then(member => {
             if (allowPings) {
-                message.channel.send(`Added ${member.user} to class "${roleToChange}".`);
+                channel.send(`Added role "${roleName}" to ${member.user}.`);
             }
-        }).catch(member => {
-            message.channel.send("An error occurred. I probably don't have permissions to assign roles :'(");
+        }).catch(err => {
+            client.fetchUser(botCreatorID).then(user => user.send(`Problem adding ${roleName} to ${member.user}: ${err}`));
         });
     } else if (allowPings) {
-        message.channel.send(`User ${member.user} is already in class "${roleToChange}".`);
+        channel.send(`User ${member.user} already has role "${roleName}".`);
     }
 }
 
-function removeRole(member, role, allowPings) {
-    if (member.roles.get(role.id) != null) {
+function removeRole(channel, member, role, roleName, allowPings) {
+    if (member.roles.some(toFind => toFind.id === role.id)) {
         member.removeRole(role).then(member => {
             if (allowPings) {
-                message.channel.send(`Removed ${member.user} from class "${roleToChange}".`);
+                channel.send(`Removed role "${roleName}" from ${member.user}.`);
             }
-        }).catch(() => {
-            message.channel.send("An error occurred. I probably don't have permissions to remove roles :'(");
+        }).catch(err => {
+            client.fetchUser(botCreatorID).then(user => user.send(`Problem removing ${roleName} from ${member.user}: ${err}`));
         });
     } else if (allowPings) {
-        message.channel.send(`User ${member.user} is not in class "${roleToChange}".`);
+        channel.send(`User ${member.user} does not have role "${roleName}".`);
     }
 }
 
@@ -67,29 +67,36 @@ function changeRolesForMember(member, message, args, adding, isForOther, checkPr
         message.channel.send(`You must enter a role.`);
         return;
     }
-    if (member instanceof Collection) {
-        for (const guildMember in member) {
-            changeRolesForMember(guildMember, message, args, adding, isForOther, checkPrefix, allowPings);
-        }
-    }
     for (let i = (isForOther) ? 1 : 0; i < args.length; ++i) {
-        const roleToChange = args[i];
-        if (roleToChange == null) {
-            return;
+        const roleName = args[i];
+        if (roleName == null) {
+            continue;
         }
-        if (checkPrefix && !isValidPrefix(roleToChange)) {
-            message.channel.send(`"${roleToChange}" does not have a valid prefix.`);
-            return;
+        if (checkPrefix && !isValidPrefix(roleName)) {
+            message.channel.send(`"${roleName}" does not have a valid prefix.`);
+            continue;
         }
 
-        const role = message.guild.roles.find(`name`, roleToChange.toUpperCase());
+        const role = parseRole(message, roleName);
         if (role == null) {
-            message.channel.send(`"${roleToChange}" is not a valid role.`);
+            message.channel.send(`"${roleName}" is not a valid role.`);
+            continue;
         }
-        if (adding) {
-            addRole(member, role, allowPings);
-        } else {
-            removeRole(member, role, allowPings);
+        console.log(role);
+
+        function addOrRemove(channel, member, role, roleName, allowPings) {
+            if (adding) {
+                addRole(channel, member, role, roleName, allowPings);
+            } else {
+                removeRole(channel, member, role, roleName, allowPings);
+            }
+        }
+
+        if (member instanceof Array) {
+            member.forEach(guildMember => addOrRemove(message.channel, guildMember, role, roleName, allowPings));
+        }
+        else {
+            addOrRemove(message.channel, member, role, roleName, allowPings);
         }
     }
 }
@@ -176,7 +183,7 @@ function getID(message, args) {
             break;
         }
         case `channel`: {
-            let channel = message.guild.channels.find(args[1]);
+            let channel = message.guild.channels.find(channel => channel.id === args[1]);
             if (channel == null)
                 message.author.send(`Channel not found.`);
             else 
@@ -184,7 +191,7 @@ function getID(message, args) {
             break;
         }
         case `role`: {
-            let role = message.guild.roles.find(args[1]);
+            let role = message.guild.roles.find(role => role.id === args[1]);
             if (role == null)
                 message.author.send(`Role not found.`);
             else 
@@ -200,7 +207,7 @@ function giveCaseWarning(message, commandSymbol) {
 
 function displayHelpMessage(message, args) {
     if (args.length === 0) {
-        let helpChannel = (message.guild != null) ? message.guild.channels.get(serverChannels.find(channel => { return (channel.name === "help"); }).id) : null;
+        const helpChannel = (message.guild != null) ? message.guild.channels.get(serverChannels.find(channel => { return (channel.name === "help"); }).id) : null;
         message.channel.send(`If you'd like help with specific command syntax, please use \`!help <commandName>\`.` +
                                     `\nIf you'd like to see available commands, please use \`!commands\`.` +
                                     ((helpChannel != null) ? `\nIf you need help with Discord or something not specific to a class, please ask a question in ${helpChannel}.` : ``));
@@ -234,23 +241,22 @@ function handleNonCommand(message) {
         logMessage(message);
         let url = matches[0].trim().toLowerCase();
         message.channel.send(`<http://www.reddit.com` + url + `>`);
-        console.log(`Attempting to link subreddit <http://www.reddit.com` + url + `>`);
     }
 }
 
 function parseUser(message, arg) {
     if (message.guild == null) {
         message.channel.send(`This command requires a guild.`);
-        return;
+        return null;
     }
     if (arg == null) {
         message.channel.send(`You must enter a user.`);
-        return;
+        return null;
     }
-    if (arg === `*`) {
-        return message.guild.members;
+    if (arg === `all`) {
+        return message.guild.members.array();
     }
-    let gm = message.guild.members.find(arg);
+    let gm = message.guild.members.find(member => { return member.user.id === arg; });
     if (gm == null) {
         gm = message.guild.members.find(member => { return (member.user.username === arg); });
     }
@@ -258,9 +264,19 @@ function parseUser(message, arg) {
         && arg[0] == arg[arg.length - 1]
         && (arg[0] === `"` || arg[0] === `'` || arg[0] === '`')) {
         const memberName = arg.substr(1, arg.length - 2); // Assume quotes around name
-        gm = message.guild.members.find(`displayName`, memberName);
+        gm = message.guild.members.find(member => member.displayName === memberName);
     }
     return gm;
+}
+
+function parseRole(message, roleName) {
+    let role = message.guild.roles.find(role => { return role.name === roleName; });
+    if (role == null && roleName.length > 2
+        && roleName[0] === roleName[roleName.length - 1]
+        && (roleName[0] === `"` || roleName[0] === `'` || roleName[0] === '`')) {
+        role = message.guild.roles.find(role => { return role.name === roleName.substr(1, roleName.length - 2); });
+    }
+    return role;
 }
 
 function compile(source, language, cb) {
@@ -382,8 +398,6 @@ function process(message) {
                 return;
             }
         }
-        
-        const botCreatorMember = message.guild ? message.guild.members.get(botCreatorID) : null;
 
         if (givenCommand == null) {
             // No valid command was found; check if the message didn't match casing
@@ -425,7 +439,7 @@ function process(message) {
                 }
                 const member = parseUser(message, args[0]);
                 const adding = (givenCommand.name === `addRoleToOtherCommand`);
-                changeRolesForMember(member, message, args, adding, true, false, true);
+                changeRolesForMember(member, message, args, adding, true, false, !(member instanceof Array));
                 break;
             }
             case `testWelcomeCommand`:
