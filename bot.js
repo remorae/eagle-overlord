@@ -167,6 +167,34 @@ function handleACM(message, args) {
     }
 }
 
+function handleCSC(message, args) {
+    if (args.length < 1) {
+        message.channel.send(`Missing parameter. Use \`!help csc\` for more info.`);
+        return;
+    }
+    
+    const member = message.guild.member(message.author);
+    const role = message.guild.roles.get(serverRoles.find(role => { return role.name === `CSC Members`; }).id);
+    switch (args[0].toLowerCase()) {
+        case `info`:
+            const cscGeneralChannel = message.guild.channels.get(serverChannels.find(channel => { return channel.name === `csc-general`; }).id);
+            message.channel.send(`CSC stands for Computer Security Club. See ${cscGeneralChannel} for more info.`);
+            return;
+        case `join`:
+            if (role != null && member.roles.get(role.id) == null) {
+                member.addRole(role);
+                member.send(`Welcome to the CSC!`);
+            }
+            break;
+        case `leave`:
+            if (role != null && member.roles.get(role.id) != null) {
+                member.removeRole(role);
+                member.send(`The CSC will miss you.`);
+            }
+            break;
+    }
+}
+
 function getID(message, args) {
     if (args.length < 2) {
         message.channel.send(`Missing parameter(s). See \`!help getID\` for more info.`);
@@ -178,23 +206,23 @@ function getID(message, args) {
             if (gm == null)
                 message.author.send(`User not found.`);
             else 
-                message.author.send(`User \"` + args[1] + `\": ` + gm.id);
+                message.author.send(`User ` + args[1] + `: ` + gm.id);
             break;
         }
         case `channel`: {
-            let channel = message.guild.channels.find(channel => channel.id === args[1]);
+            let channel = parseChannel(message, args[1]);
             if (channel == null)
                 message.author.send(`Channel not found.`);
             else 
-                message.author.send(`Channel \"` + args[1] + `\": ` + channel.id);
+                message.author.send(`Channel ` + args[1] + `: ` + channel.id);
             break;
         }
         case `role`: {
-            let role = message.guild.roles.find(role => role.id === args[1]);
+            const role = parseRole(message, args[1]);
             if (role == null)
                 message.author.send(`Role not found.`);
             else 
-                message.author.send(`Role \"` + args[1] + `\": ` + role.id);
+                message.author.send(`Role ` + args[1] + `: ` + role.id);
             break;
         }
     }
@@ -268,14 +296,31 @@ function parseUser(message, arg) {
     return gm;
 }
 
-function parseRole(message, roleName) {
-    let role = message.guild.roles.find(role => { return role.name === roleName; });
-    if (role == null && roleName.length > 2
-        && roleName[0] === roleName[roleName.length - 1]
-        && (roleName[0] === `"` || roleName[0] === `'` || roleName[0] === '`')) {
-        role = message.guild.roles.find(role => { return role.name === roleName.substr(1, roleName.length - 2); });
+function parseRole(message, arg) {
+    let role = message.guild.roles.find(role => { return role.id === arg; });
+    if (role == null) {
+        role = message.guild.roles.find(role => { return role.name === arg; });
+    }
+    if (role == null && arg.length > 2
+        && arg[0] === arg[arg.length - 1]
+        && (arg[0] === `"` || arg[0] === `'` || arg[0] === '`')) {
+        role = message.guild.roles.find(role => { return role.name === arg.substr(1, arg.length - 2); });
     }
     return role;
+}
+
+function parseChannel(message, arg) {
+    console.log(arg);
+    let ch = message.guild.channels.find(channel => channel.id === arg);
+    if (ch == null) {
+        ch = message.guild.channels.find(channel => channel.name === arg);
+    }
+    if (ch == null && arg.length > 2
+        && arg[0] === arg[arg.length - 1]
+        && (arg[0] === `"` || arg[0] === `'` || arg[0] === '`')) {
+        ch = message.guild.channels.find(channel => { return channel.name === arg.substr(1, arg.length - 2); });
+    }
+    return ch;
 }
 
 function compile(source, language, cb) {
@@ -380,7 +425,7 @@ function process(message) {
             return;
         }
 
-        let args = message.content.trim().match(/\w+|"(?:\\"|[^"])+"|```(\w+\n)?([\s\S]+)```/gm);
+        let args = message.content.trim().match(/[\w-_]+|"(?:\\"|[^"])+"|```(\w+\n)?([\s\S]+)```/gm);
         const messageCommandText = args.shift();
         const givenCommand = commands.find(com => { return (com.symbol === messageCommandText); });
         const requiresGuild = (givenCommand != null) ? givenCommand.requiresGuild : false;
@@ -489,6 +534,9 @@ function process(message) {
                 break;
             case `compileCommand`:
                 doCompileCommand(message, args);
+                break;
+            case `cscCommand`:
+                handleCSC(message, args);
                 break;
             default:
                 throw(`Bad command name.`);
