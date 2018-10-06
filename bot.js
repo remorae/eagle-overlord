@@ -55,7 +55,7 @@ function removeRole(member, role, allowPings) {
     }
 }
 
-function changeRolesForMember(member, message, args, adding, isForOther, checkPrefix, allowPings) { 
+function changeRolesForMember(member, message, args, adding, isForOther, checkPrefix, allowPings) {    
     if (message.guild == null) {
         message.channel.send(`Command requires a guild.`);
     }
@@ -66,6 +66,11 @@ function changeRolesForMember(member, message, args, adding, isForOther, checkPr
     if (args.length < 1) {
         message.channel.send(`You must enter a role.`);
         return;
+    }
+    if (member instanceof Collection) {
+        for (const guildMember in member) {
+            changeRolesForMember(guildMember, message, args, adding, isForOther, checkPrefix, allowPings);
+        }
     }
     for (let i = (isForOther) ? 1 : 0; i < args.length; ++i) {
         const roleToChange = args[i];
@@ -245,6 +250,9 @@ function parseUser(message, arg) {
     if (arg == null) {
         message.channel.send(`You must enter a user.`);
         return;
+    }
+    if (arg === `*`) {
+        return message.guild.members;
     }
     let gm = message.guild.members.find(arg);
     if (gm == null) {
