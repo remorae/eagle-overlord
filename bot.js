@@ -130,13 +130,15 @@ function listCommands(message) {
     message.channel.send(`Current commands: ${commandList}`);
 }
 
-function welcome(member) {
-    const welcomeChannel = guild.channels.get(serverChannels.find(ch => { return (ch.name === `welcome`); }).id);
-    const generalChannel = guild.channels.get(serverChannels.find(ch => { return (ch.name === `general`); }).id);
+function welcome(message, member) {
+    const welcomeChannel = member.guild.channels.get(serverChannels.find(ch => { return (ch.name === `welcome`); }).id);
+    const generalChannel = member.guild.channels.get(serverChannels.find(ch => { return (ch.name === `general`); }).id);
     generalChannel.send(`${member.user} has logged on!` +
                         `\nPlease take a look at ${welcomeChannel} before you get started.`);
     for (let i = 0; i < defaultRoles.length; ++i) {
-        member.addRole(defaultRoles[i]);
+        const role = parseRole(message, defaultRoles[i]);
+        member.addRole(role)
+        .catch(err => client.fetchUser(botCreatorID).then(user => user.send(err)));
     }
 }
 
@@ -493,7 +495,7 @@ function process(message) {
                     message.channel.send(`Missing argument(s).`);
                 }
                 const member = parseUser(message, args[0]);
-                welcome(member);
+                welcome(message, member);
                 break;
             }
             case `acmCommand`:
