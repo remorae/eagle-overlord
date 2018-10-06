@@ -19,12 +19,13 @@ const maxCompileResultLength = 1900;
 const hungID = settingsFile.hungID;
 
 function isValidPrefix(roleName) {
+    let result = false;
     validClassPrefixes.forEach(prefix => {
         if (roleName.toUpperCase().startsWith(prefix)) {
-            return true;
+            result = true;
         }
     });
-    return false;
+    return result;
 }
 
 function addRole(channel, member, role, roleName, allowPings) {
