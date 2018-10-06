@@ -169,10 +169,6 @@ function getID(message, args) {
     switch (args[0]) {
         case `user`: {
             const gm = parseUser(message, args[1]);
-            let gm = message.guild.members.find(`displayName`, args[1]);
-            if (gm == null) {
-                gm = message.guild.members.find(member => { return (member.user.username === args[1]); });
-            }
             if (gm == null)
                 message.author.send(`User not found.`);
             else 
@@ -180,7 +176,7 @@ function getID(message, args) {
             break;
         }
         case `channel`: {
-            let channel = message.guild.channels.find(`name`, args[1]);
+            let channel = message.guild.channels.find(args[1]);
             if (channel == null)
                 message.author.send(`Channel not found.`);
             else 
@@ -188,7 +184,7 @@ function getID(message, args) {
             break;
         }
         case `role`: {
-            let role = message.guild.roles.find(`name`, args[1]);
+            let role = message.guild.roles.find(args[1]);
             if (role == null)
                 message.author.send(`Role not found.`);
             else 
