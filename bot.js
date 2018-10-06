@@ -178,7 +178,7 @@ function handleCSC(message, args) {
     switch (args[0].toLowerCase()) {
         case `info`:
             const cscGeneralChannel = message.guild.channels.get(serverChannels.find(channel => { return channel.name === `csc-general`; }).id);
-            message.channel.send(`CSC stands for Computer Security Club. See ${cscGeneralChannel} for more info.`);
+            message.channel.send(`CSC stands for Cyber Security Club. See ${cscGeneralChannel} for more info.`);
             return;
         case `join`:
             if (role != null && member.roles.get(role.id) == null) {
