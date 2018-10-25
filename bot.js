@@ -78,7 +78,7 @@ function changeRolesForMember(member, message, args, adding, isForOther, checkPr
             continue;
         }
 
-        const role = parseRole(message, roleName);
+        const role = parseRole(message.guild, roleName);
         if (role == null) {
             message.channel.send(`"${roleName}" is not a valid role.`);
             continue;
@@ -130,13 +130,13 @@ function listCommands(message) {
     message.channel.send(`Current commands: ${commandList}`);
 }
 
-function welcome(message, member) {
+function welcome(member) {
     const welcomeChannel = member.guild.channels.get(serverChannels.find(ch => { return (ch.name === `welcome`); }).id);
     const generalChannel = member.guild.channels.get(serverChannels.find(ch => { return (ch.name === `general`); }).id);
     generalChannel.send(`${member.user} has logged on!` +
                         `\nPlease take a look at ${welcomeChannel} before you get started.`);
     for (let i = 0; i < defaultRoles.length; ++i) {
-        const role = parseRole(message, defaultRoles[i]);
+        const role = parseRole(member.guild, defaultRoles[i]);
         member.addRole(role)
         .catch(err => client.fetchUser(botCreatorID).then(user => user.send(err)));
     }
@@ -221,7 +221,7 @@ function getID(message, args) {
             break;
         }
         case `role`: {
-            const role = parseRole(message, args[1]);
+            const role = parseRole(message.guild, args[1]);
             if (role == null)
                 message.author.send(`Role not found.`);
             else 
@@ -299,15 +299,15 @@ function parseUser(message, arg) {
     return gm;
 }
 
-function parseRole(message, arg) {
-    let role = message.guild.roles.find(role => { return role.id === arg; });
+function parseRole(guild, arg) {
+    let role = guild.roles.find(role => { return role.id === arg; });
     if (role == null) {
-        role = message.guild.roles.find(role => { return role.name === arg; });
+        role = guild.roles.find(role => { return role.name === arg; });
     }
     if (role == null && arg.length > 2
         && arg[0] === arg[arg.length - 1]
         && (arg[0] === `"` || arg[0] === `'` || arg[0] === '`')) {
-        role = message.guild.roles.find(role => { return role.name === arg.substr(1, arg.length - 2); });
+        role = guild.roles.find(role => { return role.name === arg.substr(1, arg.length - 2); });
     }
     return role;
 }
@@ -495,7 +495,7 @@ function process(message) {
                     message.channel.send(`Missing argument(s).`);
                 }
                 const member = parseUser(message, args[0]);
-                welcome(message, member);
+                welcome(member);
                 break;
             }
             case `acmCommand`:
@@ -556,6 +556,8 @@ client.on("guildMemberAdd", member => {
         console.log(`Error on guildMemberAdd event:\n` + err.message + ` ` + err.fileName + ` ` + err.lineNumber);
     }
 });
+
+client.on("error", reportError);
 
 function login() {
     try {
