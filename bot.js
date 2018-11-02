@@ -390,6 +390,28 @@ function doCompileCommand(message, args) {
     });
 }
 
+function processAddRole(message, args) {
+    if (args.length != 1) {
+        message.channel.send(`Invalid number of arguments.`);
+    }
+
+    const member = message.guild.member(message.author);
+    let role = null;
+    switch (args[0]) {
+        case "csc-pnnl":
+            role = parseRole(member.guild, "CSCCompetition");
+            break;
+        default:
+            break;
+    }
+    if (role) {
+        addRole(message.channel, member, role, role.name, true);
+    }
+    else {
+        message.channel.send(`Invalid role.`);
+    }
+}
+
 function reportError(message) {
     client.fetchUser(botCreatorID).then(user => {
         user.send(message);
@@ -409,7 +431,7 @@ String.prototype.escape = function() {
 
 client.on(`ready`, () => {
     console.log(`Boot sequence complete.`);
-    client.user.setActivity(`pranks on neighbors`);
+    client.user.setActivity(`with its food`);
 });
 
 client.on("messageUpdate", (oldMessage, newMessage) => {
@@ -540,6 +562,9 @@ function process(message) {
                 break;
             case `cscCommand`:
                 handleCSC(message, args);
+                break;
+            case `grantRoleCommand`:
+                processAddRole(message, args);
                 break;
             default:
                 throw(`Bad command name.`);
