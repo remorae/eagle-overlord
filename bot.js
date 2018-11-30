@@ -568,7 +568,7 @@ function process(message) {
             case `adventOfCodeCommand`:
                 const today = new Date();
                 const day = today.getDate();
-                if (today.getMonth() == 11 && day <= 25)
+                if (today.getMonth() === 11 && day <= 25)
                     message.channel.send(`https://adventofcode.com/${today.getFullYear()}/day/${day}`);
                 break;
             default:
