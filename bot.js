@@ -114,7 +114,7 @@ function listCommands(message) {
         } else if (authorMember != null) {
             let hasNeededPermissions = true;
             commands[i].permissions.forEach(perm => { 
-                if (!authorMember.hasPermission(perm)) {
+                if (!authorMember.has(perm)) {
                     hasNeededPermissions = false;
                 }
             });
@@ -461,7 +461,7 @@ function process(message) {
             return;
         } else if (requiresGuild) {
             let hasNeededPermissions = true;
-            givenCommand.permissions.forEach(perm => { if (!authorMember.hasPermission(perm)) { hasNeededPermissions = false; }  });
+            givenCommand.permissions.forEach(perm => { if (!authorMember.has(perm)) { hasNeededPermissions = false; }  });
             if (!hasNeededPermissions) {
                 message.reply(`you do not have permission to use this command.`);
                 return;
