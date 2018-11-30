@@ -38,6 +38,8 @@
         "requiresGuild": false,
         "permissions": []
     }],
+    "jdoodleID": "",
+    "jdoodleSecret": "",,
     "compileLangs": [{
         "id": "java",
         "full": "Java",
