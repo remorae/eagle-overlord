@@ -104,9 +104,7 @@ function changeRolesForMember(member, message, args, adding, isForOther, checkPr
 function listCommands(message) {
     let commandList = ""; 
     let visibleCommands = [];
-    if (message.guild != null) {
-        var authorMember = message.guild.member(message.author);
-    }
+    const authorMember = (message.guild != null) ? message.guild.member(message.author) : null;
 
     for (let i = 0; i < commands.length; ++i) {
         if (commands[i].visible && !commands[i].requiresGuild) {
@@ -114,7 +112,7 @@ function listCommands(message) {
         } else if (authorMember != null) {
             let hasNeededPermissions = true;
             commands[i].permissions.forEach(perm => { 
-                if (!authorMember.has(perm)) {
+                if (!authorMember.hasPermission(perm)) {
                     hasNeededPermissions = false;
                 }
             });
@@ -459,9 +457,10 @@ function process(message) {
         if (requiresGuild && authorMember == null) {
             message.reply(`the given command requires a guild, but no matching guildMember was found. Please make sure you aren't using this command in a private message.`);
             return;
-        } else if (requiresGuild) {
+        }
+        if (authorMember != null) {
             let hasNeededPermissions = true;
-            givenCommand.permissions.forEach(perm => { if (!authorMember.has(perm)) { hasNeededPermissions = false; }  });
+            givenCommand.permissions.forEach(perm => { if (!authorMember.hasPermission(perm)) { hasNeededPermissions = false; }  });
             if (!hasNeededPermissions) {
                 message.reply(`you do not have permission to use this command.`);
                 return;
