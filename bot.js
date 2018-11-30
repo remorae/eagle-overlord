@@ -380,12 +380,12 @@ function doCompileCommand(message, args) {
         if (results.error != null) {
             reportError(`Error: ${results.error}\nStatusCode: ${results.statusCode}`);
             message.channel.send(`<@${botCreatorID}> messed up, go poke him!`);
-        } else if (results.output) {
+        } else if (results.output != null) {
             message.channel.send(`Results for <@${message.author.id}>: \`\`\`${results.output.escape()}\`\`\``
             + `\nMemory: ${results.memory}, CPU Time: ${results.cpuTime}`);
         } else {
             client.fetchUser(botCreatorID)
-            .then(user => user.send(`Bad compile:\n${message.content}`));
+            .then(user => user.send(`Bad compile:\n${message.content}\n${JSON.stringify(results)}`));
         }
     });
 }
@@ -431,7 +431,7 @@ String.prototype.escape = function() {
 
 client.on(`ready`, () => {
     console.log(`Boot sequence complete.`);
-    client.user.setActivity(`with its food`);
+    client.user.setActivity(`with elves`);
 });
 
 client.on("messageUpdate", (oldMessage, newMessage) => {
