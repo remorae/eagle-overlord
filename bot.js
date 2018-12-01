@@ -575,10 +575,12 @@ function process(message) {
                 processAddRole(message, args);
                 break;
             case `adventOfCodeCommand`:
-                const today = new Date();
-                const day = today.getDate();
-                if (today.getMonth() === 11 && day <= 25)
-                    message.channel.send(`https://adventofcode.com/${today.getFullYear()}/day/${day}`);
+                const utc = new Date();
+                const eastern = new Date(utc - 5 * 3600 * 1000); // -5 hours
+                console.log(eastern);
+                const day = eastern.getDate();
+                if (eastern.getMonth() === 11 && day <= 25)
+                    message.channel.send(`https://adventofcode.com/${eastern.getFullYear()}/day/${day}`);
                 break;
             default:
                 throw(`Bad command name.`);
