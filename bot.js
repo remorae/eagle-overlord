@@ -17,6 +17,9 @@ const serverChannels = settingsFile.serverChannels;
 const compileLangs = settingsFile.compileLangs;
 const maxCompileResultLength = 1900;
 const hungID = settingsFile.hungID;
+const cachedMessages = settingsFile.messagesToCache;
+const servers = settingsFile.servers;
+const reactions = settingsFile.reactions;
 
 function isValidPrefix(roleName) {
     let result = false;
@@ -411,14 +414,6 @@ function processAddRole(message, args) {
     }
 }
 
-function reportError(message) {
-    client.fetchUser(botCreatorID).then(user => {
-        user.send(message);
-    }).catch(err => {
-        console.log(message);
-    });
-}
-
 String.prototype.escape = function() {
 	let str = stripAnsi(this).replace(/[^\x00-\x7F]/g, "").replace(/```/g, "\\`\\`\\`");
 	if (str.length > maxCompileResultLength) {
@@ -431,6 +426,19 @@ String.prototype.escape = function() {
 client.on(`ready`, () => {
     console.log(`Boot sequence complete.`);
     client.user.setActivity(`with elves`);
+    const mainServer = client.guilds.get(servers.find(s => s.name === `mainServer`).id);
+    if (mainServer) {
+        console.log("Setting up main server...");
+        const announceChannel = mainServer.channels.get(serverChannels.find(c => c.name === `announcements`).id);
+        if (announceChannel && announceChannel.fetchMessage) {
+            console.log(`Setting up main server #announcements...`);
+            cachedMessages.forEach(message => {
+                announceChannel.fetchMessage(message.id)
+                .catch(reportError);
+            });
+        }
+    }
+    console.log(`Ready!`);
 });
 
 client.on("messageUpdate", (oldMessage, newMessage) => {
@@ -591,6 +599,53 @@ function welcomeNewMember(member) {
 }
 
 client.on("error", reportError);
+
+function reportError(message) {
+    client.fetchUser(botCreatorID).then(user => {
+        user.send(message);
+    }).catch(err => {
+        console.log(message);
+    });
+}
+
+client.on("messageReactionAdd", (reaction, user) => onReactionToggled(reaction, user, true));
+client.on("messageReactionRemove", (reaction, user) => onReactionToggled(reaction, user, false));
+
+function onReactionToggled(reaction, user, added) {
+    const guild = reaction.message.guild;
+    if (guild == null || !guild.available)
+        return;
+
+    guild.fetchMember(user)
+    .then(member => checkReaction(reaction, member, added))
+    .catch(reportError);
+}
+
+function checkReaction(reaction, member, added) {
+    const roleIDToToggle = roleIDFromReaction(reaction);
+
+    if (roleIDToToggle == null)
+        return;
+
+    const roleFound = member.roles.get(roleIDToToggle);
+
+    if (added && roleFound == null) {
+        member.addRole(roleIDToToggle).catch(reportError);
+    } else if (roleFound != null) {
+        member.removeRole(roleFound).catch(reportError);
+    }
+}
+
+function roleIDFromReaction(reaction) {
+    const handledReaction = reactions.find(r => r.name === reaction.emoji.name);
+    if (handledReaction) {
+        const roleForReaction = serverRoles.find(r => r.id === handledReaction.roleID);
+        if (roleForReaction) {
+            return roleForReaction.id;
+        }
+    }
+    return null;
+}
 
 function login() {
     try {
