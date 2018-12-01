@@ -93,6 +93,7 @@ function changeRolesForMember(member, message, args, adding, isForOther, checkPr
         }
 
         if (member instanceof Array) {
+            // Changing roles for multiple members
             member.forEach(guildMember => addOrRemove(message.channel, guildMember, role, roleName, allowPings));
         }
         else {
@@ -579,13 +580,15 @@ function process(message) {
     }
 }
 
-client.on("guildMemberAdd", member => {
+client.on("guildMemberAdd", welcomeNewMember);
+
+function welcomeNewMember(member) {
     try {
         welcome(member);
     } catch (err) {
         console.log(`Error on guildMemberAdd event:\n` + err.message + ` ` + err.fileName + ` ` + err.lineNumber);
     }
-});
+}
 
 client.on("error", reportError);
 
