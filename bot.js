@@ -20,6 +20,8 @@ const hungID = settingsFile.hungID;
 const cachedMessages = settingsFile.messagesToCache;
 const servers = settingsFile.servers;
 const reactions = settingsFile.reactions;
+const aocURL = settingsFile.aocURL;
+const aocSession = settingsFile.aocSession;
 
 function isValidPrefix(roleName) {
     let result = false;
@@ -413,7 +415,14 @@ function processAddRole(message, args) {
     }
 }
 
-function createEmbed(message, args) {
+function createEmbed(title, color, description) {
+    return new Discord.RichEmbed()
+    .setTitle(title)
+    .setColor(color)
+    .setDescription(description);
+}
+
+function parseEmbed(message, args) {
     if (args.length < 4) {
         message.channel.send(`Missing message. See \`!help embed\` for more info.`)
         return;
@@ -428,10 +437,7 @@ function createEmbed(message, args) {
     const descStr = args[3].replace(/(^\`\`\`|\`\`\`$)/g,``);
     const toEdit = (args.length > 4) ? args[4] : null;
 
-    const embed = new Discord.RichEmbed()
-    .setTitle(title)
-    .setColor(parseInt(colorStr))
-    .setDescription(descStr);
+    const embed = createEmbed(title, parseInt(colorStr), descStr);
 
     if (toEdit) {
         destChannel.fetchMessage(toEdit)
@@ -440,6 +446,77 @@ function createEmbed(message, args) {
     } else {
         destChannel.send(embed);
     }
+}
+
+function getEasternTime() {
+    const utc = new Date();
+    return new Date(utc - 5 * 3600 * 1000); // -5 hours
+}
+
+function linkCurrentAdventOfCodePage(channel) {
+    const eastern = getEasternTime();
+    const day = eastern.getDate();
+    if (eastern.getMonth() === 11 && day <= 25) { // December 1-25
+        channel.send(`https://adventofcode.com/${eastern.getFullYear()}/day/${day}`);
+    }
+}
+
+function nextAdventOfCodeWithin24Hours(now) {
+    return (now.getMonth() === 10 && now.getDate() === 30) // November 30
+        || (now.getMonth() === 11 && now.getDate() < 25); // December 1-24
+}
+
+function toHoursMinutesSeconds(millis) {
+    const hours = Math.floor(millis / (1000 * 3600));
+    const minutes = Math.floor(millis / (1000 * 60)) - hours * 60;
+    const seconds = Math.floor(millis / 1000) - hours * 3600 - minutes * 60;
+    return {
+        "hours": hours,
+        "minutes": minutes,
+        "seconds": seconds
+    };
+}
+
+function displayNextUnlock(channel) {
+    const utc = new Date();
+    const eastern = getEasternTime();
+    if (nextAdventOfCodeWithin24Hours(eastern)) {
+        const nextDay = new Date(Date.UTC(utc.getUTCFullYear(), 11, ((utc.getUTCMonth() === 10) ? 1 : utc.getUTCDate() + 1), 0));
+        const difference = nextDay - eastern.getTime();
+        const remaining = toHoursMinutesSeconds(difference);
+        message.channel.send(`Until next unlock: ${remaining.hours}h ${remaining.minutes}m ${remaining.seconds}s`);
+    }
+}
+
+function displayLeaderboard(channel) {
+    request.get({
+		url: aocURL,
+        headers: {
+            "content-type": "application/json",
+            "cookie": `session=${aocSession}`
+        }
+	}, (err, response, body) => {
+        if (err)
+            throw err;
+        if (response.statusCode != 200) {
+            console.log(`Bad AOC post: Responded w/ ${response.statusCode}`);
+            return;
+        }
+        const result = JSON.parse(body);
+        var board = "";
+        const members = Object.keys(result.members).map(k => result.members[k]); // Turn members into an array
+        members.sort((x, y) => {
+            if (x != y)
+                return y.local_score - x.local_score; // Descending scores
+            return new Date(x.last_star_ts) - new Date(y.last_star_ts); // Ascending timestamps (chronological)
+        });
+        members.forEach((member, i) => {
+            board += `${i}. ${member.name} ${member.local_score}\n`;
+        });
+        const now = new Date().toLocaleString('en-US', { timezone: 'America/Los_Angeles'});
+        const embed = createEmbed(`2018 Leaderboard - ${now}`, 0x990000, board);
+        channel.send(embed);
+	})
 }
 
 String.prototype.escape = function() {
@@ -605,23 +682,22 @@ function process(message) {
                 processAddRole(message, args);
                 break;
             case `adventOfCodeCommand`:
-                const utc = new Date();
-                const eastern = new Date(utc - 5 * 3600 * 1000); // -5 hours
-                const day = eastern.getDate();
-                if (eastern.getMonth() === 11 && day <= 25) {
-                    message.channel.send(`https://adventofcode.com/${eastern.getFullYear()}/day/${day}`);
+                if (args.length == 0) {
+                    linkCurrentAdventOfCodePage(message.channel);
+                    displayNextUnlock(message.channel);
                 }
-                if ((eastern.getMonth() === 10 && day === 30) || (eastern.getMonth() === 11 && day < 25)) {
-                    const next = new Date(Date.UTC(utc.getUTCFullYear(), 11, ((utc.getUTCMonth() === 10) ? 1 : utc.getUTCDate() + 1), 0));
-                    const remaining = next - eastern.getTime();
-                    const hours = Math.floor(remaining / (1000 * 3600));
-                    const minutes = Math.floor(remaining / (1000 * 60)) - hours * 60;
-                    const seconds = Math.floor(remaining / 1000) - hours * 3600 - minutes * 60;
-                    message.channel.send(`Until next unlock: ${hours}h ${minutes}m ${seconds}s`);
+                else {
+                    switch(args[0]) {
+                        default:
+                            break;
+                        case `leaderboard`:
+                            displayLeaderboard(message.channel);
+                            break;
+                    }
                 }
                 break;
             case `embedCommand`:
-                createEmbed(message, args);
+                parseEmbed(message, args);
                 break;
             default:
                 throw(`Bad command name.`);
