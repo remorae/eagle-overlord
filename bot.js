@@ -612,8 +612,12 @@ function process(message) {
                     message.channel.send(`https://adventofcode.com/${eastern.getFullYear()}/day/${day}`);
                 }
                 if ((eastern.getMonth() === 10 && day === 30) || (eastern.getMonth() === 11 && day < 25)) {
-                    const remaining = new Date("");
-                    console.log(`Until next unlock: ${remaining}`);
+                    const next = new Date(Date.UTC(utc.getUTCFullYear(), 11, ((utc.getUTCMonth() === 10) ? 1 : utc.getUTCDate() + 1), 0));
+                    const remaining = next - eastern.getTime();
+                    const hours = Math.floor(remaining / (1000 * 3600));
+                    const minutes = Math.floor(remaining / (1000 * 60)) - hours * 60;
+                    const seconds = Math.floor(remaining / 1000) - hours * 3600 - minutes * 60;
+                    message.channel.send(`Until next unlock: ${hours}h ${minutes}m ${seconds}s`);
                 }
                 break;
             case `embedCommand`:
