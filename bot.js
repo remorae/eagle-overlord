@@ -315,7 +315,6 @@ function parseRole(guild, arg) {
 }
 
 function parseChannel(message, arg) {
-    console.log(arg);
     let ch = message.guild.channels.find(channel => channel.id === arg);
     if (ch == null) {
         ch = message.guild.channels.find(channel => channel.name === arg);
@@ -414,6 +413,35 @@ function processAddRole(message, args) {
     }
 }
 
+function createEmbed(message, args) {
+    if (args.length < 4) {
+        message.channel.send(`Missing message. See \`!help embed\` for more info.`)
+        return;
+    }
+    const destChannel = parseChannel(message, args[0]);
+    if (destChannel == null) {
+        message.channel.send(`Invalid channel.`);
+        return;
+    }
+    const title = args[1].replace(/(^\"|\"$)/g,``);
+    const colorStr = args[2];
+    const descStr = args[3].replace(/(^\`\`\`|\`\`\`$)/g,``);
+    const toEdit = (args.length > 4) ? args[4] : null;
+
+    const embed = new Discord.RichEmbed()
+    .setTitle(title)
+    .setColor(parseInt(colorStr))
+    .setDescription(descStr);
+
+    if (toEdit) {
+        destChannel.fetchMessage(toEdit)
+        .then(msg => msg.edit(embed).catch(reportError))
+        .catch(() => message.channel.send(`Invalid message to edit.`));
+    } else {
+        destChannel.send(embed);
+    }
+}
+
 String.prototype.escape = function() {
 	let str = stripAnsi(this).replace(/[^\x00-\x7F]/g, "").replace(/```/g, "\\`\\`\\`");
 	if (str.length > maxCompileResultLength) {
@@ -460,21 +488,6 @@ function process(message) {
         let args = message.content.trim().match(/[\w-_]+|"(?:\\"|[^"])+"|```(\w+\n)?([\s\S]+)```/gm);
         const messageCommandText = args.shift();
         const givenCommand = commands.find(com => { return (com.symbol === messageCommandText); });
-        const requiresGuild = (givenCommand != null) ? givenCommand.requiresGuild : false;
-        const authorMember = (message.guild != null) ? message.guild.member(message.author) : null;
-
-        if (requiresGuild && authorMember == null) {
-            message.reply(`the given command requires a guild, but no matching guildMember was found. Please make sure you aren't using this command in a private message.`);
-            return;
-        }
-        if (authorMember != null) {
-            let hasNeededPermissions = true;
-            givenCommand.permissions.forEach(perm => { if (!authorMember.hasPermission(perm)) { hasNeededPermissions = false; }  });
-            if (!hasNeededPermissions) {
-                message.reply(`you do not have permission to use this command.`);
-                return;
-            }
-        }
 
         if (givenCommand == null) {
             // No valid command was found; check if the message didn't match casing
@@ -484,6 +497,23 @@ function process(message) {
                 }
             });
             return;
+        }
+
+        const requiresGuild = givenCommand.requiresGuild;
+        const authorMember = (message.guild != null) ? message.guild.member(message.author) : null;
+
+        if (requiresGuild && authorMember == null) {
+            message.reply(`the given command requires a guild, but no matching guildMember was found. Please make sure you aren't using this command in a private message.`);
+            return;
+        }
+
+        if (authorMember != null) {
+            let hasNeededPermissions = true;
+            givenCommand.permissions.forEach(perm => { if (!authorMember.hasPermission(perm)) { hasNeededPermissions = false; }  });
+            if (!hasNeededPermissions) {
+                message.reply(`you do not have permission to use this command.`);
+                return;
+            }
         }
 
         switch (givenCommand.name) {
@@ -577,10 +607,17 @@ function process(message) {
             case `adventOfCodeCommand`:
                 const utc = new Date();
                 const eastern = new Date(utc - 5 * 3600 * 1000); // -5 hours
-                console.log(eastern);
                 const day = eastern.getDate();
-                if (eastern.getMonth() === 11 && day <= 25)
+                if (eastern.getMonth() === 11 && day <= 25) {
                     message.channel.send(`https://adventofcode.com/${eastern.getFullYear()}/day/${day}`);
+                }
+                if ((eastern.getMonth() === 10 && day === 30) || (eastern.getMonth() === 11 && day < 25)) {
+                    const remaining = new Date("");
+                    console.log(`Until next unlock: ${remaining}`);
+                }
+                break;
+            case `embedCommand`:
+                createEmbed(message, args);
                 break;
             default:
                 throw(`Bad command name.`);
