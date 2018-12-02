@@ -514,7 +514,7 @@ function displayLeaderboard(channel) {
             board += `${i}. ${member.name} ${member.local_score}\n`;
         });
         const now = new Date().toLocaleString('en-US', { timezone: 'America/Los_Angeles'});
-        const embed = createEmbed(`2018 Leaderboard - ${now}`, 0x990000, board);
+        const embed = createEmbed(`2018 Leaderboard - ${now} UTC`, 0x990000, board);
         channel.send(embed);
 	})
 }
