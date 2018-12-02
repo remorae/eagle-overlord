@@ -484,7 +484,7 @@ function displayNextUnlock(channel) {
         const nextDay = new Date(Date.UTC(utc.getUTCFullYear(), 11, ((utc.getUTCMonth() === 10) ? 1 : utc.getUTCDate() + 1), 0));
         const difference = nextDay - eastern.getTime();
         const remaining = toHoursMinutesSeconds(difference);
-        message.channel.send(`Until next unlock: ${remaining.hours}h ${remaining.minutes}m ${remaining.seconds}s`);
+        channel.send(`Until next unlock: ${remaining.hours}h ${remaining.minutes}m ${remaining.seconds}s`);
     }
 }
 
