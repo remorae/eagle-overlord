@@ -481,10 +481,12 @@ function displayNextUnlock(channel) {
     const utc = new Date();
     const eastern = getEasternTime();
     if (nextAdventOfCodeWithin24Hours(eastern)) {
-        const nextDay = new Date(Date.UTC(utc.getUTCFullYear(), 11, ((utc.getUTCMonth() === 10) ? 1 : utc.getUTCDate() + 1), 0));
-        const difference = nextDay - eastern.getTime();
+        const nextDay = new Date(Date.UTC(eastern.getUTCFullYear(), 11, ((eastern.getUTCMonth() === 10) ? 1 : eastern.getUTCDate() + 1), 0));
+        let difference = nextDay - eastern.getTime();
         const remaining = toHoursMinutesSeconds(difference);
         channel.send(`Until next unlock: ${remaining.hours}h ${remaining.minutes}m ${remaining.seconds}s`);
+        if (remaining.hours === 0)
+            channel.send(`Soon: https://adventofcode.com/${eastern.getFullYear()}/day/${eastern.getDate() + 1}`);
     }
 }
 
