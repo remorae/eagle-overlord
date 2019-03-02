@@ -17,9 +17,9 @@ const serverChannels = settingsFile.serverChannels;
 const compileLangs = settingsFile.compileLangs;
 const maxCompileResultLength = 1900;
 const hungID = settingsFile.hungID;
+const stuID = settingsFile.stuID;
 const cachedMessages = settingsFile.messagesToCache;
 const servers = settingsFile.servers;
-const reactions = settingsFile.reactions;
 const aocURL = settingsFile.aocURL;
 const aocSession = settingsFile.aocSession;
 
@@ -674,6 +674,14 @@ function process(message) {
                     message.channel.send(`No.`);
                 }
                 break;
+            case `stuCommand`:
+                if (message.author.id === stuID) {
+                    message.author.send(`ʕ •ᴥ•ʔ All aboard Stu's Happyland Express ʕ •ᴥ•ʔ`);
+                }
+                else {
+                    message.channel.send(`Stu.`);
+                }
+                break;
             case `compileCommand`:
                 doCompileCommand(message, args);
                 break;
@@ -758,11 +766,13 @@ function checkReaction(reaction, member, added) {
 }
 
 function roleIDFromReaction(reaction) {
-    const handledReaction = reactions.find(r => r.name === reaction.emoji.name);
-    if (handledReaction) {
-        const roleForReaction = serverRoles.find(r => r.id === handledReaction.roleID);
-        if (roleForReaction) {
-            return roleForReaction.id;
+    for (let cached in messagesToCache) {
+        const handledReaction = cached.reactions.find(r => r.name === reaction.emoji.name);
+        if (handledReaction) {
+            const roleForReaction = serverRoles.find(r => r.id === handledReaction.roleID);
+            if (roleForReaction) {
+                return roleForReaction.id;
+            }
         }
     }
     return null;
