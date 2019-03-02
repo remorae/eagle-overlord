@@ -501,7 +501,7 @@ function displayLeaderboard(channel) {
         if (err)
             throw err;
         if (response.statusCode != 200) {
-            console.log(`Bad AOC post: Responded w/ ${response.statusCode}`);
+            reportError(`Bad AOC post: Responded w/ ${response.statusCode}`);
             return;
         }
         const result = JSON.parse(body);
@@ -723,16 +723,21 @@ function welcomeNewMember(member) {
     try {
         welcome(member);
     } catch (err) {
-        console.log(`Error on guildMemberAdd event:\n` + err.message + ` ` + err.fileName + ` ` + err.lineNumber);
+        reportError(`Error on guildMemberAdd event:\n` + err.message + ` ` + err.fileName + ` ` + err.lineNumber);
     }
 }
 
 client.on("error", reportError);
 
 function reportError(message) {
-    client.fetchUser(botCreatorID).then(user => {
-        user.send(message);
-    }).catch(err => {
+    client.fetchUser(botCreatorID)
+    .then(user => {
+        user.send(message)
+        .catch(err => {
+            console.log(message);
+        });
+    })
+    .catch(err => {
         console.log(message);
     });
 }
@@ -756,17 +761,23 @@ function checkReaction(reaction, member, added) {
     if (roleIDToToggle == null)
         return;
 
-    const roleFound = member.roles.get(roleIDToToggle);
+    let roleFound = member.roles.get(roleIDToToggle);
 
     if (added && roleFound == null) {
-        member.addRole(roleIDToToggle).catch(reportError);
+        const roleFound = member.guild.roles.find(role => { return role.id === roleIDToToggle; });
+        if (roleFound != null) {
+            member.addRole(roleFound).catch(reportError);
+        }
+        else {
+            reportError(`Role id not found for reaction: ${roleIDToToggle}, ${reaction}`);
+        }
     } else if (roleFound != null) {
         member.removeRole(roleFound).catch(reportError);
     }
 }
 
 function roleIDFromReaction(reaction) {
-    for (let cached in messagesToCache) {
+    for (let cached of cachedMessages) {
         const handledReaction = cached.reactions.find(r => r.name === reaction.emoji.name);
         if (handledReaction) {
             const roleForReaction = serverRoles.find(r => r.id === handledReaction.roleID);
