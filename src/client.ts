@@ -13,12 +13,12 @@ export class ClientInstance {
     }
 
     private setupEvents(this: ClientInstance): void {
-        this.client.on("error", (error: Error) => this.reportError(error));
-        this.client.on("guildMemberAdd", (member: GuildMember) => this.onGuildMemberAdd(member));
-        this.client.on("message", (message: Message) => this.processMessage(message));
-        this.client.on("messageReactionAdd", (reaction: MessageReaction, user: User) => this.onReactionToggled(reaction, user, true));
-        this.client.on("messageReactionRemove", (reaction: MessageReaction, user: User) => this.onReactionToggled(reaction, user, false));
-        this.client.on("messageUpdate", (_oldMessage: Message, newMessage: Message) => this.processMessage(newMessage));
+        this.client.on(`error`, (error: Error) => this.reportError(error));
+        this.client.on(`guildMemberAdd`, (member: GuildMember) => this.onGuildMemberAdd(member));
+        this.client.on(`message`, (message: Message) => this.processMessage(message));
+        this.client.on(`messageReactionAdd`, (reaction: MessageReaction, user: User) => this.onReactionToggled(reaction, user, true));
+        this.client.on(`messageReactionRemove`, (reaction: MessageReaction, user: User) => this.onReactionToggled(reaction, user, false));
+        this.client.on(`messageUpdate`, (_oldMessage: Message, newMessage: Message) => this.processMessage(newMessage));
         this.client.on(`ready`, () => this.onReady());
     }
 
@@ -34,7 +34,7 @@ export class ClientInstance {
             return;
         }
         const guild = reaction.message.guild;
-        if (guild == null || !guild.available)
+        if (!guild || !guild.available)
             return;
 
         guild.fetchMember(user)
@@ -75,7 +75,9 @@ export class ClientInstance {
             return;
         }
 
-        const server = message.guild ? this.settings.servers.find(s => s.id == message.guild.id) : null;
+        const server = message.guild
+            ? this.settings.servers.find(s => s.id == message.guild.id)
+            : null;
         const prefix = (server) ? server.commandPrefix : this.settings.defaultCommandPrefix;
 
         if (!message.content.startsWith(prefix)) {
@@ -88,7 +90,7 @@ export class ClientInstance {
         const commands = (server) ? server.commands : this.settings.commands;
         const givenCommand = commands.find(c => c.symbol === messageCommandText);
 
-        if (givenCommand == null) {
+        if (!givenCommand) {
             // No valid command was found; check if the message didn't match casing
             for (const command of commands) {
                 if (messageCommandText.toLowerCase() === `${command.symbol}`.toLowerCase()) {
@@ -102,7 +104,7 @@ export class ClientInstance {
         handleCommand(givenCommand, message, (err) => this.reportError(err), this.settings);
     }
 
-    public reportError(this: ClientInstance, message: string | Error): void {
+    public reportError(this: ClientInstance, message: Error | string): void {
         if (message instanceof Error) {
             message = `${message.message}\n${message.stack}`;
         }

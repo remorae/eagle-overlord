@@ -1,20 +1,23 @@
-import { RichEmbed, Message, ColorResolvable, TextChannel } from "discord.js";
-import { parseChannel } from "./utils";
+import { RichEmbed, Message, ColorResolvable, TextChannel } from 'discord.js';
+import { parseChannel } from './utils';
+import { ErrorFunc } from './error';
 
-export function createEmbed(title: string, color: ColorResolvable, description: string): RichEmbed {
+export function createEmbed(title: string, color: ColorResolvable,
+    description: string): RichEmbed {
     return new RichEmbed()
         .setTitle(title)
         .setColor(color)
         .setDescription(description);
 }
 
-export function handleEmbed(message: Message, args: string[], reportError: (message: Error | string) => void): void {
+export function handleEmbed(message: Message, args: string[],
+    reportError: ErrorFunc): void {
     if (args.length < 4) {
         message.channel.send(`Missing message. See \`!help embed\` for more info.`)
         return;
     }
     const destChannel = parseChannel(message, args[0]) as TextChannel;
-    if (destChannel == null) {
+    if (!destChannel) {
         message.channel.send(`Invalid channel.`);
         return;
     }

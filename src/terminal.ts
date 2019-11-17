@@ -11,7 +11,7 @@ export class Terminal {
             output: process.stdout,
             prompt: 'Eagle Overlord> '
         });
-        this.instance.client.on("ready", () => {
+        this.instance.client.on(`ready`, () => {
             this.cli.prompt();
         });
         this.cli.on('line', (line) => {
@@ -39,7 +39,8 @@ export class Terminal {
         console.log(`No longer handling server commands.`);
     }
 
-    private setStatus(this: Terminal, args: string[], resolve: (value?: unknown) => void): boolean {
+    private setStatus(this: Terminal, args: string[],
+        resolve: () => void): boolean {
         if (args.length === 2) {
             console.error(`Missing argument "type".`);
         } else if (args.length === 3) {
@@ -48,10 +49,10 @@ export class Terminal {
             const typeArg = args[2];
             const type = typeArg.toUpperCase();
             switch (type) {
-                case "PLAYING":
-                case "STREAMING":
-                case "LISTENING":
-                case "WATCHING":
+                case `PLAYING`:
+                case `STREAMING`:
+                case `LISTENING`:
+                case `WATCHING`:
                     const name = args.slice(3).join(' ');
                     this.instance.client.user.setActivity(name, {
                         type: type
@@ -73,7 +74,8 @@ export class Terminal {
         return true;
     }
 
-    private processStatus(this: Terminal, args: string[], resolve: (value?: unknown) => void): boolean {
+    private processStatus(this: Terminal, args: string[],
+        resolve: () => void): boolean {
         if (args.length === 1) {
             console.log(this.instance.client.user.presence);
         } else {
