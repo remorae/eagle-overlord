@@ -1,8 +1,9 @@
-import { GuildMember, TextChannel } from "discord.js";
-import { ClientSettings } from "./settings";
-import { parseRole } from "./utils";
+import { GuildMember, TextChannel } from 'discord.js';
+import { ClientSettings } from './settings';
+import { parseRole } from './utils';
+import { ErrorFunc } from './error';
 
-export function welcome(member: GuildMember, settings: ClientSettings, reportError: (message: Error | string) => void): void {
+export function welcome(member: GuildMember, settings: ClientSettings, reportError: ErrorFunc): void {
     const server = settings.servers.find(s => s.id == member.guild.id);
     if (!server) {
         return;
@@ -18,6 +19,9 @@ export function welcome(member: GuildMember, settings: ClientSettings, reportErr
 
     for (const defaultRole of server.defaultRoles) {
         const role = parseRole(member.guild, defaultRole);
+        if (!role) {
+            continue;
+        }
         member.addRole(role)
             .catch(reportError);
     }

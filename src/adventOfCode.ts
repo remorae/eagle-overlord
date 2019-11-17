@@ -1,6 +1,8 @@
-import { TextChannel, DMChannel, GroupDMChannel } from "discord.js";
-import { ClientSettings } from "./settings";
-import { createEmbed } from "./embed";
+import { TextChannel } from 'discord.js';
+import { ClientSettings } from './settings';
+import { createEmbed } from './embed';
+import { ErrorFunc } from './error';
+import { NonVoiceChannel } from './types';
 const request = require(`request`);
 
 function getEasternTime(): Date {
@@ -8,7 +10,7 @@ function getEasternTime(): Date {
     return new Date(utc.getTime() - 5 * 3600 * 1000); // -5 hours
 }
 
-export function linkCurrentAdventOfCodePage(channel: TextChannel | DMChannel | GroupDMChannel): void {
+export function linkCurrentAdventOfCodePage(channel: NonVoiceChannel): void {
     const eastern = getEasternTime();
     const day = eastern.getDate();
     if (eastern.getMonth() === 11 && day <= 25) { // December 1-25
@@ -18,8 +20,7 @@ export function linkCurrentAdventOfCodePage(channel: TextChannel | DMChannel | G
 
 function nextAdventOfCodeWithin24Hours(now: Date): boolean {
     return (now.getMonth() === 10 && now.getDate() === 30) // November 30
-        ||
-        (now.getMonth() === 11 && now.getDate() < 25); // December 1-24
+        || (now.getMonth() === 11 && now.getDate() < 25); // December 1-24
 }
 
 function extractRemainingTime(millis: number) {
@@ -34,18 +35,18 @@ function extractRemainingTime(millis: number) {
     minutes = Math.floor(minutes) % 60;
     seconds = Math.floor(seconds) % 60;
     return {
-        "weeks": weeks,
-        "days": days,
-        "hours": hours,
-        "minutes": minutes,
-        "seconds": seconds
+        'weeks': weeks,
+        'days': days,
+        'hours': hours,
+        'minutes': minutes,
+        'seconds': seconds
     };
 }
 
-export function displayNextUnlock(channel: TextChannel | DMChannel | GroupDMChannel): void {
+export function displayNextUnlock(channel: NonVoiceChannel): void {
     const eastern = getEasternTime();
     const nextDay = new Date(Date.UTC(eastern.getUTCFullYear(), 11, ((eastern.getUTCMonth() < 11) ? 1 : eastern.getUTCDate() + 1), 0));
-    let difference = nextDay.getTime() - eastern.getTime();
+    const difference = nextDay.getTime() - eastern.getTime();
     const remaining = extractRemainingTime(difference);
     channel.send(`Until next unlock: ${remaining.weeks}w ${remaining.days}d ${remaining.hours}h ${remaining.minutes}m ${remaining.seconds}s`);
     if (nextAdventOfCodeWithin24Hours(eastern) && remaining.hours === 0) {
@@ -53,18 +54,21 @@ export function displayNextUnlock(channel: TextChannel | DMChannel | GroupDMChan
     }
 }
 
-export function displayLeaderboard(channel: TextChannel, year: string, reportError: (message: Error | string) => void, settings: ClientSettings): void {
+export function displayLeaderboard(channel: TextChannel, year: string,
+    reportError: ErrorFunc, settings: ClientSettings): void {
     const server = settings.servers.find(s => s.id == channel.guild.id);
-    const aocYearInfo = server.adventOfCode.find(info => info.year === year);
-    if (aocYearInfo == null) {
+    const aocYearInfo = server
+        ? server.adventOfCode.find(info => info.year === year)
+        : null;
+    if (!aocYearInfo) {
         channel.send(`Invalid year.`);
         return;
     }
     request.get({
         url: aocYearInfo.url,
         headers: {
-            "content-type": "application/json",
-            "cookie": `session=${aocYearInfo.session}`
+            'content-type': `application/json`,
+            'cookie': `session=${aocYearInfo.session}`
         }
     }, (err: Error, response: { statusCode: number; }, body: string) => {
         if (err) {
@@ -77,7 +81,7 @@ export function displayLeaderboard(channel: TextChannel, year: string, reportErr
         }
         try {
             const result = JSON.parse(body);
-            var board = "";
+            let board = ``;
             const members = Object.keys(result.members).map(k => result.members[k]); // Turn members into an array
             members.sort((x, y) => {
                 if (x != y)

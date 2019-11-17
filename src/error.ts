@@ -1,0 +1,1 @@
+export type ErrorFunc = (error: Error | string) => void;

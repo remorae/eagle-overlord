@@ -1,5 +1,6 @@
-import { CompileLanguage, ClientSettings } from "./settings";
-import { Message } from "discord.js";
+import { CompileLanguage, ClientSettings } from './settings';
+import { Message } from 'discord.js';
+import { ErrorFunc } from './error';
 
 const request = require(`request`);
 const stripAnsi = require(`strip-ansi`);
@@ -8,9 +9,9 @@ const maxCompileResultLength = 1900;
 
 function compile(source: string, language: CompileLanguage, settings: ClientSettings,
     onSuccess: (result: { error: any; output: any; statusCode: any; cpuTime: any; memory: any; }) => void,
-    reportError: (message: Error | string) => void): void {
+    reportError: ErrorFunc): void {
     request.post({
-        url: "https://api.jdoodle.com/v1/execute",
+        url: `https://api.jdoodle.com/v1/execute`,
         json: {
             script: source,
             language: language.id,
@@ -19,7 +20,7 @@ function compile(source: string, language: CompileLanguage, settings: ClientSett
             clientSecret: settings.jdoodle.secret
         },
         headers: {
-            "content-type": "application/json"
+            'content-type': `application/json`
         }
     }, function (err: Error, _response: any, body: any) {
         if (err) {
@@ -37,15 +38,16 @@ function compile(source: string, language: CompileLanguage, settings: ClientSett
 }
 
 function escapeString(str: string): string {
-    let result = stripAnsi(str).replace(/[^\x00-\x7F]/g, "").replace(/```/g, "\\`\\`\\`");
+    let result = stripAnsi(str).replace(/[^\x00-\x7F]/g, ``).replace(/```/g, '\\`\\`\\`');
     if (result.length > maxCompileResultLength) {
         result = result.substr(0, maxCompileResultLength);
-        result += "\n(...)";
+        result += `\n(...)`;
     }
     return result;
 }
 
-export function doCompileCommand(message: Message, args: string[], settings: ClientSettings, reportError: (message: Error | string) => void): void {
+export function doCompileCommand(message: Message, args: string[],
+    settings: ClientSettings, reportError: ErrorFunc): void {
     if (args.length === 0) {
         message.channel.send(`Missing argument. See \`!help compile\` for more info.`);
         return;
@@ -58,23 +60,23 @@ export function doCompileCommand(message: Message, args: string[], settings: Cli
         message.author.send(msg);
         return;
     }
-    const language = settings.jdoodle.langs.find(item => item.id === args[0]);
-    if (language == null) {
+    const language = settings.jdoodle.langs.find(l => l.id === args[0]);
+    if (!language) {
         message.channel.send(`Invalid language. Use \`!compile langs\` to receive a PM with available languages.`);
         return;
     }
     const source = /```(\w+\n)?([\s\S]+)```/m.exec(args[1]);
-    if (source == null) {
+    if (!source) {
         message.channel.send(`\Malformatted code. See \`!help compile\` for more info.`);
         return;
     }
 
     message.channel.send(`Compiling ${language.full}...`);
-    compile(source[2].replace(/```/g, ""), language, settings, (results) => {
-        if (results.error != null) {
+    compile(source[2].replace(/```/g, ``), language, settings, (results) => {
+        if (results.error) {
             reportError(`Error: ${results.error}\nStatusCode: ${results.statusCode}`);
             message.channel.send(`Go poke <@${settings.botCreatorID}>!`);
-        } else if (results.output != null) {
+        } else if (results.output) {
             message.channel.send(`Results for <@${message.author.id}>: \`\`\`${escapeString(results.output)}\`\`\`` +
                 `\nMemory: ${results.memory}, CPU Time: ${results.cpuTime}`);
         } else {
