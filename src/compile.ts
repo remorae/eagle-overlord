@@ -67,12 +67,22 @@ export function doCompileCommand(message: Message, args: string[],
     }
     const source = /```(\w+\n)?([\s\S]+)```/m.exec(args[1]);
     if (!source) {
-        message.channel.send(`\Malformatted code. See \`!help compile\` for more info.`);
+        message.channel.send(`Malformatted code. See \`!help compile\` for more info.`);
+        return;
+    }
+    let input = source[2];
+    if (!input) {
+        message.channel.send(`Malformatted code. See \`!help compile\` for more info.`);
+        return;
+    }
+    input = input.replace(/```/g, ``);
+    if (input.length == 0) {
+        message.channel.send(`Input cannot be empty.`);
         return;
     }
 
     message.channel.send(`Compiling ${language.full}...`);
-    compile(source[2].replace(/```/g, ``), language, settings, (results) => {
+    compile(input.replace(/```/g, ``), language, settings, (results) => {
         if (results.error) {
             reportError(`Error: ${results.error}\nStatusCode: ${results.statusCode}`);
             message.channel.send(`Go poke <@${settings.botCreatorID}>!`);
