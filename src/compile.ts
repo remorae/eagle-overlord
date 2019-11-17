@@ -8,7 +8,7 @@ const stripAnsi = require(`strip-ansi`);
 const maxCompileResultLength = 1900;
 
 function compile(source: string, language: CompileLanguage, settings: ClientSettings,
-    onSuccess: (result: { error: any; output: any; statusCode: any; cpuTime: any; memory: any; }) => void,
+    onSuccess: (result: { error: any; output: any; statusCode: number; cpuTime: any; memory: any; }) => void,
     reportError: ErrorFunc): void {
     request.post({
         url: `https://api.jdoodle.com/v1/execute`,
@@ -76,7 +76,7 @@ export function doCompileCommand(message: Message, args: string[],
         return;
     }
     input = input.replace(/```/g, ``);
-    if (input.length == 0) {
+    if (input.trim().length == 0) {
         message.channel.send(`Input cannot be empty.`);
         return;
     }
@@ -89,7 +89,7 @@ export function doCompileCommand(message: Message, args: string[],
         } else if (results.output) {
             message.channel.send(`Results for <@${message.author.id}>: \`\`\`${escapeString(results.output)}\`\`\`` +
                 `\nMemory: ${results.memory}, CPU Time: ${results.cpuTime}`);
-        } else {
+        } else if (results.statusCode !== 200) {
             reportError(`Bad compile:\n${message.content}\n${JSON.stringify(results)}`);
         }
     }, reportError);
