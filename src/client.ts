@@ -68,40 +68,45 @@ export class ClientInstance {
     }
 
     private processMessage(this: ClientInstance, message: Message): void {
-        if (!this.shouldRespond) {
-            return;
-        }
-        if (message.author.bot) {
-            return;
-        }
-
-        const server = message.guild
-            ? this.settings.servers.find(s => s.id == message.guild.id)
-            : null;
-        const prefix = (server) ? server.commandPrefix : this.settings.defaultCommandPrefix;
-
-        if (!message.content.startsWith(prefix)) {
-            handleNonCommand(message);
-            return;
-        }
-
-        const messageCommandText = message.content.split(' ')[0].substr(1);
-
-        const commands = (server) ? server.commands : this.settings.commands;
-        const givenCommand = commands.find(c => c.symbol === messageCommandText);
-
-        if (!givenCommand) {
-            // No valid command was found; check if the message didn't match casing
-            for (const command of commands) {
-                if (messageCommandText.toLowerCase() === `${command.symbol}`.toLowerCase()) {
-                    giveCaseWarning(message, command.symbol);
-                    break;
-                }
+        try {
+            if (!this.shouldRespond) {
+                return;
             }
-            return;
-        }
+            if (message.author.bot) {
+                return;
+            }
 
-        handleCommand(givenCommand, message, (err) => this.reportError(err), this.settings);
+            const server = message.guild
+                ? this.settings.servers.find(s => s.id == message.guild.id)
+                : null;
+            const prefix = (server) ? server.commandPrefix : this.settings.defaultCommandPrefix;
+
+            if (!message.content.startsWith(prefix)) {
+                handleNonCommand(message);
+                return;
+            }
+
+            const messageCommandText = message.content.split(' ')[0].substr(1);
+
+            const commands = (server) ? server.commands : this.settings.commands;
+            const givenCommand = commands.find(c => c.symbol === messageCommandText);
+
+            if (!givenCommand) {
+                // No valid command was found; check if the message didn't match casing
+                for (const command of commands) {
+                    if (messageCommandText.toLowerCase() === `${command.symbol}`.toLowerCase()) {
+                        giveCaseWarning(message, command.symbol);
+                        break;
+                    }
+                }
+                return;
+            }
+
+            handleCommand(givenCommand, message, (err) => this.reportError(err), this.settings);
+        }
+        catch (e) {
+            this.reportError(e);
+        }
     }
 
     public reportError(this: ClientInstance, message: Error | string): void {
