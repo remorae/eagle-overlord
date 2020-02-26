@@ -159,7 +159,7 @@ export function handleCommand(givenCommand: CommandSettings,
             }
             break;
         }
-        case `welcomeCommand`: {
+        case `testWelcomeCommand`: {
             if (args.length < 1) {
                 message.channel.send(`Missing argument(s).`);
                 return;
