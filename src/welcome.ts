@@ -9,11 +9,12 @@ export function welcome(member: GuildMember, settings: ClientSettings, reportErr
         return;
     }
     const welcomeChannel = member.guild.channels.get(server.welcomeChannel) as TextChannel;
-    if (!welcomeChannel) {
+    const generalChannel = member.guild.channels.get(server.generalChannel) as TextChannel;
+    if (!welcomeChannel || !generalChannel) {
         return;
     }
 
-    welcomeChannel.send(`${member.user} has logged on!` +
+    generalChannel.send(`${member.user} has logged on!` +
         `\nPlease take a look at ${welcomeChannel} before you get started.`);
 
     for (const defaultRole of server.defaultRoles) {
