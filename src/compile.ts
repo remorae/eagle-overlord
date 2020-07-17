@@ -2,31 +2,26 @@ import { CompileLanguage, ClientSettings } from './settings';
 import { Message } from 'discord.js';
 import { ErrorFunc } from './error';
 
-const request = require(`request`);
+const bent = require(`bent`);
 const stripAnsi = require(`strip-ansi`);
 
 const maxCompileResultLength = 1900;
 
-function compile(source: string, language: CompileLanguage, settings: ClientSettings,
+async function compile(source: string, language: CompileLanguage, settings: ClientSettings,
     onSuccess: (result: { error: any; output: any; statusCode: number; cpuTime: any; memory: any; }) => void,
-    reportError: ErrorFunc): void {
-    request.post({
-        url: `https://api.jdoodle.com/v1/execute`,
-        json: {
-            script: source,
-            language: language.id,
-            versionIndex: language.index,
-            clientId: settings.jdoodle.id,
-            clientSecret: settings.jdoodle.secret
-        },
-        headers: {
-            'content-type': `application/json`
-        }
-    }, function (err: Error, _response: any, body: any) {
-        if (err) {
-            reportError(err);
-            return;
-        }
+    reportError: ErrorFunc): Promise<void> {
+    try {
+        const request = bent('POST', 'json', 200);
+        const body = await request(`https://api.jdoodle.com/v1/execute`, {
+                script: source,
+                language: language.id,
+                versionIndex: language.index,
+                clientId: settings.jdoodle.id,
+                clientSecret: settings.jdoodle.secret
+            },
+            {
+                'content-type': `application/json`
+        });
         onSuccess({
             error: body.error,
             output: body.output,
@@ -34,7 +29,9 @@ function compile(source: string, language: CompileLanguage, settings: ClientSett
             cpuTime: body.cpuTime,
             memory: body.memory
         });
-    })
+    } catch (e) {
+        reportError(e);
+    }
 }
 
 function escapeString(str: string): string {
