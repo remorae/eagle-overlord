@@ -3,7 +3,7 @@ import { ClientSettings } from './settings';
 import { createEmbed } from './embed';
 import { ErrorFunc } from './error';
 import { NonVoiceChannel } from './types';
-const request = require(`request`);
+const bent = require(`bent`);
 
 function getEasternTime(): Date {
     const utc = new Date();
@@ -54,8 +54,8 @@ export function displayNextUnlock(channel: NonVoiceChannel): void {
     }
 }
 
-export function displayLeaderboard(channel: TextChannel, year: string,
-    reportError: ErrorFunc, settings: ClientSettings): void {
+export async function displayLeaderboard(channel: TextChannel, year: string,
+    reportError: ErrorFunc, settings: ClientSettings): Promise<void> {
     const server = settings.servers.find(s => s.id == channel.guild.id);
     const aocYearInfo = server
         ? server.adventOfCode.find(info => info.year === year)
@@ -64,40 +64,29 @@ export function displayLeaderboard(channel: TextChannel, year: string,
         channel.send(`Invalid year.`);
         return;
     }
-    request.get({
-        url: aocYearInfo.url,
-        headers: {
+    try {
+        const request = bent('GET', 'json', 200);
+        const body = await request(aocYearInfo.url, null, {
             'content-type': `application/json`,
             'cookie': `session=${aocYearInfo.session}`
-        }
-    }, (err: Error, response: { statusCode: number; }, body: string) => {
-        if (err) {
-            reportError(err);
-            return;
-        }
-        if (response.statusCode != 200) {
-            reportError(`Bad AOC post: Responded w/ ${response.statusCode}`);
-            return;
-        }
-        try {
-            const result = JSON.parse(body);
-            let board = ``;
-            const members = Object.keys(result.members).map(k => result.members[k]); // Turn members into an array
-            members.sort((x, y) => {
-                if (x != y)
-                    return y.local_score - x.local_score; // Descending scores
-                return new Date(x.last_star_ts).getTime() - new Date(y.last_star_ts).getTime(); // Ascending timestamps (chronological)
-            });
-            members.forEach((member, i) => {
-                board += `${i}. ${member.name} ${member.local_score}\n`;
-            });
-            const now = new Date().toLocaleString('en-US', {
-                timeZone: 'America/Los_Angeles'
-            });
-            const embed = createEmbed(`${year} Leaderboard - ${now} UTC`, 0x990000, board);
-            channel.send(embed);
-        } catch (e) {
-            reportError(e);
-        }
-    })
+        });
+        const result = JSON.parse(body);
+        let board = ``;
+        const members = Object.keys(result.members).map(k => result.members[k]); // Turn members into an array
+        members.sort((x, y) => {
+            if (x != y)
+                return y.local_score - x.local_score; // Descending scores
+            return new Date(x.last_star_ts).getTime() - new Date(y.last_star_ts).getTime(); // Ascending timestamps (chronological)
+        });
+        members.forEach((member, i) => {
+            board += `${i}. ${member.name} ${member.local_score}\n`;
+        });
+        const now = new Date().toLocaleString('en-US', {
+            timeZone: 'America/Los_Angeles'
+        });
+        const embed = createEmbed(`${year} Leaderboard - ${now} UTC`, 0x990000, board);
+        channel.send(embed);
+    } catch (e) {
+        reportError(e);
+    }
 }
