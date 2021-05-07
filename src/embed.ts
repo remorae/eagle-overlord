@@ -1,10 +1,10 @@
-import { RichEmbed, Message, ColorResolvable, TextChannel } from 'discord.js';
+import { MessageEmbed, Message, ColorResolvable, TextChannel } from 'discord.js';
 import { parseChannel } from './utils';
 import { ErrorFunc } from './error';
 
 export function createEmbed(title: string, color: ColorResolvable,
-    description: string): RichEmbed {
-    return new RichEmbed()
+    description: string): MessageEmbed {
+    return new MessageEmbed()
         .setTitle(title)
         .setColor(color)
         .setDescription(description);
@@ -29,7 +29,7 @@ export function handleEmbed(message: Message, args: string[],
     const embed = createEmbed(title, parseInt(colorStr), descStr);
 
     if (toEdit) {
-        destChannel.fetchMessage(toEdit)
+        destChannel.messages.fetch(toEdit)
             .then((msg: Message) => msg.edit(embed).catch(reportError))
             .catch(() => message.channel.send(`Invalid message to edit.`));
     } else {

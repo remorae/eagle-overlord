@@ -5,11 +5,11 @@ import { giveCaseWarning } from './utils'
 export function displayHelpMessage(message: Message, args: string[],
     settings: ClientSettings): void {
     const server = message.guild
-        ? settings.servers.find(s => s.id == message.guild.id)
+        ? settings.servers.find(s => s.id == message.guild?.id)
         : null;
     if (args.length === 0) {
         const helpChannel = (server)
-            ? message.guild.channels.get(server.helpChannel)
+            ? message.guild?.channels.cache.get(server.helpChannel)
             : null;
         message.channel.send(`If you'd like help with specific command syntax, please use \`!help <commandName>\`.` +
             `\nIf you'd like to see available commands, please use \`!commands\`.` +

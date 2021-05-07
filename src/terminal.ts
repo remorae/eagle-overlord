@@ -54,7 +54,7 @@ export class Terminal {
                 case `LISTENING`:
                 case `WATCHING`:
                     const name = args.slice(3).join(' ');
-                    this.instance.client.user.setActivity(name, {
+                    this.instance.client.user?.setActivity(name, {
                         type: type
                     })
                         .then((presence: Presence) => {
@@ -77,7 +77,7 @@ export class Terminal {
     private processStatus(this: Terminal, args: string[],
         resolve: () => void): boolean {
         if (args.length === 1) {
-            console.log(this.instance.client.user.presence);
+            console.log(this.instance.client.user?.presence);
         } else {
             switch (args[1]) {
                 case `set`:

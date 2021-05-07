@@ -10,45 +10,45 @@ export function parseUser(message: Message, arg: string): GuildMember | GuildMem
         return null;
     }
     if (arg === `all`) {
-        return message.guild.members.array();
+        return message.guild.members.cache.array();
     }
-    let gm = message.guild.members.find(m => m.user.id === arg);
-    if (gm == null) {
-        gm = message.guild.members.find(m => m.user.username === arg);
+    let gm = message.guild.members.cache.find(m => m.user.id === arg);
+    if (!gm) {
+        gm = message.guild.members.cache.find(m => m.user.username === arg);
     }
-    if (gm == null && arg.length > 2 &&
+    if (!gm && arg.length > 2 &&
         arg[0] == arg[arg.length - 1] &&
         (arg[0] === `"` || arg[0] === `'` || arg[0] === '`')) {
         const memberName = arg.substr(1, arg.length - 2); // Assume quotes around name
-        gm = message.guild.members.find(m => m.displayName === memberName);
+        gm = message.guild.members.cache.find(m => m.displayName === memberName);
     }
-    return gm;
+    return gm ? gm : null;
 }
 
 export function parseRole(guild: Guild, arg: string): Role | null {
-    let role = guild.roles.find(r => r.id === arg);
-    if (role == null) {
-        role = guild.roles.find(r => r.name === arg);
+    let role = guild.roles.cache.find(r => r.id === arg);
+    if (!role) {
+        role = guild.roles.cache.find(r => r.name === arg);
     }
-    if (role == null && arg.length > 2 &&
+    if (!role && arg.length > 2 &&
         arg[0] === arg[arg.length - 1] &&
         (arg[0] === `"` || arg[0] === `'` || arg[0] === '`')) {
-        role = guild.roles.find(r => r.name === arg.substr(1, arg.length - 2));
+        role = guild.roles.cache.find(r => r.name === arg.substr(1, arg.length - 2));
     }
-    return role;
+    return role ? role : null;
 }
 
 export function parseChannel(message: Message, arg: string): GuildChannel | null {
-    let ch = message.guild.channels.find(c => c.id === arg);
-    if (ch == null) {
-        ch = message.guild.channels.find(c => c.name === arg);
+    let ch = message.guild?.channels.cache.find(c => c.id === arg);
+    if (!ch) {
+        ch = message.guild?.channels.cache.find(c => c.name === arg);
     }
-    if (ch == null && arg.length > 2 &&
+    if (!ch && arg.length > 2 &&
         arg[0] === arg[arg.length - 1] &&
         (arg[0] === `"` || arg[0] === `'` || arg[0] === '`')) {
-        ch = message.guild.channels.find(c => c.name === arg.substr(1, arg.length - 2));
+        ch = message.guild?.channels.cache.find(c => c.name === arg.substr(1, arg.length - 2));
     }
-    return ch;
+    return ch ? ch : null;
 }
 
 export function giveCaseWarning(message: Message, symbol: string): void {

@@ -1,4 +1,4 @@
-import { Client, Message, User, MessageReaction, GuildMember, TextChannel } from 'discord.js';
+import { Client, Message, PartialMessage, User, PartialUser, MessageReaction, GuildMember, TextChannel } from 'discord.js';
 import { handleCommand, handleNonCommand } from './commands';
 import { ClientSettings } from './settings';
 import { handleReaction } from './reactions';
@@ -16,9 +16,18 @@ export class ClientInstance {
         this.client.on(`error`, (error: Error) => this.reportError(error, "`error` event"));
         this.client.on(`guildMemberAdd`, (member: GuildMember) => this.onGuildMemberAdd(member));
         this.client.on(`message`, (message: Message) => this.processMessage(message));
-        this.client.on(`messageReactionAdd`, (reaction: MessageReaction, user: User) => this.onReactionToggled(reaction, user, true));
-        this.client.on(`messageReactionRemove`, (reaction: MessageReaction, user: User) => this.onReactionToggled(reaction, user, false));
-        this.client.on(`messageUpdate`, (_oldMessage: Message, newMessage: Message) => this.processMessage(newMessage));
+        this.client.on(`messageReactionAdd`, (reaction: MessageReaction, user: User | PartialUser) => this.onReactionToggled(reaction, user, true));
+        this.client.on(`messageReactionRemove`, (reaction: MessageReaction, user: User | PartialUser) => this.onReactionToggled(reaction, user, false));
+        this.client.on(`messageUpdate`, (_oldMessage: Message | PartialMessage, newMessage: Message | PartialMessage) => {
+            if (newMessage.partial) {
+                newMessage.fetch()
+                    .then(this.processMessage)
+                    .catch((error) => this.reportError(error, "`messageUpdate` event"));
+            }
+            else {
+                this.processMessage(newMessage);
+            }
+        });
         this.client.on(`ready`, () => this.onReady());
     }
 
@@ -29,7 +38,7 @@ export class ClientInstance {
         welcome(member, this.settings, (msg) => this.reportError(msg, "welcome"));
     }
 
-    private onReactionToggled(this: ClientInstance, reaction: MessageReaction, user: User, added: boolean): void {
+    private onReactionToggled(this: ClientInstance, reaction: MessageReaction, user: User | PartialUser, added: boolean): void {
         if (!this.shouldRespond) {
             return;
         }
@@ -37,25 +46,33 @@ export class ClientInstance {
         if (!guild || !guild.available)
             return;
 
-        guild.fetchMember(user)
+        const handle = (fullUser: User) => guild.members.fetch(fullUser)
             .then((member: GuildMember) => handleReaction(reaction, member, added, this.settings, (msg) => this.reportError(msg, "handleReaction")))
             .catch((err) => this.reportError(err, "onReactionToggled"));
+        if (user.partial) {
+            user.fetch()
+            .then(handle)
+            .catch((error) => this.reportError(error, "onReactionToggled"))
+        }
+        else {
+            handle(user);
+        }
     }
 
     private setupServers(this: ClientInstance): void {
         console.log(`Setting up servers...`);
         for (const server of this.settings.servers) {
-            const guild = this.client.guilds.get(server.id);
+            const guild = this.client.guilds.cache.get(server.id);
             if (!guild) {
                 continue;
             }
             for (const message of server.messagesToCache) {
-                const channel = guild.channels.get(message.channelID) as TextChannel;
+                const channel = guild.channels.cache.get(message.channelID) as TextChannel;
                 if (!channel) {
                     continue;
                 }
                 if (message.messageID.length > 0) {
-                    channel.fetchMessage(message.messageID)
+                    channel.messages.fetch(message.messageID)
                         .catch((err) => this.reportError(err, "setupServers"));
                 }
             }
@@ -77,7 +94,7 @@ export class ClientInstance {
             }
 
             const server = message.guild
-                ? this.settings.servers.find(s => s.id == message.guild.id)
+                ? this.settings.servers.find(s => s.id == message.guild?.id)
                 : null;
             const prefix = (server) ? server.commandPrefix : this.settings.defaultCommandPrefix;
 
@@ -116,9 +133,9 @@ export class ClientInstance {
         if (context && context.length > 0) {
             message = `${message}\n"Context: ${context}`;
         }
-        this.client.fetchUser(this.settings.botCreatorID)
+        this.client.users.fetch(this.settings.botCreatorID)
             .then((user: User) => {
-                user.send(message)
+                user.send(message as string)
                     .catch((err: Error) => {
                         console.error(message, err);
                     });

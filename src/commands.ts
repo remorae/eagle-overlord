@@ -1,4 +1,4 @@
-import { Message, GuildMember, TextChannel, PermissionString } from 'discord.js';
+import { Message, GuildMember, TextChannel, PermissionString, NewsChannel } from 'discord.js';
 import { parseUser, parseChannel, parseRole } from './utils';
 import { ClientSettings, CommandSettings } from './settings';
 import { changeRolesForMember, processAddRole } from './roles';
@@ -14,12 +14,12 @@ const infoFile = require('../package.json');
 
 function listCommands(message: Message, settings: ClientSettings): void {
     const server = message.guild
-        ? settings.servers.find(s => s.id == message.guild.id)
+        ? settings.servers.find(s => s.id == message.guild?.id)
         : null;
     const commands = server ? server.commands : settings.commands;
 
     const authorMember = message.guild
-        ? message.guild.members.get(message.author.id)
+        ? message.guild.members.cache.get(message.author.id)
         : null;
 
     const visibleCommands: CommandSettings[] = [];
@@ -82,7 +82,7 @@ function getID(message: Message, args: string[]): void {
             break;
         }
         case `role`: {
-            const role = parseRole(message.guild, args[1]);
+            const role = parseRole(message.guild!, args[1]);
             if (!role)
                 message.author.send(`Role not found.`);
             else
@@ -95,7 +95,7 @@ function getID(message: Message, args: string[]): void {
 export function handleCommand(givenCommand: CommandSettings,
     message: Message, reportError: ErrorFunc, settings: ClientSettings): void {
     const authorMember = message.guild
-        ? message.guild.members.get(message.author.id)
+        ? message.guild.members.cache.get(message.author.id)
         : null;
 
     if (givenCommand.requiresGuild) {
@@ -104,7 +104,7 @@ export function handleCommand(givenCommand: CommandSettings,
             return;
         }
 
-        const authorMember = message.guild.members.get(message.author.id);
+        const authorMember = message.guild.members.cache.get(message.author.id);
         if (!authorMember) {
             reportError(`Could not get GuildMember: ${message.author.id}`);
             return;
@@ -191,7 +191,7 @@ export function handleCommand(givenCommand: CommandSettings,
                     message.channel.send(`Not in a guild; can't !say something in a different channel.`)
                     return;
                 }
-                channel = message.guild.channels.get(args[1]) as TextChannel;
+                channel = message.guild.channels.cache.get(args[1]) as TextChannel;
             }
             if (!channel) {
                 message.channel.send(`There is no channel "${args[1]}".`)
@@ -224,7 +224,7 @@ export function handleCommand(givenCommand: CommandSettings,
             processAddRole(message, args, settings, reportError);
             break;
         case `adventOfCodeCommand`:
-            if (args.length == 0) {
+            if (args.length == 0 && !(message.channel instanceof NewsChannel)) {
                 linkCurrentAdventOfCodePage(message.channel);
                 displayNextUnlock(message.channel);
             } else {
