@@ -1,3 +1,3 @@
-import { DMChannel, GroupDMChannel, TextChannel } from "discord.js";
+import { DMChannel, TextChannel } from "discord.js";
 
-export type NonVoiceChannel = TextChannel | DMChannel | GroupDMChannel;
+export type NonVoiceChannel = TextChannel | DMChannel;

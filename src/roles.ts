@@ -14,8 +14,8 @@ function isValidPrefix(roleName: string, validClassPrefixes: string[]): boolean 
 }
 
 function addRole(channel: TextChannel, member: GuildMember, role: Role, allowPings: boolean, reportError: ErrorFunc): void {
-    if (!member.roles.some((toFind: Role) => toFind.id === role.id)) {
-        member.addRole(role)
+    if (!member.roles.cache.some((toFind: Role) => toFind.id === role.id)) {
+        member.roles.add(role)
             .then((member: GuildMember) => {
                 if (allowPings) {
                     channel.send(`Added role "${role.name}" to ${member.user}.`);
@@ -28,8 +28,8 @@ function addRole(channel: TextChannel, member: GuildMember, role: Role, allowPin
 }
 
 function removeRole(channel: TextChannel, member: GuildMember, role: Role, allowPings: boolean, reportError: ErrorFunc): void {
-    if (member.roles.some((toFind: Role) => toFind.id === role.id)) {
-        member.removeRole(role)
+    if (member.roles.cache.some((toFind: Role) => toFind.id === role.id)) {
+        member.roles.remove(role)
             .then((member: GuildMember) => {
                 if (allowPings) {
                     channel.send(`Removed role "${role.name}" from ${member.user}.`);
@@ -54,7 +54,7 @@ export function changeRolesForMember(member: GuildMember | GuildMember[], messag
         message.channel.send(`You must enter a role.`);
         return;
     }
-    const server = settings.servers.find(s => s.id == message.guild.id);
+    const server = settings.servers.find(s => s.id == message.guild?.id);
     if (!server) {
         return;
     }
@@ -69,7 +69,7 @@ export function changeRolesForMember(member: GuildMember | GuildMember[], messag
             continue;
         }
 
-        const role = parseRole(message.guild, roleName);
+        const role = parseRole(message.guild!, roleName);
         if (!role) {
             message.channel.send(`"${roleName}" is not a valid role.`);
             continue;
@@ -102,23 +102,23 @@ export function processAddRole(message: Message, args: string[], settings: Clien
         return;
     }
 
-    const member = message.guild.member(message.author);
+    const member = message.guild?.member(message.author);
     let role = null;
     switch (args[0]) {
         case `csc-pnnl`:
             const server = message.guild
-                ? settings.servers.find(s => s.id == message.guild.id)
+                ? settings.servers.find(s => s.id == message.guild?.id)
                 : null;
             if (!server) {
                 return;
             }
-            role = member.guild.roles.get(server.cscCompetitionRole);
+            role = member?.guild.roles.cache.get(server.cscCompetitionRole);
             break;
         default:
             break;
     }
     if (role) {
-        addRole(message.channel as TextChannel, member, role, true, reportError);
+        addRole(message.channel as TextChannel, member!, role, true, reportError);
     } else {
         message.channel.send(`Invalid role.`);
     }

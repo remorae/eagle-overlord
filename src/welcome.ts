@@ -8,8 +8,8 @@ export function welcome(member: GuildMember, settings: ClientSettings, reportErr
     if (!server) {
         return;
     }
-    const welcomeChannel = member.guild.channels.get(server.welcomeChannel) as TextChannel;
-    const generalChannel = member.guild.channels.get(server.generalChannel) as TextChannel;
+    const welcomeChannel = member.guild.channels.cache.get(server.welcomeChannel) as TextChannel;
+    const generalChannel = member.guild.channels.cache.get(server.generalChannel) as TextChannel;
     if (!welcomeChannel || !generalChannel) {
         return;
     }
@@ -22,7 +22,7 @@ export function welcome(member: GuildMember, settings: ClientSettings, reportErr
         if (!role) {
             continue;
         }
-        member.addRole(role)
+        member.roles.add(role)
             .catch(reportError);
     }
 }

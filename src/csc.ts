@@ -9,29 +9,29 @@ export function handleCSC(message: Message, args: string[],
     }
 
     const server = message.guild
-        ? settings.servers.find(s => s.id == message.guild.id)
+        ? settings.servers.find(s => s.id == message.guild?.id)
         : null;
     if (!server) {
         message.channel.send(`This command requires a guild.`);
         return;
     }
-    const member = message.guild.member(message.author);
-    const role = message.guild.roles.get(server.cscRole);
+    const member = message.guild?.member(message.author);
+    const role = message.guild?.roles.cache.get(server.cscRole);
     switch (args[0].toLowerCase()) {
         case `info`:
-            const cscGeneralChannel = message.guild.channels.get(server.cscGeneralChannel);
+            const cscGeneralChannel = message.guild?.channels.cache.get(server.cscGeneralChannel);
             message.channel.send(`CSC stands for Cyber Security Club. See ${cscGeneralChannel} for more info.`);
             return;
         case `join`:
-            if (role && !member.roles.get(role.id)) {
-                member.addRole(role);
-                member.send(`Welcome to the CSC!`);
+            if (role && !member?.roles.cache.get(role.id)) {
+                member?.roles.add(role);
+                member?.send(`Welcome to the CSC!`);
             }
             break;
         case `leave`:
-            if (role && member.roles.get(role.id)) {
-                member.removeRole(role);
-                member.send(`The CSC will miss you.`);
+            if (role && member?.roles.cache.get(role.id)) {
+                member?.roles.add(role);
+                member?.send(`The CSC will miss you.`);
             }
             break;
     }

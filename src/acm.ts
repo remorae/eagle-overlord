@@ -9,28 +9,28 @@ export function handleACM(message: Message, args: string[],
     }
 
     const server = message.guild
-        ? settings.servers.find((s) => s.id == message.guild.id)
+        ? settings.servers.find((s) => s.id == message.guild?.id)
         : null;
     if (!server) {
         return;
     }
-    const member = message.guild.member(message.author);
-    const role = message.guild.roles.get(server.acmRole);
+    const member = message.guild?.member(message.author);
+    const role = message.guild?.roles.cache.get(server.acmRole);
     switch (args[0].toLowerCase()) {
         case `info`:
-            const acmGeneralChannel = message.guild.channels
-                .get(server.acmGeneralChannel);
+            const acmGeneralChannel = message.guild?.channels
+                .cache.get(server.acmGeneralChannel);
             message.channel.send(`ACM stands for Association for Computing Machinery. See ${acmGeneralChannel} for more info.`);
             return;
         case `join`:
-            if (role && !member.roles.get(role.id)) {
-                member.addRole(role);
-                member.send(`Welcome to ACM!`);
+            if (role && !member?.roles.cache.get(role.id)) {
+                member?.roles.add(role);
+                member?.send(`Welcome to ACM!`);
             }
             break;
         case `leave`:
-            if (role && member.roles.get(role.id)) {
-                member.removeRole(role);
+            if (role && member?.roles.cache.get(role.id)) {
+                member?.roles.remove(role);
                 member.send(`ACM will miss you.`);
             }
             break;

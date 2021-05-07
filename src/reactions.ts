@@ -11,25 +11,25 @@ export function handleReaction(reaction: MessageReaction,
         return;
     }
 
-    const memberRole = member.roles.get(roleIDToToggle);
+    const memberRole = member.roles.cache.get(roleIDToToggle);
 
     if (added && !memberRole) {
-        const guildRole = member.guild.roles.find(r => r.id === roleIDToToggle);
+        const guildRole = member.guild.roles.cache.find(r => r.id === roleIDToToggle);
         if (guildRole) {
-            member.addRole(guildRole)
+            member.roles.add(guildRole)
                 .catch(reportError);
         } else {
             reportError(`Role id not found for reaction: ${roleIDToToggle}, ${reaction}`);
         }
     } else if (memberRole) {
-        member.removeRole(memberRole)
+        member.roles.remove(memberRole)
             .catch(reportError);
     }
 }
 
 function roleIDFromReaction(reaction: MessageReaction,
     settings: ClientSettings): string | null {
-    const server = settings.servers.find(s => s.id == reaction.message.guild.id);
+    const server = settings.servers.find(s => s.id == reaction.message.guild?.id);
     if (!server) {
         return null;
     }
