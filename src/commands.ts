@@ -187,11 +187,17 @@ export function handleCommand(givenCommand: CommandSettings,
             const msg = args[0].replace(/\"/g, ``);
             let channel = message.channel;
             if (args.length > 1) {
+                if (!message.guild) {
+                    message.channel.send(`Not in a guild; can't !say something in a different channel.`)
+                    return;
+                }
                 channel = message.guild.channels.get(args[1]) as TextChannel;
             }
-            if (channel && msg) {
-                channel.send(msg);
+            if (!channel) {
+                message.channel.send(`There is no channel "${args[1]}".`)
+                return;
             }
+            channel.send(msg);
             break;
         }
         case `hungCommand`:
