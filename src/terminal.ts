@@ -62,7 +62,7 @@ export class Terminal {
                             resolve();
                         })
                         .catch((err: Error) => {
-                            this.instance.reportError(err);
+                            this.instance.reportError(err, "setStatus");
                             resolve();
                         });
                     return false;

@@ -13,7 +13,7 @@ export class ClientInstance {
     }
 
     private setupEvents(this: ClientInstance): void {
-        this.client.on(`error`, (error: Error) => this.reportError(error));
+        this.client.on(`error`, (error: Error) => this.reportError(error, "`error` event"));
         this.client.on(`guildMemberAdd`, (member: GuildMember) => this.onGuildMemberAdd(member));
         this.client.on(`message`, (message: Message) => this.processMessage(message));
         this.client.on(`messageReactionAdd`, (reaction: MessageReaction, user: User) => this.onReactionToggled(reaction, user, true));
@@ -26,7 +26,7 @@ export class ClientInstance {
         if (!this.shouldRespond) {
             return;
         }
-        welcome(member, this.settings, (msg) => this.reportError(msg));
+        welcome(member, this.settings, (msg) => this.reportError(msg, "welcome"));
     }
 
     private onReactionToggled(this: ClientInstance, reaction: MessageReaction, user: User, added: boolean): void {
@@ -38,8 +38,8 @@ export class ClientInstance {
             return;
 
         guild.fetchMember(user)
-            .then((member: GuildMember) => handleReaction(reaction, member, added, this.settings, (msg) => this.reportError(msg)))
-            .catch((err) => this.reportError(err));
+            .then((member: GuildMember) => handleReaction(reaction, member, added, this.settings, (msg) => this.reportError(msg, "handleReaction")))
+            .catch((err) => this.reportError(err, "onReactionToggled"));
     }
 
     private setupServers(this: ClientInstance): void {
@@ -56,7 +56,7 @@ export class ClientInstance {
                 }
                 if (message.messageID.length > 0) {
                     channel.fetchMessage(message.messageID)
-                        .catch((err) => this.reportError(err));
+                        .catch((err) => this.reportError(err, "setupServers"));
                 }
             }
         }
@@ -102,16 +102,19 @@ export class ClientInstance {
                 return;
             }
 
-            handleCommand(givenCommand, message, (err) => this.reportError(err), this.settings);
+            handleCommand(givenCommand, message, (err) => this.reportError(err, "handleCommand"), this.settings);
         }
         catch (e) {
-            this.reportError(e);
+            this.reportError(e, "processMessage");
         }
     }
 
-    public reportError(this: ClientInstance, message: Error | string): void {
+    public reportError(this: ClientInstance, message: Error | string, context?: string): void {
         if (message instanceof Error) {
             message = `${message.message}\n${message.stack}`;
+        }
+        if (context && context.length > 0) {
+            message = `${message}\n"Context: ${context}`;
         }
         this.client.fetchUser(this.settings.botCreatorID)
             .then((user: User) => {
