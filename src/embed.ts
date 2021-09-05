@@ -1,4 +1,4 @@
-import { MessageEmbed, Message, ColorResolvable, TextChannel } from 'discord.js';
+import { MessageEmbed, Message, ColorResolvable, TextChannel, HexColorString } from 'discord.js';
 import { parseChannel } from './utils';
 import { ErrorFunc } from './error';
 
@@ -23,10 +23,11 @@ export function handleEmbed(message: Message, args: string[],
     }
     const title = args[1].replace(/(^\"|\"$)/g, ``);
     const colorStr = args[2];
+    const color = colorStr.startsWith("0x") ? ("#" + colorStr.substr(2)) as HexColorString : parseInt(colorStr);
     const descStr = args[3].replace(/(^\`\`\`|\`\`\`$)/g, ``);
     const toEdit = (args.length > 4) ? args[4] : null;
 
-    const embed = createEmbed(title, parseInt(colorStr), descStr);
+    const embed = createEmbed(title, color, descStr);
 
     if (toEdit) {
         destChannel.messages.fetch(toEdit)
