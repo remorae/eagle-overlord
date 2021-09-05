@@ -1,6 +1,6 @@
 import { Interface, createInterface } from 'readline';
 import { ClientInstance } from './client';
-import { ActivityTypes } from 'discord.js/typings/enums';
+import { ActivityType } from 'discord.js';
 
 export class Terminal {
     private readonly cli: Interface;
@@ -48,10 +48,14 @@ export class Terminal {
         } else {
             const typeArg = args[2];
             const type = typeArg.toUpperCase();
-            if (type in ActivityTypes && ActivityTypes[type as keyof typeof ActivityTypes] != ActivityTypes.CUSTOM) {
+            type MyActivityTypes = {
+                [key in ActivityType] : key
+            }
+            const dummyTypes = {} as MyActivityTypes;
+            if (type in dummyTypes) {
                 const name = args.slice(3).join(' ');
                 const presence = this.instance.client.user?.setActivity(name, {
-                    type: type as keyof typeof ActivityTypes
+                    type: type as ActivityType
                 });
                 console.log(`Activity set to `, presence);
                 resolve();
