@@ -14,7 +14,7 @@ export function handleACM(message: Message, args: string[],
     if (!server) {
         return;
     }
-    const member = message.guild?.member(message.author);
+    const member = message.guild?.members.cache.get(message.author.id);
     const role = message.guild?.roles.cache.get(server.acmRole);
     switch (args[0].toLowerCase()) {
         case `info`:

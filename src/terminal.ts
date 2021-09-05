@@ -1,6 +1,6 @@
 import { Interface, createInterface } from 'readline';
 import { ClientInstance } from './client';
-import { Presence } from 'discord.js';
+import { ActivityTypes } from 'discord.js/typings/enums';
 
 export class Terminal {
     private readonly cli: Interface;
@@ -39,7 +39,7 @@ export class Terminal {
         console.log(`No longer handling server commands.`);
     }
 
-    private setStatus(this: Terminal, args: string[],
+    private setActivity(this: Terminal, args: string[],
         resolve: () => void): boolean {
         if (args.length === 2) {
             console.error(`Missing argument "type".`);
@@ -48,40 +48,34 @@ export class Terminal {
         } else {
             const typeArg = args[2];
             const type = typeArg.toUpperCase();
-            switch (type) {
-                case `PLAYING`:
-                case `STREAMING`:
-                case `LISTENING`:
-                case `WATCHING`:
-                    const name = args.slice(3).join(' ');
-                    this.instance.client.user?.setActivity(name, {
-                        type: type
-                    })
-                        .then((presence: Presence) => {
-                            console.log(`Activity set to `, presence);
-                            resolve();
-                        })
-                        .catch((err: Error) => {
-                            this.instance.reportError(err, "setStatus");
-                            resolve();
-                        });
-                    return false;
-                default:
-                    console.error(`Unknown type "${typeArg}"`);
-                    break;
+            if (type in ActivityTypes && ActivityTypes[type as keyof typeof ActivityTypes] != ActivityTypes.CUSTOM) {
+                const name = args.slice(3).join(' ');
+                const presence = this.instance.client.user?.setActivity(name, {
+                    type: type as keyof typeof ActivityTypes
+                });
+                console.log(`Activity set to `, presence);
+                resolve();
+                return false;
+            }
+            else {
+                console.error(`Unknown type "${typeArg}"`);
             }
         }
         return true;
     }
 
-    private processStatus(this: Terminal, args: string[],
+    private processActivity(this: Terminal, args: string[],
         resolve: () => void): boolean {
         if (args.length === 1) {
-            console.log(this.instance.client.user?.presence);
+            const user = this.instance.client.user;
+            const guild = this.instance.client.guilds.cache.first();
+            if (user && guild) {
+                console.log(`Activity: ${guild.members.cache.get(user.id)?.presence}`);
+            }
         } else {
             switch (args[1]) {
                 case `set`:
-                    return this.setStatus(args, resolve);
+                    return this.setActivity(args, resolve);
                 default:
                     console.error(`Unknown argument "${args[1]}".`);
                     break;
@@ -110,8 +104,8 @@ export class Terminal {
                         break;
                     }
                     switch (args[0]) {
-                        case `status`:
-                            resolveImmediately = this.processStatus(args, resolve);
+                        case `activity`:
+                            resolveImmediately = this.processActivity(args, resolve);
                             break;
                         default:
                             console.error(`Unknown command.`);

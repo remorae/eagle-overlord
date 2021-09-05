@@ -85,7 +85,7 @@ export async function displayLeaderboard(channel: TextChannel, year: string,
             timeZone: 'America/Los_Angeles'
         });
         const embed = createEmbed(`${year} Leaderboard - ${now} UTC`, 0x990000, board);
-        channel.send(embed);
+        channel.send({ embeds: [embed] });
     } catch (e) {
         reportError(e);
     }

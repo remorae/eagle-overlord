@@ -1,3 +1,4 @@
-import { DMChannel, TextChannel } from "discord.js";
+import {  NewsChannel, PartialDMChannel,  TextBasedChannels } from "discord.js";
 
-export type NonVoiceChannel = TextChannel | DMChannel;
+export type NonVoiceChannel = Exclude<PartialNonVoiceChannel, PartialDMChannel>
+export type PartialNonVoiceChannel = Exclude<TextBasedChannels, NewsChannel>

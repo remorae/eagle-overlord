@@ -41,7 +41,7 @@ function removeRole(channel: TextChannel, member: GuildMember, role: Role, allow
     }
 }
 
-export function changeRolesForMember(member: GuildMember | GuildMember[], message: Message, args: string[], adding: boolean, isForOther: boolean, checkPrefix: boolean, allowPings: boolean,
+export function changeRolesForMember(member: GuildMember | Iterable<GuildMember>, message: Message, args: string[], adding: boolean, isForOther: boolean, checkPrefix: boolean, allowPings: boolean,
     reportError: ErrorFunc, settings: ClientSettings): void {
     if (!(message.channel instanceof TextChannel)) {
         return;
@@ -83,11 +83,14 @@ export function changeRolesForMember(member: GuildMember | GuildMember[], messag
             }
         }
 
-        if (member instanceof Array) {
-            // Changing roles for multiple members
-            member.forEach(guildMember => addOrRemove(guildMember));
-        } else {
+        if (member instanceof GuildMember) {
             addOrRemove(member);
+        }
+        else {
+            // Changing roles for multiple members
+            for (const guildMember of member) {
+                addOrRemove(guildMember);
+            }
         }
     }
 }
@@ -102,7 +105,7 @@ export function processAddRole(message: Message, args: string[], settings: Clien
         return;
     }
 
-    const member = message.guild?.member(message.author);
+    const member = message.guild?.members.cache.get(message.author.id);
     let role = null;
     switch (args[0]) {
         case `csc-pnnl`:

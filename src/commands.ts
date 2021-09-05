@@ -10,6 +10,7 @@ import { handleCSC } from './csc';
 import { handleEmbed } from './embed';
 import { displayHelpMessage } from './help';
 import { ErrorFunc } from './error';
+import { NonVoiceChannel } from './types';
 const infoFile = require('../package.json');
 
 function listCommands(message: Message, settings: ClientSettings): void {
@@ -35,7 +36,7 @@ function listCommands(message: Message, settings: ClientSettings): void {
         if (command.requiresGuild && authorMember) {
             for (const permission of command.permissions) {
                 const required = permission as PermissionString;
-                if (!authorMember.hasPermission(required)) {
+                if (!authorMember.permissions.has(required)) {
                     continue;
                 }
             }
@@ -112,7 +113,7 @@ export function handleCommand(givenCommand: CommandSettings,
 
         for (const permission of givenCommand.permissions) {
             const required = permission as PermissionString;
-            if (!authorMember.hasPermission(required)) {
+            if (!authorMember.permissions.has(required)) {
                 message.reply(`you do not have permission to use this command.`);
                 return;
             }
@@ -155,7 +156,8 @@ export function handleCommand(givenCommand: CommandSettings,
             const member = parseUser(message, args[0]);
             const adding = (givenCommand.name === `addRoleToOtherCommand`);
             if (member) {
-                changeRolesForMember(member, message, args, adding, true, false, !(member instanceof Array), reportError, settings);
+                const allowPings = member instanceof GuildMember;
+                changeRolesForMember(member, message, args, adding, true, false, allowPings, reportError, settings);
             }
             break;
         }
@@ -225,8 +227,18 @@ export function handleCommand(givenCommand: CommandSettings,
             break;
         case `adventOfCodeCommand`:
             if (args.length == 0 && !(message.channel instanceof NewsChannel)) {
-                linkCurrentAdventOfCodePage(message.channel);
-                displayNextUnlock(message.channel);
+                const showSummary = (fullChannel: NonVoiceChannel) => {
+                    linkCurrentAdventOfCodePage(fullChannel);
+                    displayNextUnlock(fullChannel);
+                };
+                if (message.channel.partial) {
+                    message.channel.fetch()
+                    .then(showSummary)
+                    .catch(reportError)
+                }
+                else {
+                    showSummary(message.channel);
+                }
             } else {
                 switch (args[0]) {
                     default:
