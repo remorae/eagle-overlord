@@ -1,6 +1,6 @@
-import { Message, Guild, GuildMember, Role, GuildChannel } from 'discord.js';
+import { Message, Guild, GuildMember, Role, GuildChannel, ThreadChannel } from 'discord.js';
 
-export function parseUser(message: Message, arg: string): GuildMember | GuildMember[] | null {
+export function parseUser(message: Message, arg: string): GuildMember | Iterable<GuildMember> | null {
     if (message.guild == null) {
         message.channel.send(`This command requires a guild.`);
         return null;
@@ -10,7 +10,7 @@ export function parseUser(message: Message, arg: string): GuildMember | GuildMem
         return null;
     }
     if (arg === `all`) {
-        return message.guild.members.cache.array();
+        return message.guild.members.cache.values();
     }
     let gm = message.guild.members.cache.find(m => m.user.id === arg);
     if (!gm) {
@@ -38,7 +38,7 @@ export function parseRole(guild: Guild, arg: string): Role | null {
     return role ? role : null;
 }
 
-export function parseChannel(message: Message, arg: string): GuildChannel | null {
+export function parseChannel(message: Message, arg: string): GuildChannel | ThreadChannel | null {
     let ch = message.guild?.channels.cache.find(c => c.id === arg);
     if (!ch) {
         ch = message.guild?.channels.cache.find(c => c.name === arg);

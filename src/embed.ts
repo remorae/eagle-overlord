@@ -30,9 +30,9 @@ export function handleEmbed(message: Message, args: string[],
 
     if (toEdit) {
         destChannel.messages.fetch(toEdit)
-            .then((msg: Message) => msg.edit(embed).catch(reportError))
+            .then((msg: Message) => msg.edit({ embeds: [embed] }).catch(reportError))
             .catch(() => message.channel.send(`Invalid message to edit.`));
     } else {
-        destChannel.send(embed);
+        destChannel.send({ embeds: [embed] });
     }
 }

@@ -15,7 +15,7 @@ export function handleCSC(message: Message, args: string[],
         message.channel.send(`This command requires a guild.`);
         return;
     }
-    const member = message.guild?.member(message.author);
+    const member = message.guild?.members.cache.get(message.author.id);
     const role = message.guild?.roles.cache.get(server.cscRole);
     switch (args[0].toLowerCase()) {
         case `info`:

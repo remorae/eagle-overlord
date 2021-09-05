@@ -1,4 +1,4 @@
-import { Client, Message, PartialMessage, User, PartialUser, MessageReaction, GuildMember, TextChannel } from 'discord.js';
+import { Client, Message, PartialMessage, User, PartialUser, MessageReaction, PartialMessageReaction, GuildMember, TextChannel } from 'discord.js';
 import { handleCommand, handleNonCommand } from './commands';
 import { ClientSettings } from './settings';
 import { handleReaction } from './reactions';
@@ -15,9 +15,9 @@ export class ClientInstance {
     private setupEvents(this: ClientInstance): void {
         this.client.on(`error`, (error: Error) => this.reportError(error, "`error` event"));
         this.client.on(`guildMemberAdd`, (member: GuildMember) => this.onGuildMemberAdd(member));
-        this.client.on(`message`, (message: Message) => this.processMessage(message));
-        this.client.on(`messageReactionAdd`, (reaction: MessageReaction, user: User | PartialUser) => this.onReactionToggled(reaction, user, true));
-        this.client.on(`messageReactionRemove`, (reaction: MessageReaction, user: User | PartialUser) => this.onReactionToggled(reaction, user, false));
+        this.client.on(`messageCreate`, (message: Message) => this.processMessage(message));
+        this.client.on(`messageReactionAdd`, (reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) => this.onReactionToggled(reaction, user, true));
+        this.client.on(`messageReactionRemove`, (reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) => this.onReactionToggled(reaction, user, false));
         this.client.on(`messageUpdate`, (_oldMessage: Message | PartialMessage, newMessage: Message | PartialMessage) => {
             if (newMessage.partial) {
                 newMessage.fetch()
@@ -38,24 +38,34 @@ export class ClientInstance {
         welcome(member, this.settings, (msg) => this.reportError(msg, "welcome"));
     }
 
-    private onReactionToggled(this: ClientInstance, reaction: MessageReaction, user: User | PartialUser, added: boolean): void {
+    private onReactionToggled(this: ClientInstance, reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser, added: boolean): void {
         if (!this.shouldRespond) {
             return;
         }
-        const guild = reaction.message.guild;
-        if (!guild || !guild.available)
-            return;
+        const useReaction = (fullReaction: MessageReaction) => {
+            const guild = fullReaction.message.guild;
+            if (!guild || !guild.available)
+                return;
 
-        const handle = (fullUser: User) => guild.members.fetch(fullUser)
-            .then((member: GuildMember) => handleReaction(reaction, member, added, this.settings, (msg) => this.reportError(msg, "handleReaction")))
-            .catch((err) => this.reportError(err, "onReactionToggled"));
-        if (user.partial) {
-            user.fetch()
-            .then(handle)
-            .catch((error) => this.reportError(error, "onReactionToggled"))
+            const useUser = (fullUser: User) => guild.members.fetch(fullUser)
+                .then((member: GuildMember) => handleReaction(fullReaction, member, added, this.settings, (msg) => this.reportError(msg, "handleReaction")))
+                .catch((err) => this.reportError(err, "onReactionToggled"));
+            if (user.partial) {
+                user.fetch()
+                .then(useUser)
+                .catch((error) => this.reportError(error, "onReactionToggled"))
+            }
+            else {
+                useUser(user);
+            }
+        };
+        if (reaction.partial) {
+            reaction.fetch()
+            .then(useReaction)
+            .catch((error) => this.reportError(error, "onReactionToggled"));
         }
         else {
-            handle(user);
+            useReaction(reaction);
         }
     }
 
