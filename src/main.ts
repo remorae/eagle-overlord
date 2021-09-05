@@ -8,6 +8,7 @@ function main(): void {
     const settings: ClientSettings = require('../settings/settings.json');
     const client = new Client({
         intents: [
+            Intents.FLAGS.GUILDS,
             Intents.FLAGS.GUILD_MEMBERS, // For guildMemberAdd
             Intents.FLAGS.GUILD_MESSAGES, // For messageCreate, etc.
             Intents.FLAGS.GUILD_MESSAGE_REACTIONS, // For messageReactionAdd, etc.
