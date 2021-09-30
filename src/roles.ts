@@ -1,5 +1,5 @@
 import { parseRole } from './utils';
-import { Message, TextChannel, GuildMember, Role, Guild, RoleResolvable } from 'discord.js';
+import { Message, TextChannel, GuildMember, Role, Guild } from 'discord.js';
 import { ClientSettings } from './settings';
 import { ErrorFunc } from './error';
 
