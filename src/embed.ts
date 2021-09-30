@@ -1,5 +1,5 @@
 import { MessageEmbed, Message, ColorResolvable, TextChannel, HexColorString } from 'discord.js';
-import { parseChannel } from './utils';
+import { parseCachedChannel } from './utils';
 import { ErrorFunc } from './error';
 
 export function createEmbed(title: string, color: ColorResolvable,
@@ -16,7 +16,7 @@ export function handleEmbed(message: Message, args: string[],
         message.channel.send(`Missing message. See \`!help embed\` for more info.`)
         return;
     }
-    const destChannel = parseChannel(message, args[0]) as TextChannel;
+    const destChannel = parseCachedChannel(message, args[0]) as TextChannel;
     if (!destChannel) {
         message.channel.send(`Invalid channel.`);
         return;

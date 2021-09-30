@@ -1,6 +1,6 @@
-import { parseRole } from './utils';
+import { getAuthorMember, parseCachedRole } from './utils';
 import { Message, TextChannel, GuildMember, Role, Guild } from 'discord.js';
-import { ClientSettings } from './settings';
+import { ClientSettings, findServer } from './settings';
 import { ErrorFunc } from './error';
 
 function isValidPrefix(roleName: string, validClassPrefixes: string[]): boolean {
@@ -63,40 +63,42 @@ export function changeRolesForMember(member: GuildMember | Iterable<GuildMember>
         return;
     }
 
-    for (let i = (isForOther) ? 1 : 0; i < args.length; ++i) {
-        const roleName = args[i];
-        if (!roleName) {
-            continue;
-        }
-        if (checkPrefix && !isValidPrefix(roleName, server.validClassPrefixes)) {
-            message.channel.send(`"${roleName}" does not have a valid prefix.`);
-            continue;
-        }
-
-        const role = parseRole(message.guild!, roleName);
-        if (!role) {
-            message.channel.send(`"${roleName}" is not a valid role.`);
-            continue;
-        }
-
-        const addOrRemove = (member: GuildMember) => {
-            if (adding) {
-                addRole(message.channel as TextChannel, member, role, allowPings, reportError);
-            } else {
-                removeRole(message.channel as TextChannel, member, role, allowPings, reportError);
+    message.guild!.roles.fetch().then(() => {
+        for (let i = (isForOther) ? 1 : 0; i < args.length; ++i) {
+            const roleName = args[i];
+            if (!roleName) {
+                continue;
+            }
+            if (checkPrefix && !isValidPrefix(roleName, server.validClassPrefixes)) {
+                message.channel.send(`"${roleName}" does not have a valid prefix.`);
+                continue;
+            }
+    
+            const role = parseCachedRole(message.guild!, roleName);
+            if (!role) {
+                message.channel.send(`"${roleName}" is not a valid role.`);
+                continue;
+            }
+    
+            const addOrRemove = (member: GuildMember) => {
+                if (adding) {
+                    addRole(message.channel as TextChannel, member, role, allowPings, reportError);
+                } else {
+                    removeRole(message.channel as TextChannel, member, role, allowPings, reportError);
+                }
+            }
+    
+            if (member instanceof GuildMember) {
+                addOrRemove(member);
+            }
+            else {
+                // Changing roles for multiple members
+                for (const guildMember of member) {
+                    addOrRemove(guildMember);
+                }
             }
         }
-
-        if (member instanceof GuildMember) {
-            addOrRemove(member);
-        }
-        else {
-            // Changing roles for multiple members
-            for (const guildMember of member) {
-                addOrRemove(guildMember);
-            }
-        }
-    }
+    });
 }
 
 export function processAddRole(message: Message, args: string[], settings: ClientSettings, reportError: ErrorFunc): void {
@@ -109,26 +111,27 @@ export function processAddRole(message: Message, args: string[], settings: Clien
         return;
     }
 
-    const member = message.guild?.members.cache.get(message.author.id);
-    let role = null;
-    switch (args[0]) {
-        case `csc-pnnl`:
-            const server = message.guild
-                ? settings.servers.find(s => s.id == message.guild?.id)
-                : null;
-            if (!server) {
-                return;
-            }
-            role = member?.guild.roles.cache.get(server.cscCompetitionRole);
-            break;
-        default:
-            break;
-    }
-    if (role) {
-        addRole(message.channel as TextChannel, member!, role, true, reportError);
-    } else {
-        message.channel.send(`Invalid role.`);
-    }
+    const member = getAuthorMember(message);
+    const getRole = () => {
+        switch (args[0]) {
+            case `csc-pnnl`:
+                const server = findServer(settings, message.guild);
+                if (server) {
+                    return Promise.resolve(getCachedRole(member!.guild, server.cscCompetitionRole));
+                }
+                break;
+            default:
+                break;
+        }
+        return Promise.resolve(null);
+    };
+    getRole().then((role) => {
+        if (role) {
+            addRole(message.channel as TextChannel, member!, role, true, reportError);
+        } else {
+            message.channel.send(`Invalid role.`);
+        }
+    });
 }
 
 export function getCachedRole(guild: Guild, role: string): Role | null {

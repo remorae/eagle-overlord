@@ -1,5 +1,5 @@
 import { Message, GuildMember, TextChannel, PermissionString, NewsChannel } from 'discord.js';
-import { parseUser, parseChannel, parseRole } from './utils';
+import { parseCachedUser, parseCachedChannel, parseCachedRole, getAuthorMember, getCachedChannel } from './utils';
 import { ClientSettings, CommandSettings } from './settings';
 import { changeRolesForMember, processAddRole } from './roles';
 import { welcome } from './welcome';
@@ -19,9 +19,7 @@ function listCommands(message: Message, settings: ClientSettings): void {
         : null;
     const commands = server ? server.commands : settings.commands;
 
-    const authorMember = message.guild
-        ? message.guild.members.cache.get(message.author.id)
-        : null;
+    const authorMember = getAuthorMember(message);
 
     const visibleCommands: CommandSettings[] = [];
     for (const command of commands) {
@@ -67,27 +65,51 @@ function getID(message: Message, args: string[]): void {
     }
     switch (args[0]) {
         case `user`: {
-            const gm = parseUser(message, args[1]);
-            if (!gm)
-                message.author.send(`User not found.`);
-            else if (gm instanceof GuildMember)
-                message.author.send(`User ${args[1]}: ${gm.id}`);
+            const getUserID = () => {
+                const gm = parseCachedUser(message, args[1]);
+                if (!gm)
+                    message.author.send(`User not found.`);
+                else if (gm instanceof GuildMember)
+                    message.author.send(`User ${args[1]}: ${gm.id}`);
+            };
+            if (message.guild) {
+                message.guild.members.fetch().then(getUserID);
+            }
+            else {
+                getUserID();
+            }
             break;
         }
         case `channel`: {
-            const channel = parseChannel(message, args[1]);
-            if (!channel)
-                message.author.send(`Channel not found.`);
-            else
-                message.author.send(`Channel ${args[1]}: ${channel.id}`);
+            const getChannelID = () => {
+                const channel = parseCachedChannel(message, args[1]);
+                if (!channel)
+                    message.author.send(`Channel not found.`);
+                else
+                    message.author.send(`Channel ${args[1]}: ${channel.id}`);
+            };
+            if (message.guild) {
+                message.guild.channels.fetch().then(getChannelID);
+            }
+            else {
+                getChannelID();
+            }
             break;
         }
         case `role`: {
-            const role = parseRole(message.guild!, args[1]);
-            if (!role)
-                message.author.send(`Role not found.`);
-            else
-                message.author.send(`Role ${args[1]}: ${role.id}`);
+            const getRoleID = () => {
+                const role = parseCachedRole(message.guild!, args[1]);
+                if (!role)
+                    message.author.send(`Role not found.`);
+                else
+                    message.author.send(`Role ${args[1]}: ${role.id}`);
+            };
+            if (message.guild) {
+                message.guild.roles.fetch().then(getRoleID);
+            }
+            else {
+                getRoleID();
+            }
             break;
         }
     }
@@ -95,9 +117,7 @@ function getID(message: Message, args: string[]): void {
 
 export function handleCommand(givenCommand: CommandSettings,
     message: Message, reportError: ErrorFunc, settings: ClientSettings): void {
-    const authorMember = message.guild
-        ? message.guild.members.cache.get(message.author.id)
-        : null;
+    const authorMember = getAuthorMember(message);
 
     if (givenCommand.requiresGuild) {
         if (!message.guild) {
@@ -105,7 +125,6 @@ export function handleCommand(givenCommand: CommandSettings,
             return;
         }
 
-        const authorMember = message.guild.members.cache.get(message.author.id);
         if (!authorMember) {
             reportError(`Could not get GuildMember: ${message.author.id}`);
             return;
@@ -153,12 +172,14 @@ export function handleCommand(givenCommand: CommandSettings,
                 message.channel.send(`Missing argument(s).`);
                 return;
             }
-            const member = parseUser(message, args[0]);
-            const adding = (givenCommand.name === `addRoleToOtherCommand`);
-            if (member) {
-                const allowPings = member instanceof GuildMember;
-                changeRolesForMember(member, message, args, adding, true, false, allowPings, reportError, settings);
-            }
+            message.guild?.members.fetch().then(() => {
+                const member = parseCachedUser(message, args[0]);
+                const adding = (givenCommand.name === `addRoleToOtherCommand`);
+                if (member) {
+                    const allowPings = member instanceof GuildMember;
+                    changeRolesForMember(member, message, args, adding, true, false, allowPings, reportError, settings);
+                }
+            });
             break;
         }
         case `testWelcomeCommand`: {
@@ -166,10 +187,12 @@ export function handleCommand(givenCommand: CommandSettings,
                 message.channel.send(`Missing argument(s).`);
                 return;
             }
-            const member = parseUser(message, args[0]);
-            if (member instanceof GuildMember) {
-                welcome(member, settings, reportError);
-            }
+            message.guild?.members.fetch().then(() => {
+                const member = parseCachedUser(message, args[0]);
+                if (member instanceof GuildMember) {
+                    welcome(member, settings, reportError);
+                }
+            });
             break;
         }
         case `acmCommand`:
@@ -186,20 +209,24 @@ export function handleCommand(givenCommand: CommandSettings,
                 message.channel.send(`Missing message. See \`!help say\` for more info.`);
                 return;
             }
-            const msg = args[0].replace(/\"/g, ``);
-            let channel = message.channel;
-            if (args.length > 1) {
-                if (!message.guild) {
-                    message.channel.send(`Not in a guild; can't !say something in a different channel.`)
-                    return;
+            const getChannel = () => {
+                if (args.length > 1) {
+                    if (!message.guild) {
+                        message.channel.send(`Not in a guild; can't !say something in a different channel.`)
+                        return Promise.reject();
+                    }
+                    return Promise.resolve(getCachedChannel(message.guild, args[1]) as TextChannel);
                 }
-                channel = message.guild.channels.cache.get(args[1]) as TextChannel;
-            }
-            if (!channel) {
+                return Promise.resolve(message.channel);
+            };
+            getChannel()
+            .then((channel) => {
+                const msg = args[0].replace(/\"/g, ``);
+                channel.send(msg);
+            })
+            .catch(() => {
                 message.channel.send(`There is no channel "${args[1]}".`)
-                return;
-            }
-            channel.send(msg);
+            });
             break;
         }
         case `hungCommand`:
