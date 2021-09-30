@@ -3,7 +3,7 @@ import { handleCommand, handleNonCommand } from './commands';
 import { ClientSettings } from './settings';
 import { handleReaction } from './reactions';
 import { welcome } from './welcome';
-import { giveCaseWarning } from './utils';
+import { getCachedChannel, giveCaseWarning } from './utils';
 
 export class ClientInstance {
     public shouldRespond: boolean = true;
@@ -71,22 +71,26 @@ export class ClientInstance {
 
     private setupServers(this: ClientInstance): void {
         console.log(`Setting up servers...`);
-        for (const server of this.settings.servers) {
-            const guild = this.client.guilds.cache.get(server.id);
-            if (!guild) {
-                continue;
-            }
-            for (const message of server.messagesToCache) {
-                const channel = guild.channels.cache.get(message.channelID) as TextChannel;
-                if (!channel) {
+        this.client.guilds.fetch().then(() => {
+            for (const server of this.settings.servers) {
+                const guild = this.client.guilds.cache.get(server.id);
+                if (!guild) {
                     continue;
                 }
-                if (message.messageID.length > 0) {
-                    channel.messages.fetch(message.messageID)
-                        .catch((err) => this.reportError(err, "setupServers"));
-                }
+                guild.channels.fetch().then(() => {
+                    for (const message of server.messagesToCache) {
+                        const channel = getCachedChannel(guild, message.channelID) as TextChannel;
+                        if (!channel) {
+                            continue;
+                        }
+                        if (message.messageID.length > 0) {
+                            channel.messages.fetch(message.messageID)
+                                .catch((err) => this.reportError(err, "setupServers"));
+                        }
+                    }
+                });
             }
-        }
+        });
     }
 
     private onReady(this: ClientInstance): void {

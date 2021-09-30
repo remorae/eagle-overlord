@@ -1,16 +1,12 @@
 import { Message } from 'discord.js';
-import { ClientSettings } from './settings';
-import { giveCaseWarning } from './utils'
+import { ClientSettings, findServer } from './settings';
+import { getCachedChannel, giveCaseWarning } from './utils'
 
 export function displayHelpMessage(message: Message, args: string[],
     settings: ClientSettings): void {
-    const server = message.guild
-        ? settings.servers.find(s => s.id == message.guild?.id)
-        : null;
+    const server = findServer(settings, message.guild);
     if (args.length === 0) {
-        const helpChannel = (server)
-            ? message.guild?.channels.cache.get(server.helpChannel)
-            : null;
+        const helpChannel = (server) ? getCachedChannel(message.guild!, server.helpChannel) : null;
         message.channel.send(`If you'd like help with specific command syntax, please use \`!help <commandName>\`.` +
             `\nIf you'd like to see available commands, please use \`!commands\`.` +
             (helpChannel ? `\nIf you need help with Discord or something not specific to a class, please ask a question in ${helpChannel}.` : ``));
