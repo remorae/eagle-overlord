@@ -20,7 +20,12 @@ export class Terminal {
             this.cli.prompt();
         });
         this.cli.on('line', async (line) => {
-            await this.processInput(line);
+            try {
+                await this.processInput(line);
+            }
+            catch (e) {
+                console.log(e);
+            }
             this.cli.prompt();
         });
     }
@@ -93,6 +98,8 @@ export class Terminal {
 
     private async refreshCommands(this: Terminal): Promise<void> {
         await this.instance.setupCommands();
+        await this.instance.setCommandPermissions();
+        console.log(`Refreshed commands.`);
     }
 
     private async processInput(this: Terminal, line: string): Promise<void> {

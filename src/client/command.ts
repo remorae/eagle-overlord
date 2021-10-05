@@ -33,7 +33,10 @@ export async function getCommandsOnDisk(): Promise<Command[]> {
     const commandsDir = path.resolve(path.dirname(require.main!.filename), 'client', 'commands');
     const commandFiles = (await fs.promises.readdir(commandsDir)).filter(file => file.endsWith('.js'));
     return commandFiles.map(file => {
+        const commandPath = path.resolve(commandsDir, file);
+        // Update command in memory if the .js file has been modified (may need to hotfix things without restarting the bot)
+        delete require.cache[commandPath];
         // eslint-disable-next-line @typescript-eslint/no-var-requires
-        return require(path.resolve(commandsDir, file)).command as Command;
+        return require(commandPath).getCommand() as Command;
     });
 }
