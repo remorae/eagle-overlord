@@ -1,42 +1,5 @@
 import { Guild } from "discord.js";
-
-export interface ReactionSettings {
-  name: string;
-  roleID: string;
-}
-
-export interface MessageSettings {
-  name: string;
-  channelID: string;
-  messageID: string;
-  reactions: ReactionSettings[];
-}
-
-export interface AdventOfCodeSettings {
-  year: string;
-  url: string;
-  session: string;
-}
-
-export interface ServerSettings {
-  name: string;
-  id: string;
-  defaultRoles: string[];
-  validClassPrefixes: string[];
-  commandPrefix: string;
-  commands: CommandSettings[];
-  messagesToCache: MessageSettings[];
-  adventOfCode: AdventOfCodeSettings[];
-  welcomeChannel: string;
-  generalChannel: string;
-  helpChannel: string;
-  acmRole: string;
-  acmLeaderRole: string;
-  acmGeneralChannel: string;
-  cscRole: string;
-  cscCompetitionRole: string;
-  cscGeneralChannel: string;
-}
+import * as config from './config.json'
 
 export interface CommandSettings {
   name: string;
@@ -54,29 +17,11 @@ export interface CompileLanguage {
   index: number;
 }
 
-export interface JDoodleSettings {
-  id: string;
-  secret: string;
-  langs: CompileLanguage[];
-}
-
-export interface ClientSettings {
-  token: string;
-  botID: string;
-  botCreatorID: string;
-  botCreatorName: string;
-  servers: ServerSettings[];
-  jdoodle: JDoodleSettings;
-  defaultCommandPrefix: string;
-  commands: CommandSettings[];
-  hungID: string;
-  stuID: string;
-}
-
-export function findServer(settings: ClientSettings, guild: Guild | null): ServerSettings | null {
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+export function findServer(guild: Guild | null) {
   if (!guild) {
     return null;
   }
-  const found = settings.servers.find((s) => s.id == guild.id);
+  const found = config.legacy.servers.find((s) => s.id == guild.id);
   return found ?? null;
 }

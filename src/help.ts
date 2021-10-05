@@ -1,10 +1,10 @@
 import { Message } from 'discord.js';
-import { ClientSettings, findServer } from './settings';
+import { findServer } from './settings';
 import { getCachedChannel, giveCaseWarning } from './utils'
+import * as config from './config.json'
 
-export function displayHelpMessage(message: Message, args: string[],
-    settings: ClientSettings): void {
-    const server = findServer(settings, message.guild);
+export function displayHelpMessage(message: Message, args: string[]): void {
+    const server = findServer(message.guild);
     if (args.length === 0) {
         const helpChannel = (server) ? getCachedChannel(message.guild!, server.helpChannel) : null;
         message.channel.send(`If you'd like help with specific command syntax, please use \`!help <commandName>\`.` +
@@ -12,7 +12,7 @@ export function displayHelpMessage(message: Message, args: string[],
             (helpChannel ? `\nIf you need help with Discord or something not specific to a class, please ask a question in ${helpChannel}.` : ``));
     } else {
         const commandArg = args[0];
-        const commands = server ? server.commands : settings.commands;
+        const commands = server ? server.commands : config.legacy.commands;
         for (const command of commands) {
             if (commandArg.toLowerCase() === `${command.symbol}`.toLowerCase()) {
                 if (commandArg === command.symbol) {

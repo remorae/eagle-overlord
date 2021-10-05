@@ -10,7 +10,20 @@
         "skipFiles": [
             "<node_internals>/**"
         ],
-        "program": "${workspaceFolder}\\dist\\main.js",
+        "program": "${workspaceFolder}/dist/main.js",
+        "preLaunchTask": "tsc: build - tsconfig.json",
+        "outFiles": [
+            "${workspaceFolder}/dist/**/*.js"
+        ],
+        "console": "integratedTerminal"
+    }, {
+        "type": "node",
+        "request": "launch",
+        "name": "Deploy Commands",
+        "skipFiles": [
+            "<node_internals>/**"
+        ],
+        "program": "${workspaceFolder}/dist/deployCommands.js",
         "preLaunchTask": "tsc: build - tsconfig.json",
         "outFiles": [
             "${workspaceFolder}/dist/**/*.js"

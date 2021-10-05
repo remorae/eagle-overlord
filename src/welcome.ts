@@ -1,10 +1,10 @@
 import { GuildMember, TextChannel } from 'discord.js';
-import { ClientSettings } from './settings';
 import { getCachedChannel, parseCachedRole } from './utils';
 import { ErrorFunc } from './error';
+import { findServer } from './settings';
 
-export function welcome(member: GuildMember, settings: ClientSettings, reportError: ErrorFunc): void {
-    const server = settings.servers.find(s => s.id == member.guild.id);
+export function welcome(member: GuildMember, reportError: ErrorFunc): void {
+    const server = findServer(member.guild);
     if (!server) {
         return;
     }

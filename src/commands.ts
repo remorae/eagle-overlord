@@ -1,6 +1,6 @@
 import { Message, GuildMember, TextChannel, PermissionString, NewsChannel } from 'discord.js';
 import { parseCachedUser, parseCachedChannel, parseCachedRole, getAuthorMember, getCachedChannel } from './utils';
-import { ClientSettings, CommandSettings } from './settings';
+import { CommandSettings, findServer } from './settings';
 import { changeRolesForMember, processAddRole } from './roles';
 import { welcome } from './welcome';
 import { handleACM } from './acm';
@@ -11,13 +11,12 @@ import { handleEmbed } from './embed';
 import { displayHelpMessage } from './help';
 import { ErrorFunc } from './error';
 import { NonVoiceChannel } from './types';
-const infoFile = require('../package.json');
+import * as config from './config.json'
+import * as path from 'path'
 
-function listCommands(message: Message, settings: ClientSettings): void {
-    const server = message.guild
-        ? settings.servers.find(s => s.id == message.guild?.id)
-        : null;
-    const commands = server ? server.commands : settings.commands;
+function listCommands(message: Message): void {
+    const server = findServer(message.guild);
+    const commands = server ? server.commands : config.legacy.commands;
 
     const authorMember = getAuthorMember(message);
 
@@ -116,7 +115,7 @@ function getID(message: Message, args: string[]): void {
 }
 
 export function handleCommand(givenCommand: CommandSettings,
-    message: Message, reportError: ErrorFunc, settings: ClientSettings): void {
+    message: Message, reportError: ErrorFunc): void {
     const authorMember = getAuthorMember(message);
 
     if (givenCommand.requiresGuild) {
@@ -148,13 +147,17 @@ export function handleCommand(givenCommand: CommandSettings,
 
     switch (givenCommand.name) {
         case `helpCommand`:
-            displayHelpMessage(message, args, settings);
+            displayHelpMessage(message, args);
             break;
         case `aboutCommand`:
-            message.channel.send(`Currently running on version ${infoFile.version}. Created in 2021 by ${settings.botCreatorName}.`);
+            {
+                // eslint-disable-next-line @typescript-eslint/no-var-requires
+                const infoFile = require(path.resolve(require.main!.filename, '..', 'package.json'));
+                message.channel.send(`Currently running on version ${infoFile.version}. Created in 2021 by ${config.legacy.botCreatorName}.`);
+            }
             break;
         case `listCommandsCommand`:
-            listCommands(message, settings);
+            listCommands(message);
             break;
         case `addRoleCommand`:
         case `removeRoleCommand`: {
@@ -163,7 +166,7 @@ export function handleCommand(givenCommand: CommandSettings,
                 return;
             }
             const adding = (givenCommand.name === `addRoleCommand`);
-            changeRolesForMember(authorMember, message, args, adding, false, true, true, reportError, settings);
+            changeRolesForMember(authorMember, message, args, adding, false, true, true, reportError);
             break;
         }
         case `addRoleToOtherCommand`:
@@ -177,7 +180,7 @@ export function handleCommand(givenCommand: CommandSettings,
                 const adding = (givenCommand.name === `addRoleToOtherCommand`);
                 if (member) {
                     const allowPings = member instanceof GuildMember;
-                    changeRolesForMember(member, message, args, adding, true, false, allowPings, reportError, settings);
+                    changeRolesForMember(member, message, args, adding, true, false, allowPings, reportError);
                 }
             });
             break;
@@ -190,19 +193,19 @@ export function handleCommand(givenCommand: CommandSettings,
             message.guild?.members.fetch().then(() => {
                 const member = parseCachedUser(message, args[0]);
                 if (member instanceof GuildMember) {
-                    welcome(member, settings, reportError);
+                    welcome(member, reportError);
                 }
             });
             break;
         }
         case `acmCommand`:
-            handleACM(message, args, settings);
+            handleACM(message, args);
             break;
         case `getIDCommand`:
             getID(message, args);
             break;
         case `shrugCommand`:
-            message.channel.send(`¯\\\_(ツ)\_/¯`);
+            message.channel.send(`¯\\_(ツ)_/¯`);
             break;
         case `sayCommand`: {
             if (args.length === 0) {
@@ -221,7 +224,7 @@ export function handleCommand(givenCommand: CommandSettings,
             };
             getChannel()
             .then((channel) => {
-                const msg = args[0].replace(/\"/g, ``);
+                const msg = args[0].replace(/"/g, ``);
                 channel.send(msg);
             })
             .catch(() => {
@@ -230,27 +233,27 @@ export function handleCommand(givenCommand: CommandSettings,
             break;
         }
         case `hungCommand`:
-            if (message.author.id === settings.hungID) {
+            if (message.author.id === config.legacy.hungID) {
                 message.author.send(`Hello there.`);
             } else {
                 message.channel.send(`No.`);
             }
             break;
         case `stuCommand`:
-            if (message.author.id === settings.stuID) {
+            if (message.author.id === config.legacy.stuID) {
                 message.author.send(`ʕ •ᴥ•ʔ All aboard Stu's Happyland Express ʕ •ᴥ•ʔ`);
             } else {
                 message.channel.send(`Stu.`);
             }
             break;
         case `compileCommand`:
-            doCompileCommand(message, args, settings, reportError);
+            doCompileCommand(message, args, reportError);
             break;
         case `cscCommand`:
-            handleCSC(message, args, settings);
+            handleCSC(message, args);
             break;
         case `grantRoleCommand`:
-            processAddRole(message, args, settings, reportError);
+            processAddRole(message, args, reportError);
             break;
         case `adventOfCodeCommand`:
             if (args.length == 0 && !(message.channel instanceof NewsChannel)) {
@@ -274,11 +277,13 @@ export function handleCommand(givenCommand: CommandSettings,
                         if (!message.guild) {
                             return;
                         }
-                        let year = new Date().getFullYear().toString();
-                        if (args.length > 1) {
-                            year = args[1];
+                        {
+                            let year = new Date().getFullYear().toString();
+                            if (args.length > 1) {
+                                year = args[1];
+                            }
+                            displayLeaderboard(message.channel as TextChannel, year, reportError);
                         }
-                        displayLeaderboard(message.channel as TextChannel, year, reportError, settings);
                         break;
                 }
             }
