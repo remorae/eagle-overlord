@@ -56,8 +56,6 @@ export function giveCaseWarning(message: Message, symbol: string): void {
     message.reply(`did you mean "${symbol}"? Commands are cASe-SeNsiTIvE.`);
 }
 
-export function ignoreUnused(_val: any) { }
-
 export function getCachedMember(guild: Guild, user: string | User): GuildMember | null {
     const id = user instanceof User ? user.id : user;
     return guild.members.cache.get(id) ?? null;

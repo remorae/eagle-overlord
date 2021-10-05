@@ -1,16 +1,15 @@
 import { GuildMember, Message } from 'discord.js';
 import { getCachedRole, hasRole } from './roles';
-import { ClientSettings, findServer } from './settings';
+import { findServer } from './settings';
 import { getAuthorMember, getCachedChannel, parseCachedUser } from './utils';
 
-export function handleACM(message: Message, args: string[],
-    settings: ClientSettings): void {
+export function handleACM(message: Message, args: string[]): void {
     if (args.length < 1) {
         message.channel.send(`Missing parameter. Use \`!help acm\` for more info.`);
         return;
     }
 
-    const server = findServer(settings, message.guild);
+    const server = findServer(message.guild);
     if (!server) {
         message.channel.send(`This command requires a guild.`);
         return;
@@ -47,8 +46,10 @@ export function handleACM(message: Message, args: string[],
         const role = getCachedRole(message.guild!, server.acmRole);
         switch (args[0].toLowerCase()) {
             case `info`:
-                const acmGeneralChannel = getCachedChannel(message.guild!, server.acmGeneralChannel);
-                message.channel.send(`ACM stands for Association for Computing Machinery. See ${acmGeneralChannel} for more info.`);
+                {
+                    const acmGeneralChannel = getCachedChannel(message.guild!, server.acmGeneralChannel);
+                    message.channel.send(`ACM stands for Association for Computing Machinery. See ${acmGeneralChannel} for more info.`);
+                }
                 return;
             case `join`:
                 if (role && member && !hasRole(member, role)) {

@@ -1,11 +1,10 @@
 import { MessageReaction, GuildMember } from 'discord.js';
-import { ClientSettings } from './settings';
 import { ErrorFunc } from './error';
+import { findServer } from './settings';
 
 export function handleReaction(reaction: MessageReaction,
-    member: GuildMember, added: boolean, settings: ClientSettings,
-    reportError: ErrorFunc): void {
-    const roleIDToToggle = roleIDFromReaction(reaction, settings);
+    member: GuildMember, added: boolean, reportError: ErrorFunc): void {
+    const roleIDToToggle = roleIDFromReaction(reaction);
 
     if (!roleIDToToggle) {
         return;
@@ -27,9 +26,8 @@ export function handleReaction(reaction: MessageReaction,
     }
 }
 
-function roleIDFromReaction(reaction: MessageReaction,
-    settings: ClientSettings): string | null {
-    const server = settings.servers.find(s => s.id == reaction.message.guild?.id);
+function roleIDFromReaction(reaction: MessageReaction): string | null {
+    const server = findServer(reaction.message.guild);
     if (!server) {
         return null;
     }

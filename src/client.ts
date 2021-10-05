@@ -1,18 +1,38 @@
-import { Client, Message, PartialMessage, User, PartialUser, MessageReaction, PartialMessageReaction, GuildMember, TextChannel } from 'discord.js';
+import { Client, Message, PartialMessage, User, PartialUser, MessageReaction, PartialMessageReaction, GuildMember, TextChannel, Interaction, Collection, ApplicationCommandPermissionData } from 'discord.js';
 import { handleCommand, handleNonCommand } from './commands';
-import { ClientSettings } from './settings';
+import * as config from './config.json';
 import { handleReaction } from './reactions';
 import { welcome } from './welcome';
 import { getCachedChannel, giveCaseWarning } from './utils';
+import { Command } from './client/command';
+import { SlashCommandBuilder } from '@discordjs/builders';
+import * as fs from 'fs';
+import * as path from 'path';
+import { findServer } from './settings';
 
 export class ClientInstance {
-    public shouldRespond: boolean = true;
+    public shouldRespond = true;
+    private commands: Collection<string, Command> = new Collection()
 
-    public constructor(public client: Client, private readonly settings: ClientSettings) {
+    public constructor(public client: Client) {
         this.setupEvents();
     }
 
-    private setupEvents(this: ClientInstance): void {
+    public async setupCommands(this: ClientInstance): Promise<void> {
+        this.commands.clear();
+        const commandsDir = path.resolve(path.dirname(require.main!.filename), 'client', 'commands');
+        const commandFiles = (await fs.promises.readdir(commandsDir)).filter((file: string) => file.endsWith('.js'));
+        for (const file of commandFiles) {
+            // eslint-disable-next-line @typescript-eslint/no-var-requires
+            const command = require(path.resolve(commandsDir, file)).command as Command;
+            const builder = new SlashCommandBuilder();
+            command.build(builder);
+            this.commands.set(builder.name, command);
+        }
+        console.log(`Found ${this.commands.size} commands.`);
+    }
+
+    private setupEvents(this: ClientInstance) {
         this.client.on(`error`, (error: Error) => this.reportError(error, "`error` event"));
         this.client.on(`guildMemberAdd`, (member: GuildMember) => this.onGuildMemberAdd(member));
         this.client.on(`messageCreate`, (message: Message) => this.processMessage(message));
@@ -28,14 +48,31 @@ export class ClientInstance {
                 this.processMessage(newMessage);
             }
         });
+        this.client.on(`interactionCreate`, async (interaction) => await this.handleInteraction(interaction))
         this.client.on(`ready`, () => this.onReady());
+    }
+
+    private async handleInteraction(this: ClientInstance, interaction: Interaction) {
+        if (!interaction.isCommand()) {
+            return;
+        }
+        if (!interaction.command) {
+            return;
+        }
+        try {
+            const command = this.commands.get(interaction.command.name);
+            await command?.execute(interaction);
+        }
+        catch (e) {
+            this.reportError(e, "handleInteraction");
+        }
     }
 
     private onGuildMemberAdd(this: ClientInstance, member: GuildMember): void {
         if (!this.shouldRespond) {
             return;
         }
-        welcome(member, this.settings, (msg) => this.reportError(msg, "welcome"));
+        welcome(member, (msg) => this.reportError(msg, "welcome"));
     }
 
     private onReactionToggled(this: ClientInstance, reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser, added: boolean): void {
@@ -48,7 +85,7 @@ export class ClientInstance {
                 return;
 
             const useUser = (fullUser: User) => guild.members.fetch(fullUser)
-                .then((member: GuildMember) => handleReaction(fullReaction, member, added, this.settings, (msg) => this.reportError(msg, "handleReaction")))
+                .then((member: GuildMember) => handleReaction(fullReaction, member, added, (msg) => this.reportError(msg, "handleReaction")))
                 .catch((err) => this.reportError(err, "onReactionToggled"));
             if (user.partial) {
                 user.fetch()
@@ -69,32 +106,47 @@ export class ClientInstance {
         }
     }
 
-    private setupServers(this: ClientInstance): void {
-        console.log(`Setting up servers...`);
-        this.client.guilds.fetch().then(() => {
-            for (const server of this.settings.servers) {
-                const guild = this.client.guilds.cache.get(server.id);
-                if (!guild) {
+    private async setupServers(this: ClientInstance) {
+        await this.client.guilds.fetch();
+        for (const server of config.legacy.servers) {
+            const guild = this.client.guilds.cache.get(server.id);
+            if (!guild) {
+                continue;
+            }
+            await guild.channels.fetch();
+            for (const message of server.messagesToCache) {
+                const channel = getCachedChannel(guild, message.channelID) as TextChannel;
+                if (!channel) {
                     continue;
                 }
-                guild.channels.fetch().then(() => {
-                    for (const message of server.messagesToCache) {
-                        const channel = getCachedChannel(guild, message.channelID) as TextChannel;
-                        if (!channel) {
-                            continue;
-                        }
-                        if (message.messageID.length > 0) {
-                            channel.messages.fetch(message.messageID)
-                                .catch((err) => this.reportError(err, "setupServers"));
-                        }
-                    }
-                });
+                if (message.messageID.length > 0) {
+                    channel.messages.fetch(message.messageID)
+                        .catch((err) => this.reportError(err, "setupServers"));
+                }
             }
-        });
+        }
     }
 
-    private onReady(this: ClientInstance): void {
-        this.setupServers();
+    private async setCommandPermissions(this: ClientInstance) {
+        await this.client.guilds.fetch();
+        for (const guild of this.client.guilds.cache.values()) {
+            await guild.commands.fetch();
+            await guild.roles.fetch();
+            await guild.members.fetch();
+            for (const [name, command] of this.commands) {
+                const permissions: ApplicationCommandPermissionData[] = [];
+                command.getPermissions(guild, permissions);
+                const guildCommand = guild.commands.cache.find(c => c.applicationId == this.client.application?.id && c.name == name);
+                await guildCommand?.permissions.set({ permissions });
+            }
+        }
+    }
+
+    private async onReady(this: ClientInstance) {
+        console.log(`Setting up servers...`);
+        await this.setupServers();
+        console.log(`Setting command permissions...`);
+        await this.setCommandPermissions();
         console.log(`Ready!`);
     }
 
@@ -107,10 +159,8 @@ export class ClientInstance {
                 return;
             }
 
-            const server = message.guild
-                ? this.settings.servers.find(s => s.id == message.guild?.id)
-                : null;
-            const prefix = (server) ? server.commandPrefix : this.settings.defaultCommandPrefix;
+            const server = findServer(message.guild);
+            const prefix = (server) ? server.commandPrefix : config.legacy.defaultCommandPrefix;
 
             if (!message.content.startsWith(prefix)) {
                 handleNonCommand(message);
@@ -119,7 +169,7 @@ export class ClientInstance {
 
             const messageCommandText = message.content.split(' ')[0].substr(1);
 
-            const commands = (server) ? server.commands : this.settings.commands;
+            const commands = (server) ? server.commands : config.legacy.commands;
             const givenCommand = commands.find(c => c.symbol === messageCommandText);
 
             if (!givenCommand) {
@@ -133,7 +183,7 @@ export class ClientInstance {
                 return;
             }
 
-            handleCommand(givenCommand, message, (err) => this.reportError(err, "handleCommand"), this.settings);
+            handleCommand(givenCommand, message, (err) => this.reportError(err, "handleCommand"));
         }
         catch (e) {
             this.reportError(e, "processMessage");
@@ -147,7 +197,7 @@ export class ClientInstance {
         if (context && context.length > 0) {
             message = `${message}\n"Context: ${context}`;
         }
-        this.client.users.fetch(this.settings.botCreatorID)
+        this.client.users.fetch(config.legacy.botCreatorID)
             .then((user: User) => {
                 user.send(message as string)
                     .catch((err: Error) => {

@@ -1,14 +1,13 @@
-import { CompileLanguage, ClientSettings } from './settings';
+import { CompileLanguage } from './settings';
 import { Message } from 'discord.js';
 import { ErrorFunc } from './error';
-
-const bent = require(`bent`);
-const stripAnsi = require(`strip-ansi`);
+import * as bent from 'bent';
+import * as config from './config.json'
 
 const maxCompileResultLength = 1900;
 
-async function compile(source: string, language: CompileLanguage, settings: ClientSettings,
-    onSuccess: (result: { error: any; output: any; statusCode: number; cpuTime: any; memory: any; }) => void,
+async function compile(source: string, language: CompileLanguage,
+    onSuccess: (result: { error: unknown; output: unknown; statusCode: number; cpuTime: unknown; memory: unknown; }) => void,
     reportError: ErrorFunc): Promise<void> {
     try {
         const request = bent('POST', 'json', 200);
@@ -16,8 +15,8 @@ async function compile(source: string, language: CompileLanguage, settings: Clie
                 script: source,
                 language: language.id,
                 versionIndex: language.index,
-                clientId: settings.jdoodle.id,
-                clientSecret: settings.jdoodle.secret
+                clientId: config.jdoodle.id,
+                clientSecret: config.jdoodle.token
             },
             {
                 'content-type': `application/json`
@@ -35,6 +34,9 @@ async function compile(source: string, language: CompileLanguage, settings: Clie
 }
 
 function escapeString(str: string): string {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const stripAnsi = require(`strip-ansi`);
+    // eslint-disable-next-line no-control-regex
     let result = stripAnsi(str).replace(/[^\x00-\x7F]/g, ``).replace(/```/g, '\\`\\`\\`');
     if (result.length > maxCompileResultLength) {
         result = result.substr(0, maxCompileResultLength);
@@ -43,21 +45,20 @@ function escapeString(str: string): string {
     return result;
 }
 
-export function doCompileCommand(message: Message, args: string[],
-    settings: ClientSettings, reportError: ErrorFunc): void {
+export function doCompileCommand(message: Message, args: string[], reportError: ErrorFunc): void {
     if (args.length === 0) {
         message.channel.send(`Missing argument. See \`!help compile\` for more info.`);
         return;
     }
     if (args[0] === `langs`) {
         let msg = `Available languages:\n`;
-        for (const lang of settings.jdoodle.langs) {
+        for (const lang of config.legacy.jdoodle.langs) {
             msg += `${lang.full}: ${lang.id}\n`;
         }
         message.author.send(msg);
         return;
     }
-    const language = settings.jdoodle.langs.find(l => l.id === args[0]);
+    const language = config.legacy.jdoodle.langs.find(l => l.id === args[0]);
     if (!language) {
         message.channel.send(`Invalid language. Use \`!compile langs\` to receive a PM with available languages.`);
         return;
@@ -79,12 +80,12 @@ export function doCompileCommand(message: Message, args: string[],
     }
 
     message.channel.send(`Compiling ${language.full}...`);
-    compile(input.replace(/```/g, ``), language, settings, (results) => {
+    compile(input.replace(/```/g, ``), language, (results) => {
         if (results.error) {
             reportError(`Error: ${results.error}\nStatusCode: ${results.statusCode}`);
-            message.channel.send(`Go poke <@${settings.botCreatorID}>!`);
+            message.channel.send(`Go poke <@${config.legacy.botCreatorID}>!`);
         } else if (results.output) {
-            message.channel.send(`Results for <@${message.author.id}>: \`\`\`${escapeString(results.output)}\`\`\`` +
+            message.channel.send(`Results for <@${message.author.id}>: \`\`\`${escapeString(results.output as string)}\`\`\`` +
                 `\nMemory: ${results.memory}, CPU Time: ${results.cpuTime}`);
         } else if (results.statusCode !== 200) {
             reportError(`Bad compile:\n${message.content}\n${JSON.stringify(results)}`);

@@ -1,11 +1,9 @@
 import { Client, Intents } from 'discord.js';
 import { ClientInstance } from './client';
 import { Terminal } from './terminal';
-import { ClientSettings } from './settings';
-import { ignoreUnused } from './utils';
+import * as config from './config.json';
 
-function main(): void {
-    const settings: ClientSettings = require('../settings/settings.json');
+async function main() {
     const client = new Client({
         intents: [
             Intents.FLAGS.GUILDS,
@@ -18,11 +16,12 @@ function main(): void {
             'CHANNEL' // Necessary to cache DM Channels in order to receive DMs
         ]
     });
-    const instance = new ClientInstance(client, settings);
-    const terminal = new Terminal(instance);
-    ignoreUnused(terminal);
+    const instance = new ClientInstance(client);
+    await instance.setupCommands();
+    
+    new Terminal(instance);
 
-    instance.client.login(settings.token);
+    instance.client.login(config.client.token);
 }
 
 if (require.main === module) {

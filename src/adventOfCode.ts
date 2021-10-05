@@ -1,9 +1,9 @@
 import { TextChannel } from 'discord.js';
-import { ClientSettings } from './settings';
 import { createEmbed } from './embed';
 import { ErrorFunc } from './error';
 import { NonVoiceChannel } from './types';
-const bent = require(`bent`);
+import * as bent from 'bent';
+import { findServer } from './settings';
 
 function getEasternTime(): Date {
     const utc = new Date();
@@ -55,8 +55,8 @@ export function displayNextUnlock(channel: NonVoiceChannel): void {
 }
 
 export async function displayLeaderboard(channel: TextChannel, year: string,
-    reportError: ErrorFunc, settings: ClientSettings): Promise<void> {
-    const server = settings.servers.find(s => s.id == channel.guild.id);
+    reportError: ErrorFunc): Promise<void> {
+    const server = findServer(channel.guild);
     const aocYearInfo = server
         ? server.adventOfCode.find(info => info.year === year)
         : null;
@@ -66,7 +66,7 @@ export async function displayLeaderboard(channel: TextChannel, year: string,
     }
     try {
         const request = bent('GET', 'json', 200);
-        const body = await request(aocYearInfo.url, null, {
+        const body = await request(aocYearInfo.url, undefined, {
             'content-type': `application/json`,
             'cookie': `session=${aocYearInfo.session}`
         });

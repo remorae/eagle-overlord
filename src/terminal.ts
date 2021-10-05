@@ -12,12 +12,16 @@ export class Terminal {
             output: process.stdout,
             prompt: 'Eagle Overlord> '
         });
+        this.setupEvents();
+    }
+
+    private setupEvents() {
         this.instance.client.on(`ready`, () => {
             this.cli.prompt();
         });
-        this.cli.on('line', (line) => {
-            this.processInput(line)
-                .then(() => this.cli.prompt());
+        this.cli.on('line', async (line) => {
+            await this.processInput(line);
+            this.cli.prompt();
         });
     }
 
@@ -92,7 +96,11 @@ export class Terminal {
         return true;
     }
 
-    private processInput(this: Terminal, line: string): Promise<void> {
+    private async refreshCommands(this: Terminal): Promise<void> {
+        await this.instance.setupCommands();
+    }
+
+    private async processInput(this: Terminal, line: string): Promise<void> {
         return new Promise((resolve) => {
             let resolveImmediately = true;
             switch (line.trim()) {
@@ -106,18 +114,23 @@ export class Terminal {
                 case 'disconnect':
                     this.disconnectClient();
                     break;
+                case 'refresh-commands':
+                    this.refreshCommands();
+                    break;
                 default:
-                    const args = line.split(' ');
-                    if (args.length === 0) {
-                        break;
-                    }
-                    switch (args[0]) {
-                        case `activity`:
-                            resolveImmediately = this.processActivity(args, resolve);
+                    {
+                        const args = line.split(' ');
+                        if (args.length === 0) {
                             break;
-                        default:
-                            console.error(`Unknown command.`);
-                            break;
+                        }
+                        switch (args[0]) {
+                            case `activity`:
+                                resolveImmediately = this.processActivity(args, resolve);
+                                break;
+                            default:
+                                console.error(`Unknown command.`);
+                                break;
+                        }
                     }
                     break;
             }
