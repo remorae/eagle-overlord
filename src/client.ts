@@ -120,7 +120,7 @@ export class ClientInstance extends EventEmitter {
         }
     }
 
-    private async setCommandPermissions(this: ClientInstance) {
+    public async setCommandPermissions(this: ClientInstance) {
         await this.client.guilds.fetch();
         for (const guild of this.client.guilds.cache.values()) {
             await guild.commands.fetch();
