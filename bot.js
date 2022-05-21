@@ -1,15 +1,17 @@
 const Discord = require("discord.js");
-const client = new Discord.Client();
-const info = require("./package.json");
-const settings = require("./settings.json");
+const client = new Discord.Client({autoReconnect: true});
+const infoFile = require("./package.json");
+const settingsFile = require("./settings.json");
+const fs = require(`fs`);
 
-const token = settings.token;
-const botCreatorID = settings.botCreatorID;
-const commandPrefix = settings.commandPrefix;
-const validClassPrefixes = settings.validClassPrefixes;
-const commands = settings.commands;
+const token = settingsFile.token;
+const botID = settingsFile.botID;
+const botCreatorID = settingsFile.botCreatorID;
+const commandPrefix = settingsFile.commandPrefix;
+const validClassPrefixes = settingsFile.validClassPrefixes;
+const commands = settingsFile.commands;
 
-var changeClassForMember = function (member, message, args, adding) { 
+var changeClassForMember = function (member, message, args, adding, isForOther) { 
     if (message.guild == null || message.guild.channels.get(message.channel.id).name === "general") {
         return;
     }
@@ -19,7 +21,7 @@ var changeClassForMember = function (member, message, args, adding) {
         message.channel.sendMessage("You must enter a class.");
     } else {
         let changingForOther = (member.user.id != message.author.id);
-        for (let i = 0; i < args.length; ++i) {
+        for (let i = (isForOther) ? 1 : 0; i < args.length; ++i) {
             if (args[i] === "" || args[i] === " ") {
                 continue;
             }
@@ -61,7 +63,7 @@ var changeClassForMember = function (member, message, args, adding) {
                                     message.channel.sendMessage("An error occurred. I probably don't have permissions to remove roles :'(");
                                 });
                             } else {
-                                if (!changingForOther && settings.alwaysVisibleClasses.find(vclass => { return vclass.toUpperCase() === classToChange.toUpperCase(); }) != null) {
+                                if (!changingForOther && settingsFile.alwaysVisibleClasses.find(vclass => { return vclass.toUpperCase() === classToChange.toUpperCase(); }) != null) {
                                     message.reply(`you are not in the class "${classToChange}". Please note that the channel for ${classToChange} is visible to everyone.`);
                                 } else {
                                     message.channel.sendMessage(`User ${member.user} is not in class "${classToChange}".`);
@@ -159,10 +161,153 @@ var getUserFromArgs = function (message, args) {
         message.channel.sendMessage(`You must enter a user.`);
         return;
     }
-    let memberName = args.shift();
-    // Follow member nickname conventions
-    memberName = memberName.substr(0, memberName.length - 1).concat(" ").concat(memberName.charAt(memberName.length - 1)); // e.g. "NatR" becomes "Nat R"
+    let memberName = args[0];
+    memberName = memberName.substr(1, memberName.length - 2);
     return message.guild.members.find(`displayName`, memberName);
+}
+
+var addQuote = function (message, args) {
+    if (args.length == 0) {
+        message.channel.fetchMessages("before", message.id).then(results => {
+            let filtered = results.filter(function (item) { 
+                return item.author.id != botID && item.id != message.id; 
+            }).array();
+            filtered.sort(function compare(o1, o2) { 
+                if (o1.createdTimestamp > o2.createdTimestamp) {
+                    return 1;
+                }
+                if (o1.createdTimestamp < o2.createdTimestamp) {
+                    return -1;
+                }
+                return 0;
+            });
+            let toQuote = filtered[filtered.length - 1];
+            logQuote(message, toQuote);
+        }).catch(error => {
+            console.log(error);
+        });
+    } else {
+        let messageID = args[0];
+        message.channel.fetchMessage(messageID).then(result => {
+            let toQuote = result;
+            logQuote(message, toQuote);
+        }).catch(error => {
+            message.channel.sendMessage("Invalid message ID.");
+        });
+    }
+}
+
+var logQuote = function (message, toQuote) {
+    if (toQuote === null) {
+        message.channel.sendMessage("Invalid quote!");
+    } else {
+        fs.readFile(`./quotes.json`, function (err, content) {
+            if (err) console.log(err);
+            let obj = JSON.parse(content);
+            try {
+                obj.quotes.push({
+                    id: toQuote.id,
+                    author: toQuote.author.id,
+                    time: toQuote.createdAt,
+                    text: toQuote.content
+                });
+                fs.writeFile(`./quotes.json`, JSON.stringify(obj), function (err) {
+                    if (err) console.log(err);
+                });
+                message.channel.sendMessage("Quote " + toQuote.id + " added!");
+            } catch (err) {
+                console.log(err);
+            }
+        });
+    }
+}
+
+var displayQuote = function (message, args) {
+    fs.readFile(`./quotes.json`, function (err, content) {
+        if (err) console.log(err);
+        let obj = JSON.parse(content);
+
+        if (args.length >= 1) {
+            let author = getUserFromArgs(message, args);
+            if (author != null) {
+                var authorID = author.id;
+            } else {
+                message.channel.sendMessage("Invalid user!");
+                return;
+            }
+            var quoteResults = obj.quotes.filter(function (item) { return item.author === authorID; });
+        } else {
+            var quoteResults = obj.quotes;
+        }
+
+        if (quoteResults.length == 0) {
+            message.channel.sendMessage("Sorry, no quotes available :(");
+        } else {
+            let i = Math.floor(Math.random() * quoteResults.length);
+            let quote = quoteResults[i];
+            let author = message.guild.members.get(quote.author);
+            let time = new Date(Date.parse(quote.time));
+            let minutes = (time.getMinutes() >= 10) ? time.getMinutes() : ("0" + time.getMinutes());
+            message.channel.sendMessage("```" + author.displayName + 
+                " at " + time.getHours() + ":" + minutes +
+                " on " + (time.getMonth() + 1) + "/" + time.getDate() + "/" + time.getFullYear() + 
+                ": " + quote.text + "```");
+        }
+    });
+}
+
+var listQuotes = function (message, args) {
+    fs.readFile(`./quotes.json`, function (err, content) {
+        if (err) console.log(err);
+        let obj = JSON.parse(content);
+
+        if (args.length >= 1) {
+            let authorID = getUserFromArgs(message, args).id;
+            var quoteResults = obj.quotes.filter(function (item) { return item.author === authorID; });
+        } else {
+            var quoteResults = obj.quotes;
+        }
+
+        if (quoteResults.length == 0) {
+            message.author.sendMessage("Sorry, no quotes available :(");
+        } else {
+            quoteResults.forEach(quote => {
+            let author = message.guild.members.get(quote.author);
+            let time = new Date(Date.parse(quote.time));
+            let minutes = (time.getMinutes() >= 10) ? time.getMinutes() : ("0" + time.getMinutes());
+            message.author.sendMessage("```" + quote.id + " - " + author.displayName + 
+                " at " + time.getHours() + ":" + minutes +
+                " on " + (time.getMonth() + 1) + "/" + time.getDate() + "/" + time.getFullYear() + 
+                ": " + quote.text + "```");
+            });
+        }
+    });
+}
+
+var removeQuote = function (message, args) {
+    if (args.length < 1) {
+        message.channel.reply("You must enter a quote ID!");
+    }
+    let toRemoveID = args[0];
+    fs.readFile(`./quotes.json`, function (err, content) {
+        if (err) console.log(err);
+        let obj = JSON.parse(content);
+        try {
+            let removed = obj.quotes.splice(obj.quotes.findIndex(item => item.id === toRemoveID), 1);
+            fs.writeFile(`./quotes.json`, JSON.stringify(obj), function (err) {
+                if (err) console.log(err);
+            });
+            if (removed.length == 0) {
+                message.channel.sendMessage("Invalid quote ID.");
+            } else {
+                removed.forEach(quote => {
+                    message.channel.sendMessage("Quote " + quote.id + " removed!");
+                })
+            }
+        } catch (err) {
+            console.log(err);
+        }
+    });
 }
 
 client.on("ready", () => {
@@ -180,11 +325,11 @@ client.on("message", message => {
             return;
         }
 
-        logMessage(message);
+        // logMessage(message);
 
-        let args = message.content.trim().split(/\s+/);
+        let args = message.content.trim().match(/\w+|"(?:\\"|[^"])+"/g);
         let messageCommandText = args.shift();
-        let givenCommand = commands.find(com => { if (com.symbol === messageCommandText.substring(1)) return true; });
+        let givenCommand = commands.find(com => { if (com.symbol === messageCommandText) return true; });
         let requiresGuild = (givenCommand != null) ? givenCommand.requiresGuild : false;
         let authorMember = (message.guild != null) ? message.guild.member(message.author) : null;
 
@@ -220,7 +365,7 @@ client.on("message", message => {
             }
 
             else if (givenCommand.symbol === `about`) {
-                message.channel.sendMessage(`Currently running on version ${info.version}. Created in 2017 by Natrastellar.`);
+                message.channel.sendMessage(`Currently running on version ${infoFile.version}. Created in 2017 by Natrastellar.`);
             }
 
             else if (givenCommand.symbol === `commands`) {
@@ -234,13 +379,13 @@ client.on("message", message => {
                 }
                 let member = message.guild.member(message.author);
                 let adding = (givenCommand.symbol === `addClass`);
-                changeClassForMember(member, message, args, adding);
+                changeClassForMember(member, message, args, adding, false);
             }
 
             else if (givenCommand.symbol === `addClassTo` || givenCommand.symbol === `removeClassFrom`) {
                 let member = getUserFromArgs(message, args);
                 let adding = (givenCommand.symbol === `addClassTo`);
-                changeClassForMember(member, message, args, adding);
+                changeClassForMember(member, message, args, adding, true);
             }
 
             else if (givenCommand.symbol === `welcome`) {
@@ -250,6 +395,22 @@ client.on("message", message => {
                                             `\n${member.user.username}, please read through the rules.` + 
                                             `\nIf you have any questions, please feel free to mention ${moderatorRole} in #help and we can assist you.`);
             }
+
+            // else if (givenCommand.symbol === `addQuote`) {
+            //     addQuote(message, args);
+            // }
+
+            // else if (givenCommand.symbol === `quote`) {
+            //     displayQuote(message, args);
+            // }
+
+            // else if (givenCommand.symbol === `listQuotes`) {
+            //     listQuotes(message, args);
+            // }
+
+            // else if (givenCommand.symbol === `removeQuote`) {
+            //     removeQuote(message, args);
+            // }
         }
     } catch (err) {
         console.log("Error on message event:\n" + err.message + " " + err.fileName + " " + err.lineNumber);
