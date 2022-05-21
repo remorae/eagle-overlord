@@ -248,6 +248,34 @@ client.on("message", message => {
                                             `\n${member.user.username}, please read through the rules.` + 
                                             `\nIf you have any questions, please feel free to mention ${moderatorRole} in #help and we can assist you.`);
             }
+            else if (givenCommand.symbol === `acm`) {
+                if (message.guild == null) {
+                    message.reply("No guild available. Please note that this command does not work in private messages.");
+                    return;
+                }
+                if (args.length < 1) {
+                    message.channel.sendMessage(`Missing parameter. Use \`!help acm\` for more info.`);
+                    return;
+                }
+                
+                let member = message.guild.member(message.author);
+                let role = message.guild.roles.find(`name`, `ACM Members`);
+                switch (args[0].toLowerCase()) {
+                    case `info`:
+                        message.channel.sendMessage(`ACM stands for Association for Computing Machinery. See ${message.guild.channels.get(`360933694443094016`)} for more info.`);
+                        return;
+                    case `join`:
+                        if (role != null && member.roles.get(role.id) == null) {
+                            member.addRole(role);
+                        }
+                        break;
+                    case `leave`:
+                        if (role != null && member.roles.get(role.id) != null) {
+                            member.removeRole(role);
+                        }
+                        break;
+                }
+            }
         }
     } catch (err) {
         console.log("Error on message event:\n" + err.message + " " + err.fileName + " " + err.lineNumber);
@@ -260,12 +288,15 @@ client.on("guildMemberAdd", member => {
         let welcomeChannel = guild.channels.find("name", "welcome");
         let helpChannel = guild.channels.find("name", "help");
         let moderatorRole = guild.roles.find(role => role.name.toLowerCase() === "moderators");
-        guild.channels.find("name", "general").sendMessage(`Please welcome ${member.user} to the server!` +
+        let generalChannel = guild.channels.find("name", "general");
+        generalChannel.sendMessage(`Please welcome ${member.user} to the server!` +
                                                            `\n${member.user.username}, please read through the rules` + ((welcomeChannel != null) ? ` in ${welcomeChannel}.` : `.`) + 
                                                            `\nIf you have any questions, please feel free to mention ${moderatorRole} in ${helpChannel} and we can assist you.`);
-        for (let i = 0; i < defaultRoles.length; ++i) {
-            member.addRole(defaultRoles[i]);
-            console.log("Added default role " + guild.roles.get(defaultRoles[i]) + " to " + member.user);
+        if (member.user.email != null) {
+            for (let i = 0; i < defaultRoles.length; ++i) {
+                member.addRole(defaultRoles[i]);
+                console.log("Added default role " + guild.roles.get(defaultRoles[i]) + " to " + member.user);
+            }
         }
     } catch (err) {
         console.log("Error on guildMemberAdd event:\n" + err.message + " " + err.fileName + " " + err.lineNumber);
