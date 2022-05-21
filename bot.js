@@ -11,15 +11,17 @@ const commandPrefix = settingsFile.commandPrefix;
 const validClassPrefixes = settingsFile.validClassPrefixes;
 const commands = settingsFile.commands;
 const defaultRoles = settingsFile.defaultRoles;
+const serverRoles = settingsFile.serverRoles;
+const serverChannels = settingsFile.serverChannels;
 
 var changeClassForMember = function (member, message, args, adding, isForOther) { 
-    if (message.guild == null || message.guild.channels.get(message.channel.id).name === "general") {
+    if (message.guild == null || message.guild.channels.get(message.channel.id).name === `general`) {
         return;
     }
     if (member == null) {
-        message.channel.sendMessage("Invalid guildMember.");
+        message.channel.send(`Invalid guildMember.`);
     } else if (args.length < 1) {
-        message.channel.sendMessage("You must enter a class.");
+        message.channel.send(`You must enter a class.`);
     } else {
         let changingForOther = (member.user.id != message.author.id);
         for (let i = (isForOther) ? 1 : 0; i < args.length; ++i) {
@@ -37,38 +39,38 @@ var changeClassForMember = function (member, message, args, adding, isForOther) 
                 });
     
                 if (!isValidClass) {
-                    message.channel.sendMessage(`"${classToChange}" is not a valid class.`);
+                    message.channel.send(`"${classToChange}" is not a valid class.`);
                 } else {
                     // The class is valid; ensure the role is valid before adding/removing it to/from the user.
-                    let role = message.guild.roles.find("name", classToChange.toUpperCase());
+                    let role = message.guild.roles.find(`name`, classToChange.toUpperCase());
                     if (role != null) {
                         if (adding) {
                             // Attempt to add the class role.
                             if (member.roles.get(role.id) == null) {
                                 member.addRole(role).then(member => {
-                                    message.channel.sendMessage(`Added ${member.user} to class "${classToChange}".`);
+                                    message.channel.send(`Added ${member.user} to class "${classToChange}".`);
                                     console.log(`Added ${member.user} to class "${classToChange}".`);
                                 }).catch(member => {
-                                    message.channel.sendMessage("An error occurred. I probably don't have permissions to assign roles :'(");
+                                    message.channel.send("An error occurred. I probably don't have permissions to assign roles :'(");
                                 });
                             } else {
-                                message.channel.sendMessage(`User ${member.user} is already in class "${classToChange}".`);
+                                message.channel.send(`User ${member.user} is already in class "${classToChange}".`);
                             }
                         } else {
                             // Attempt to remove the class role.
                             if (member.roles.get(role.id) != null) {
                                 member.removeRole(role).then(member => {
-                                    message.channel.sendMessage(`Removed ${member.user} from class "${classToChange}".`);
+                                    message.channel.send(`Removed ${member.user} from class "${classToChange}".`);
                                     console.log(`Removed ${member.user} from class "${classToChange}".`);
                                 }).catch(member => {
-                                    message.channel.sendMessage("An error occurred. I probably don't have permissions to remove roles :'(");
+                                    message.channel.send("An error occurred. I probably don't have permissions to remove roles :'(");
                                 });
                             } else {
-                                message.channel.sendMessage(`User ${member.user} is not in class "${classToChange}".`);
+                                message.channel.send(`User ${member.user} is not in class "${classToChange}".`);
                             }
                         }
                     } else {
-                        message.channel.sendMessage(`"${classToChange}" is not a valid class or does not have a role created on the server.`);
+                        message.channel.send(`"${classToChange}" is not a valid class or does not have a role created on the server.`);
                     }
                 }
             }
@@ -102,7 +104,7 @@ var listCommands = function (message) {
     for (let i = 0; i < visibleCommands.length; ++i) {
         commandList += visibleCommands[i].symbol + ((i < visibleCommands.length - 1) ? ", " : "");
     }
-    message.channel.sendMessage(`Current commands: ${commandList}`);
+    message.channel.send(`Current commands: ${commandList}`);
 }
 
 var giveCaseWarning = function (message, commandSymbol) {
@@ -111,8 +113,8 @@ var giveCaseWarning = function (message, commandSymbol) {
 
 var displayHelpMessage = function (message, args, botCreatorUser) {
     if (args.length == 0) {
-        let helpChannel = (message.guild != null) ? message.guild.channels.find("name", "help") : null;
-        message.channel.sendMessage(`If you'd like help with specific command syntax, please use "!help <commandName>".` +
+        let helpChannel = (message.guild != null) ? message.guild.channels.get(serverChannels.find(channel => { return (channel.name === "help"); }).id) : null;
+        message.channel.send(`If you'd like help with specific command syntax, please use "!help <commandName>".` +
                                     `\nIf you'd like to see available commands, please use "!commands".` +
                                     ((helpChannel != null) ? `\nIf you need help with Discord or something not specific to a class, please ask a question in ${helpChannel}.` : ``));
     } else {
@@ -122,7 +124,7 @@ var displayHelpMessage = function (message, args, botCreatorUser) {
             if (commandArg.toLowerCase() === `${command.symbol}`.toLowerCase()) {
                 isValidCommand = true;
                 if (commandArg === command.symbol) {
-                    message.channel.sendMessage(`Usage: ` + command.usage + "\nInfo: " + command.info);
+                    message.channel.send(`Usage: ` + command.usage + "\nInfo: " + command.info);
                 } else {
                     giveCaseWarning(message, command.symbol);
                 }
@@ -130,7 +132,7 @@ var displayHelpMessage = function (message, args, botCreatorUser) {
         });
         
         if (!isValidCommand) {
-            message.channel.sendMessage(`Unrecognized command. See !help for more information or !commands for a list of valid commands.`);
+            message.channel.send(`Unrecognized command. See !help for more information or !commands for a list of valid commands.`);
         }
     }
 }
@@ -144,7 +146,7 @@ var handleNonCommand = function (message) {
     if (matches != null) {
         logMessage(message);
         let url = matches[0].trim().toLowerCase();
-        message.channel.sendMessage(`<http://www.reddit.com` + url + `>`);
+        message.channel.send(`<http://www.reddit.com` + url + `>`);
         console.log(`Attempting to link subreddit <http://www.reddit.com` + url + `>`);
     }
 }
@@ -155,17 +157,20 @@ var getUserFromArgs = function (message, args) {
         return;
     }
     if (args.length < 1) {
-        message.channel.sendMessage(`You must enter a user.`);
+        message.channel.send(`You must enter a user.`);
         return;
     }
     let memberName = args[0];
     memberName = memberName.substr(1, memberName.length - 2);
-    return message.guild.members.find(`displayName`, memberName);
+    let gm = message.guild.members.find(`displayName`, memberName);
+    if (gm == null)
+        gm = message.guild.members.find(member => { return (member.user.username === args[1]); });
+    return gm;
 }
 
-client.on("ready", () => {
-    console.log("Boot sequence complete.");
-    client.user.setGame("Banhammer 40k");
+client.on(`ready`, () => {
+    console.log(`Boot sequence complete.`);
+    client.user.setGame(`Banhammer 40k`);
 });
 
 client.on("message", message => {
@@ -182,18 +187,18 @@ client.on("message", message => {
 
         let args = message.content.trim().match(/\w+|"(?:\\"|[^"])+"/g);
         let messageCommandText = args.shift();
-        let givenCommand = commands.find(com => { if (com.symbol === messageCommandText) return true; });
+        let givenCommand = commands.find(com => { return (com.symbol === messageCommandText); });
         let requiresGuild = (givenCommand != null) ? givenCommand.requiresGuild : false;
         let authorMember = (message.guild != null) ? message.guild.member(message.author) : null;
 
         if (requiresGuild && authorMember == null) {
-            message.reply("The given command requires a guild, but no matching guildMember was found. Please make sure you aren't using this command in a private message.");
+            message.reply(`the given command requires a guild, but no matching guildMember was found. Please make sure you aren't using this command in a private message.`);
             return;
         } else if (requiresGuild) {
             let hasNeededPermissions = true;
             givenCommand.permissions.forEach(perm => { if (!authorMember.hasPermission(perm)) { hasNeededPermissions = false; }  });
             if (!hasNeededPermissions) {
-                message.reply("you do not have permission to use this command.");
+                message.reply(`you do not have permission to use this command.`);
                 return;
             }
         }
@@ -218,7 +223,7 @@ client.on("message", message => {
             }
 
             else if (givenCommand.symbol === `about`) {
-                message.channel.sendMessage(`Currently running on version ${infoFile.version}. Created in 2017 by Natrastellar.`);
+                message.channel.send(`Currently running on version ${infoFile.version}. Created in 2017 by Natrastellar.`);
             }
 
             else if (givenCommand.symbol === `commands`) {
@@ -244,62 +249,105 @@ client.on("message", message => {
             else if (givenCommand.symbol === `welcome`) {
                 let member = getUserFromArgs(message, args);
                 let moderatorRole = message.guild.roles.find(role => role.name.toLowerCase() === "moderators");
-                message.channel.sendMessage(`Please welcome ${member.user} to the server!` +
+                message.channel.send(`Please welcome ${member.user} to the server!` +
                                             `\n${member.user.username}, please read through the rules.` + 
                                             `\nIf you have any questions, please feel free to mention ${moderatorRole} in #help and we can assist you.`);
             }
             else if (givenCommand.symbol === `acm`) {
                 if (message.guild == null) {
-                    message.reply("No guild available. Please note that this command does not work in private messages.");
+                    message.channel.send(`No guild available. Please note that this command does not work in private messages.`);
                     return;
                 }
                 if (args.length < 1) {
-                    message.channel.sendMessage(`Missing parameter. Use \`!help acm\` for more info.`);
+                    message.channel.send(`Missing parameter. Use \`!help acm\` for more info.`);
                     return;
                 }
                 
                 let member = message.guild.member(message.author);
-                let role = message.guild.roles.find(`name`, `ACM Members`);
+                let role = message.guild.roles.get(acmMembersRole);
                 switch (args[0].toLowerCase()) {
                     case `info`:
-                        message.channel.sendMessage(`ACM stands for Association for Computing Machinery. See ${message.guild.channels.get(`360933694443094016`)} for more info.`);
+                        message.channel.send(`ACM stands for Association for Computing Machinery. See ${message.guild.channels.get(`360933694443094016`)} for more info.`);
                         return;
                     case `join`:
                         if (role != null && member.roles.get(role.id) == null) {
                             member.addRole(role);
+                            member.send(`Welcome to ACM!`);
                         }
                         break;
                     case `leave`:
                         if (role != null && member.roles.get(role.id) != null) {
                             member.removeRole(role);
+                            member.send(`ACM will miss you.`);
                         }
                         break;
                 }
             }
+            else if (givenCommand.symbol === `getID`) {
+                if (message.guild == null) {
+                    message.channel.send(`No guild available. Please note that this command does not work in private messages.`);
+                    return;
+                }
+                if (args.length < 2) {
+                    message.channel.send(`Missing parameter(s). See "!help getID" for more info.`);
+                    return;
+                }
+                if (args[1][0] === '\"')
+                    args[1] = args[1].substr(1, args[1].length - 2);
+                switch (args[0]) {
+                    case `user`: {
+                        let gm = message.guild.members.find(`displayName`, args[1]);
+                        if (gm == null) {
+                            gm = message.guild.members.find(member => { return (member.user.username === args[1]); });
+                        }
+                        if (gm == null)
+                            message.author.send(`User not found.`);
+                        else 
+                            message.author.send(`User \"` + args[1] + `\": ` + gm.id);
+                        break;
+                    }
+                    case `channel`: {
+                        let channel = message.guild.channels.find(`name`, args[1]);
+                        if (channel == null)
+                            message.author.send(`Channel not found.`);
+                        else 
+                            message.author.send(`Channel \"` + args[1] + `\": ` + channel.id);
+                        break;
+                    }
+                    case `role`: {
+                        let role = message.guild.roles.find(`name`, args[1]);
+                        if (role == null)
+                            message.author.send(`Role not found.`);
+                        else 
+                            message.author.send(`Role \"` + args[1] + `\": ` + role.id);
+                        break;
+                    }
+                }
+            }
         }
     } catch (err) {
-        console.log("Error on message event:\n" + err.message + " " + err.fileName + " " + err.lineNumber);
+        console.log(`Error on message event:\n` + err.message + ` ` + err.fileName + ` ` + err.lineNumber);
     }
 });
 
 client.on("guildMemberAdd", member => {
     let guild = member.guild;
     try {
-        let welcomeChannel = guild.channels.find("name", "welcome");
-        let helpChannel = guild.channels.find("name", "help");
-        let moderatorRole = guild.roles.find(role => role.name.toLowerCase() === "moderators");
-        let generalChannel = guild.channels.find("name", "general");
-        generalChannel.sendMessage(`Please welcome ${member.user} to the server!` +
+        let welcomeChannel = guild.channels.get(serverChannels.find(ch => { return (ch.name === `welcome`); }).id);
+        let helpChannel = guild.channels.get(serverChannels.find(ch => { return (ch.name === `help`); }).id);
+        let moderatorRole = guild.roles.get(serverRoles.find(role => { return (role.name === `moderators`); }).id);
+        let generalChannel = guild.channels.get(serverChannels.find(ch => { return (ch.name === `general`); }).id);
+        generalChannel.send(`Please welcome ${member.user} to the server!` +
                                                            `\n${member.user.username}, please read through the rules` + ((welcomeChannel != null) ? ` in ${welcomeChannel}.` : `.`) + 
                                                            `\nIf you have any questions, please feel free to mention ${moderatorRole} in ${helpChannel} and we can assist you.`);
         if (member.user.email != null) {
             for (let i = 0; i < defaultRoles.length; ++i) {
                 member.addRole(defaultRoles[i]);
-                console.log("Added default role " + guild.roles.get(defaultRoles[i]) + " to " + member.user);
+                console.log("Added default role " + guild.roles.get(defaultRoles[i]) + ` to ` + member.user);
             }
         }
     } catch (err) {
-        console.log("Error on guildMemberAdd event:\n" + err.message + " " + err.fileName + " " + err.lineNumber);
+        console.log(`Error on guildMemberAdd event:\n` + err.message + ` ` + err.fileName + ` ` + err.lineNumber);
     }
 });
 
