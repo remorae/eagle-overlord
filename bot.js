@@ -9,7 +9,10 @@ const commandPrefix = settings.commandPrefix;
 const validClassPrefixes = settings.validClassPrefixes;
 const commands = settings.commands;
 
-var changeClassForMember = function (member, message, args, adding) {
+var changeClassForMember = function (member, message, args, adding) { 
+    if (message.guild == null || message.guild.channels.get(message.channel.id).name === "general") {
+        return;
+    }
     if (member == null) {
         message.channel.sendMessage("Invalid guildMember.");
     } else if (args.length < 1) {
@@ -76,8 +79,29 @@ var changeClassForMember = function (member, message, args, adding) {
 
 var listCommands = function (message) {
     let commandList = ""; 
+    let visibleCommands = [];
+    if (message.guild != null) {
+        var authorMember = message.guild.member(message.author);
+    }
+
     for (let i = 0; i < commands.length; ++i) {
-        commandList += commands[i].symbol + ((i < commands.length - 1) ? ", " : "");
+        if (commands[i].visible && !commands[i].requiresGuild) {
+            visibleCommands.push(commands[i]);
+        } else if (authorMember != null) {
+            let hasNeededPermissions = true;
+            commands[i].permissions.forEach(perm => { 
+                if (!authorMember.hasPermission(perm)) {
+                    hasNeededPermissions = false;
+                }
+            });
+            if (hasNeededPermissions) {
+                visibleCommands.push(commands[i]);
+            }
+        }
+    }
+
+    for (let i = 0; i < visibleCommands.length; ++i) {
+        commandList += visibleCommands[i].symbol + ((i < visibleCommands.length - 1) ? ", " : "");
     }
     message.channel.sendMessage(`Current commands: ${commandList}`);
 }
@@ -112,6 +136,35 @@ var displayHelpMessage = function (message, args, botCreatorUser) {
     }
 }
 
+var logMessage = function (message) {
+    console.log(`[${message.createdAt}] ${message.author} (${message.author.username}): ${message.content}`);
+}
+
+var handleNonCommand = function (message) {
+    var matches = message.content.match(/(^|[^\w]+)\/r\/\w+/i);
+    if (matches != null) {
+        logMessage(message);
+        let url = matches[0].trim().toLowerCase();
+        message.channel.sendMessage(`<http://www.reddit.com` + url + `>`);
+        console.log(`Attempting to link subreddit <http://www.reddit.com` + url + `>`);
+    }
+}
+
+var getUserFromArgs = function (message, args) {
+    if (message.guild == null) {
+        message.reply(`No guild found. Please note that this command does not work in private messages.`);
+        return;
+    }
+    if (args.length < 1) {
+        message.channel.sendMessage(`You must enter a user.`);
+        return;
+    }
+    let memberName = args.shift();
+    // Follow member nickname conventions
+    memberName = memberName.substr(0, memberName.length - 1).concat(" ").concat(memberName.charAt(memberName.length - 1)); // e.g. "NatR" becomes "Nat R"
+    return message.guild.members.find(`displayName`, memberName);
+}
+
 client.on("ready", () => {
     console.log("Boot sequence complete.");
     client.user.setGame("Banhammer 40k");
@@ -123,10 +176,11 @@ client.on("message", message => {
             return;
         }
         if (!message.content.startsWith(commandPrefix)) {
+            handleNonCommand(message);
             return;
         }
 
-        console.log(`[${message.createdAt}] ${message.author} (${message.author.username}): ${message.content}`);
+        logMessage(message);
 
         let args = message.content.trim().split(/\s+/);
         let messageCommandText = args.shift();
@@ -184,20 +238,17 @@ client.on("message", message => {
             }
 
             else if (givenCommand.symbol === `addClassTo` || givenCommand.symbol === `removeClassFrom`) {
-                if (message.guild == null) {
-                    message.reply("No guild to change roles. Please note that this command does not work in private messages.");
-                    return;
-                }
-                if (args.length < 1) {
-                    message.channel.sendMessage("You must enter a user.");
-                    return;
-                }
-                let memberName = args.shift();
-                // Follow member nickname conventions
-                memberName = memberName.substr(0, memberName.length - 1).concat(" ").concat(memberName.charAt(memberName.length - 1)); // e.g. "NatR" becomes "Nat R"
-                let member = message.guild.members.find("displayName", memberName);
+                let member = getUserFromArgs(message, args);
                 let adding = (givenCommand.symbol === `addClassTo`);
                 changeClassForMember(member, message, args, adding);
+            }
+
+            else if (givenCommand.symbol === `welcome`) {
+                let member = getUserFromArgs(message, args);
+                let moderatorRole = message.guild.roles.find(role => role.name.toLowerCase() === "moderators");
+                message.channel.sendMessage(`Please welcome ${member.user} to the server!` +
+                                            `\n${member.user.username}, please read through the rules.` + 
+                                            `\nIf you have any questions, please feel free to mention ${moderatorRole} in #help and we can assist you.`);
             }
         }
     } catch (err) {
@@ -209,9 +260,11 @@ client.on("guildMemberAdd", member => {
     let guild = member.guild;
     try {
         let welcomeChannel = guild.channels.find("name", "welcome");
+        let helpChannel = guild.channels.find("name", "help");
+        let moderatorRole = guild.roles.find(role => role.name.toLowerCase() === "moderators");
         guild.channels.find("name", "general").sendMessage(`Please welcome ${member.user} to the server!` +
-                                                           `\n${member.user.username}, please read through the rules` + ((welcomeChannel != null) ? ` in ${welcomeChannel}` : ``) + 
-                                                           ` and assign yourself a nickname in the format "FirstName LastInitial", e.g. "/nick Suzy Q".`);
+                                                           `\n${member.user.username}, please read through the rules` + ((welcomeChannel != null) ? ` in ${welcomeChannel}.` : `.`) + 
+                                                           `\nIf you have any questions, please feel free to mention ${moderatorRole} in ${helpChannel} and we can assist you.`);
     } catch (err) {
         console.log("Error on guildMemberAdd event:\n" + err.message + " " + err.fileName + " " + err.lineNumber);
     }
