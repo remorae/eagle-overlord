@@ -61,6 +61,7 @@ export interface ClientSettings {
   token: string;
   botID: string;
   botCreatorID: string;
+  botCreatorName: string;
   servers: ServerSettings[];
   jdoodle: JDoodleSettings;
   defaultCommandPrefix: string;
