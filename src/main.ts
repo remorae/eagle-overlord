@@ -21,7 +21,7 @@ async function main() {
     
     new Terminal(instance);
 
-    instance.client.login(config.client.token);
+    await instance.client.login(config.client.token);
 }
 
 if (require.main === module) {

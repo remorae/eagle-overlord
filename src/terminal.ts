@@ -16,7 +16,7 @@ export class Terminal {
     }
 
     private setupEvents() {
-        this.instance.client.on(`ready`, () => {
+        this.instance.on('ready', () => {
             this.cli.prompt();
         });
         this.cli.on('line', async (line) => {
@@ -44,8 +44,7 @@ export class Terminal {
         console.log(`No longer handling server commands.`);
     }
 
-    private setActivity(this: Terminal, args: string[],
-        resolve: () => void): boolean {
+    private setActivity(this: Terminal, args: string[]) {
         if (args.length === 2) {
             console.error(`Missing argument "type".`);
         } else if (args.length === 3) {
@@ -66,18 +65,14 @@ export class Terminal {
                     type: type as ActivityType
                 });
                 console.log(`Activity set to `, presence);
-                resolve();
-                return false;
             }
             else {
                 console.error(`Unknown type "${typeArg}"`);
             }
         }
-        return true;
     }
 
-    private processActivity(this: Terminal, args: string[],
-        resolve: () => void): boolean {
+    private processActivity(this: Terminal, args: string[]) {
         if (args.length === 1) {
             const user = this.instance.client.user;
             const guild = this.instance.client.guilds.cache.first();
@@ -87,13 +82,13 @@ export class Terminal {
         } else {
             switch (args[1]) {
                 case `set`:
-                    return this.setActivity(args, resolve);
+                    this.setActivity(args);
+                    break;
                 default:
                     console.error(`Unknown argument "${args[1]}".`);
                     break;
             }
         }
-        return true;
     }
 
     private async refreshCommands(this: Terminal): Promise<void> {
@@ -101,42 +96,36 @@ export class Terminal {
     }
 
     private async processInput(this: Terminal, line: string): Promise<void> {
-        return new Promise((resolve) => {
-            let resolveImmediately = true;
-            switch (line.trim()) {
-                case 'quit':
-                case 'exit':
-                    this.exit();
-                    break;
-                case 'connect':
-                    this.connectClient();
-                    break;
-                case 'disconnect':
-                    this.disconnectClient();
-                    break;
-                case 'refresh-commands':
-                    this.refreshCommands();
-                    break;
-                default:
-                    {
-                        const args = line.split(' ');
-                        if (args.length === 0) {
-                            break;
-                        }
-                        switch (args[0]) {
-                            case `activity`:
-                                resolveImmediately = this.processActivity(args, resolve);
-                                break;
-                            default:
-                                console.error(`Unknown command.`);
-                                break;
-                        }
+        switch (line.trim()) {
+            case 'quit':
+            case 'exit':
+                this.exit();
+                break;
+            case 'connect':
+                this.connectClient();
+                break;
+            case 'disconnect':
+                this.disconnectClient();
+                break;
+            case 'refresh-commands':
+                await this.refreshCommands();
+                break;
+            default:
+                {
+                    const args = line.split(' ');
+                    if (args.length === 0) {
+                        break;
                     }
-                    break;
-            }
-            if (resolveImmediately) {
-                resolve();
-            }
-        });
+                    switch (args[0]) {
+                        case `activity`:
+                            this.processActivity(args);
+                            break;
+                        default:
+                            console.error(`Unknown command.`);
+                            break;
+                    }
+                }
+                break;
+        }
     }
 }

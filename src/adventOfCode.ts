@@ -1,4 +1,4 @@
-import { TextChannel } from 'discord.js';
+import { TextChannel, ThreadChannel } from 'discord.js';
 import { createEmbed } from './embed';
 import { ErrorFunc } from './error';
 import { NonVoiceChannel } from './types';
@@ -10,11 +10,11 @@ function getEasternTime(): Date {
     return new Date(utc.getTime() - 5 * 3600 * 1000); // -5 hours
 }
 
-export function linkCurrentAdventOfCodePage(channel: NonVoiceChannel): void {
+export async function linkCurrentAdventOfCodePage(channel: NonVoiceChannel): Promise<void> {
     const eastern = getEasternTime();
     const day = eastern.getDate();
     if (eastern.getMonth() === 11 && day <= 25) { // December 1-25
-        channel.send(`https://adventofcode.com/${eastern.getFullYear()}/day/${day}`);
+        await channel.send(`https://adventofcode.com/${eastern.getFullYear()}/day/${day}`);
     }
 }
 
@@ -43,25 +43,25 @@ function extractRemainingTime(millis: number) {
     };
 }
 
-export function displayNextUnlock(channel: NonVoiceChannel): void {
+export async function displayNextUnlock(channel: NonVoiceChannel): Promise<void> {
     const eastern = getEasternTime();
     const nextDay = new Date(Date.UTC(eastern.getUTCFullYear(), 11, ((eastern.getUTCMonth() < 11) ? 1 : eastern.getUTCDate() + 1), 0));
     const difference = nextDay.getTime() - eastern.getTime();
     const remaining = extractRemainingTime(difference);
-    channel.send(`Until next unlock: ${remaining.weeks}w ${remaining.days}d ${remaining.hours}h ${remaining.minutes}m ${remaining.seconds}s`);
+    await channel.send(`Until next unlock: ${remaining.weeks}w ${remaining.days}d ${remaining.hours}h ${remaining.minutes}m ${remaining.seconds}s`);
     if (nextAdventOfCodeWithin24Hours(eastern) && remaining.hours === 0) {
-        channel.send(`Soon: https://adventofcode.com/${eastern.getFullYear()}/day/${eastern.getDate() + 1}`);
+        await channel.send(`Soon: https://adventofcode.com/${eastern.getFullYear()}/day/${eastern.getDate() + 1}`);
     }
 }
 
-export async function displayLeaderboard(channel: TextChannel, year: string,
+export async function displayLeaderboard(channel: TextChannel | ThreadChannel, year: string,
     reportError: ErrorFunc): Promise<void> {
     const server = findServer(channel.guild);
     const aocYearInfo = server
         ? server.adventOfCode.find(info => info.year === year)
         : null;
     if (!aocYearInfo) {
-        channel.send(`Invalid year.`);
+        await channel.send(`Invalid year.`);
         return;
     }
     try {
@@ -85,8 +85,9 @@ export async function displayLeaderboard(channel: TextChannel, year: string,
             timeZone: 'America/Los_Angeles'
         });
         const embed = createEmbed(`${year} Leaderboard - ${now} UTC`, 0x990000, board);
-        channel.send({ embeds: [embed] });
-    } catch (e) {
-        reportError(e);
+        await channel.send({ embeds: [embed] });
+    }
+    catch (e) {
+        await reportError(e);
     }
 }

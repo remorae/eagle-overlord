@@ -1,4 +1,4 @@
-import { Message, GuildMember, TextChannel, PermissionString, NewsChannel } from 'discord.js';
+import { Message, GuildMember, TextChannel, PermissionString, NewsChannel, TextBasedChannels, ThreadChannel } from 'discord.js';
 import { parseCachedUser, parseCachedChannel, parseCachedRole, getAuthorMember, getCachedChannel } from './utils';
 import { CommandSettings, findServer } from './settings';
 import { changeRolesForMember, processAddRole } from './roles';
@@ -11,10 +11,10 @@ import { handleEmbed } from './embed';
 import { displayHelpMessage } from './help';
 import { ErrorFunc } from './error';
 import { NonVoiceChannel } from './types';
-import * as config from './config.json'
-import * as path from 'path'
+import * as config from './config.json';
+import * as path from 'path';
 
-function listCommands(message: Message): void {
+async function listCommands(message: Message): Promise<void> {
     const server = findServer(message.guild);
     const commands = server ? server.commands : config.legacy.commands;
 
@@ -46,93 +46,78 @@ function listCommands(message: Message): void {
         const remaining = (Number.parseInt(i) < visibleCommands.length - 1);
         commandList += `${visibleCommands[i].symbol}${(remaining ? `, ` : ``)}`;
     }
-    message.channel.send(`Current commands: ${commandList}`);
+    await message.channel.send(`Current commands: ${commandList}`);
 }
 
-export function handleNonCommand(message: Message): void {
+export async function handleNonCommand(message: Message): Promise<void> {
     const matches = message.content.match(/(^|[^\w]+)\/r\/\w+/i);
     if (matches) {
         const url = matches[0].trim().toLowerCase();
-        message.channel.send(`<http://www.reddit.com${url}>`);
+        await message.channel.send(`<http://www.reddit.com${url}>`);
     }
 }
 
-function getID(message: Message, args: string[]): void {
+async function getID(message: Message, args: string[]): Promise<void> {
     if (args.length < 2) {
-        message.channel.send(`Missing parameter(s). See \`!help getID\` for more info.`);
+        await message.channel.send(`Missing parameter(s). See \`!help getID\` for more info.`);
         return;
     }
     switch (args[0]) {
         case `user`: {
-            const getUserID = () => {
-                const gm = parseCachedUser(message, args[1]);
-                if (!gm)
-                    message.author.send(`User not found.`);
-                else if (gm instanceof GuildMember)
-                    message.author.send(`User ${args[1]}: ${gm.id}`);
-            };
             if (message.guild) {
-                message.guild.members.fetch().then(getUserID);
+                await message.guild.members.fetch();
             }
-            else {
-                getUserID();
-            }
+            const gm = await parseCachedUser(message, args[1]);
+            if (!gm)
+                await message.author.send(`User not found.`);
+            else if (gm instanceof GuildMember)
+                await message.author.send(`User ${args[1]}: ${gm.id}`);
             break;
         }
         case `channel`: {
-            const getChannelID = () => {
-                const channel = parseCachedChannel(message, args[1]);
-                if (!channel)
-                    message.author.send(`Channel not found.`);
-                else
-                    message.author.send(`Channel ${args[1]}: ${channel.id}`);
-            };
             if (message.guild) {
-                message.guild.channels.fetch().then(getChannelID);
+                await message.guild.channels.fetch();
             }
-            else {
-                getChannelID();
-            }
+            const channel = parseCachedChannel(message, args[1]);
+            if (!channel)
+                await message.author.send(`Channel not found.`);
+            else
+                await message.author.send(`Channel ${args[1]}: ${channel.id}`);
             break;
         }
         case `role`: {
-            const getRoleID = () => {
-                const role = parseCachedRole(message.guild!, args[1]);
-                if (!role)
-                    message.author.send(`Role not found.`);
-                else
-                    message.author.send(`Role ${args[1]}: ${role.id}`);
-            };
             if (message.guild) {
-                message.guild.roles.fetch().then(getRoleID);
+                await message.guild.roles.fetch();
             }
-            else {
-                getRoleID();
-            }
+            const role = parseCachedRole(message.guild!, args[1]);
+            if (!role)
+                await message.author.send(`Role not found.`);
+            else
+                await message.author.send(`Role ${args[1]}: ${role.id}`);
             break;
         }
     }
 }
 
-export function handleCommand(givenCommand: CommandSettings,
-    message: Message, reportError: ErrorFunc): void {
+export async function handleCommand(givenCommand: CommandSettings,
+    message: Message, reportError: ErrorFunc): Promise<void> {
     const authorMember = getAuthorMember(message);
 
     if (givenCommand.requiresGuild) {
         if (!message.guild) {
-            message.reply(`the given command requires a guild. Please make sure you aren't using this command in a private message.`);
+            await message.reply(`the given command requires a guild. Please make sure you aren't using this command in a private message.`);
             return;
         }
 
         if (!authorMember) {
-            reportError(`Could not get GuildMember: ${message.author.id}`);
+            await reportError(`Could not get GuildMember: ${message.author.id}`);
             return;
         }
 
         for (const permission of givenCommand.permissions) {
             const required = permission as PermissionString;
             if (!authorMember.permissions.has(required)) {
-                message.reply(`you do not have permission to use this command.`);
+                await message.reply(`you do not have permission to use this command.`);
                 return;
             }
         }
@@ -147,127 +132,126 @@ export function handleCommand(givenCommand: CommandSettings,
 
     switch (givenCommand.name) {
         case `helpCommand`:
-            displayHelpMessage(message, args);
+            await displayHelpMessage(message, args);
             break;
         case `aboutCommand`:
             {
                 // eslint-disable-next-line @typescript-eslint/no-var-requires
                 const infoFile = require(path.resolve(require.main!.filename, '..', 'package.json'));
-                message.channel.send(`Currently running on version ${infoFile.version}. Created in 2021 by ${config.legacy.botCreatorName}.`);
+                await message.channel.send(`Currently running on version ${infoFile.version}. Created in 2021 by ${config.legacy.botCreatorName}.`);
             }
             break;
         case `listCommandsCommand`:
-            listCommands(message);
+            await listCommands(message);
             break;
         case `addRoleCommand`:
         case `removeRoleCommand`: {
             if (!authorMember) {
-                reportError(`Could not get GuildMember: ${message.author.id}`);
+                await reportError(`Could not get GuildMember: ${message.author.id}`);
                 return;
             }
             const adding = (givenCommand.name === `addRoleCommand`);
-            changeRolesForMember(authorMember, message, args, adding, false, true, true, reportError);
+            await changeRolesForMember(authorMember, message, args, adding, false, true, true, reportError);
             break;
         }
         case `addRoleToOtherCommand`:
         case `removeRoleFromOtherCommand`: {
             if (args.length < 1) {
-                message.channel.send(`Missing argument(s).`);
+                await message.channel.send(`Missing argument(s).`);
                 return;
             }
-            message.guild?.members.fetch().then(() => {
-                const member = parseCachedUser(message, args[0]);
-                const adding = (givenCommand.name === `addRoleToOtherCommand`);
-                if (member) {
-                    const allowPings = member instanceof GuildMember;
-                    changeRolesForMember(member, message, args, adding, true, false, allowPings, reportError);
-                }
-            });
+            await message.guild?.members.fetch();
+            const member = await parseCachedUser(message, args[0]);
+            const adding = (givenCommand.name === `addRoleToOtherCommand`);
+            if (member) {
+                const allowPings = member instanceof GuildMember;
+                await changeRolesForMember(member, message, args, adding, true, false, allowPings, reportError);
+            }
             break;
         }
         case `testWelcomeCommand`: {
             if (args.length < 1) {
-                message.channel.send(`Missing argument(s).`);
+                await message.channel.send(`Missing argument(s).`);
                 return;
             }
-            message.guild?.members.fetch().then(() => {
-                const member = parseCachedUser(message, args[0]);
-                if (member instanceof GuildMember) {
-                    welcome(member, reportError);
-                }
-            });
+            await message.guild?.members.fetch();
+            const member = await parseCachedUser(message, args[0]);
+            if (member instanceof GuildMember) {
+                await welcome(member, reportError);
+            }
             break;
         }
         case `acmCommand`:
-            handleACM(message, args);
+            await handleACM(message, args);
             break;
         case `getIDCommand`:
-            getID(message, args);
+            await getID(message, args);
             break;
         case `shrugCommand`:
-            message.channel.send(`¯\\_(ツ)_/¯`);
+            await message.channel.send(`¯\\_(ツ)_/¯`);
             break;
         case `sayCommand`: {
             if (args.length === 0) {
-                message.channel.send(`Missing message. See \`!help say\` for more info.`);
+                await message.channel.send(`Missing message. See \`!help say\` for more info.`);
                 return;
             }
-            const getChannel = () => {
-                if (args.length > 1) {
-                    if (!message.guild) {
-                        message.channel.send(`Not in a guild; can't !say something in a different channel.`)
-                        return Promise.reject();
-                    }
-                    return Promise.resolve(getCachedChannel(message.guild, args[1]) as TextChannel);
+            let channel: TextBasedChannels | null = null;
+            if (args.length > 1) {
+                if (!message.guild) {
+                    await message.channel.send(`Not in a guild; can't !say something in a different channel.`);
                 }
-                return Promise.resolve(message.channel);
-            };
-            getChannel()
-            .then((channel) => {
+                else {
+                    const specifiedChannel = getCachedChannel(message.guild, args[1]);
+                    if (specifiedChannel instanceof TextChannel || specifiedChannel instanceof ThreadChannel) {
+                        channel = specifiedChannel;
+                    }
+                    else {
+                        await message.channel.send(`Invalid channel "${args[1]}".`);
+                        channel = null;
+                    }
+                }
+            }
+            else {
+                channel = message.channel;
+            }
+            if (channel) {
                 const msg = args[0].replace(/"/g, ``);
-                channel.send(msg);
-            })
-            .catch(() => {
-                message.channel.send(`There is no channel "${args[1]}".`)
-            });
+                await channel.send(msg);
+            }
             break;
         }
         case `hungCommand`:
             if (message.author.id === config.legacy.hungID) {
-                message.author.send(`Hello there.`);
+                await message.author.send(`Hello there.`);
             } else {
-                message.channel.send(`No.`);
+                await message.channel.send(`No.`);
             }
             break;
         case `stuCommand`:
             if (message.author.id === config.legacy.stuID) {
-                message.author.send(`ʕ •ᴥ•ʔ All aboard Stu's Happyland Express ʕ •ᴥ•ʔ`);
+                await message.author.send(`ʕ •ᴥ•ʔ All aboard Stu's Happyland Express ʕ •ᴥ•ʔ`);
             } else {
-                message.channel.send(`Stu.`);
+                await message.channel.send(`Stu.`);
             }
             break;
         case `compileCommand`:
-            doCompileCommand(message, args, reportError);
+            await doCompileCommand(message, args, reportError);
             break;
         case `cscCommand`:
-            handleCSC(message, args);
+            await handleCSC(message, args);
             break;
         case `grantRoleCommand`:
-            processAddRole(message, args, reportError);
+            await processAddRole(message, args, reportError);
             break;
         case `adventOfCodeCommand`:
             if (args.length == 0 && !(message.channel instanceof NewsChannel)) {
-                const showSummary = (fullChannel: NonVoiceChannel) => {
-                    linkCurrentAdventOfCodePage(fullChannel);
-                    displayNextUnlock(fullChannel);
-                };
-                if (message.channel.partial) {
-                    message.channel.fetch()
-                    .then(showSummary)
-                    .catch(reportError)
+                try {
+                    const fullChannel = await message.channel.fetch() as NonVoiceChannel;
+                    await linkCurrentAdventOfCodePage(fullChannel);
+                    await displayNextUnlock(fullChannel);
                 }
-                else {
-                    showSummary(message.channel);
+                catch (e) {
+                    await reportError(e);
                 }
             } else {
                 switch (args[0]) {
@@ -282,17 +266,17 @@ export function handleCommand(givenCommand: CommandSettings,
                             if (args.length > 1) {
                                 year = args[1];
                             }
-                            displayLeaderboard(message.channel as TextChannel, year, reportError);
+                            await displayLeaderboard(message.channel as (TextChannel | ThreadChannel), year, reportError);
                         }
                         break;
                 }
             }
             break;
         case `embedCommand`:
-            handleEmbed(message, args, reportError);
+            await handleEmbed(message, args, reportError);
             break;
         default:
-            reportError(`Bad command name: ${givenCommand.name}`);
+            await reportError(`Bad command name: ${givenCommand.name}`);
             break;
     }
 }

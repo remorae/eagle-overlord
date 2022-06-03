@@ -10,15 +10,15 @@ export function createEmbed(title: string, color: ColorResolvable,
         .setDescription(description);
 }
 
-export function handleEmbed(message: Message, args: string[],
-    reportError: ErrorFunc): void {
+export async function handleEmbed(message: Message, args: string[],
+    reportError: ErrorFunc): Promise<void> {
     if (args.length < 4) {
-        message.channel.send(`Missing message. See \`!help embed\` for more info.`)
+        await message.channel.send(`Missing message. See \`!help embed\` for more info.`)
         return;
     }
     const destChannel = parseCachedChannel(message, args[0]) as TextChannel;
     if (!destChannel) {
-        message.channel.send(`Invalid channel.`);
+        await message.channel.send(`Invalid channel.`);
         return;
     }
     const title = args[1].replace(/(^"|"$)/g, ``);
@@ -30,10 +30,19 @@ export function handleEmbed(message: Message, args: string[],
     const embed = createEmbed(title, color, descStr);
 
     if (toEdit) {
-        destChannel.messages.fetch(toEdit)
-            .then((msg: Message) => msg.edit({ embeds: [embed] }).catch(reportError))
-            .catch(() => message.channel.send(`Invalid message to edit.`));
+        try {
+            const msg = await destChannel.messages.fetch(toEdit);
+            try {
+                await msg.edit({ embeds: [embed] });
+            }
+            catch (e) {
+                await reportError(e);
+            }
+        }
+        catch (_) {
+            await message.channel.send(`Invalid message to edit.`);
+        }
     } else {
-        destChannel.send({ embeds: [embed] });
+        await destChannel.send({ embeds: [embed] });
     }
 }
