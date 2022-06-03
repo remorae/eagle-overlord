@@ -4,9 +4,9 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 export interface Command {
-    build(builder: SlashCommandBuilder): void,
+    build(builder: SlashCommandBuilder): Promise<void>,
     getPermissions(guild: Guild, permissions: ApplicationCommandPermissionData[]): Promise<void>,
-    execute(interaction: CommandInteraction): Promise<void>
+    execute(interaction: CommandInteraction): Promise<void>;
 }
 
 export function commandRolePermission(role: string, allow: boolean): ApplicationCommandPermissionData {
@@ -29,14 +29,16 @@ export function rolesWithPermissions(guild: Guild, permissions: PermissionResolv
     return guild.roles.cache.filter(r => r.permissions.has(permissions)).values();
 }
 
-export async function getCommandsOnDisk(): Promise<Command[]> {
+export async function getCommandsOnDisk(reload: boolean = true): Promise<Command[]> {
     const commandsDir = path.resolve(path.dirname(require.main!.filename), 'client', 'commands');
     const commandFiles = (await fs.promises.readdir(commandsDir)).filter(file => file.endsWith('.js'));
     return commandFiles.map(file => {
         const commandPath = path.resolve(commandsDir, file);
-        // Update command in memory if the .js file has been modified (may need to hotfix things without restarting the bot)
-        delete require.cache[commandPath];
+        if (reload) {
+            // Update command in memory if the .js file has been modified (may need to hotfix things without restarting the bot)
+            delete require.cache[commandPath];
+        }
         // eslint-disable-next-line @typescript-eslint/no-var-requires
-        return require(commandPath).getCommand() as Command;
+        return require(commandPath).command as Command;
     });
 }

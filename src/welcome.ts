@@ -1,5 +1,5 @@
 import { GuildMember, TextChannel } from 'discord.js';
-import { getCachedChannel, parseCachedRole } from './utils';
+import { getCachedChannel } from './utils';
 import { ErrorFunc } from './error';
 import { findServer } from './settings';
 
@@ -17,14 +17,12 @@ export async function welcome(member: GuildMember, reportError: ErrorFunc): Prom
     generalChannel.send(`${member.user} has logged on!` +
         `\nPlease take a look at ${welcomeChannel} before you get started.`);
 
-    member.guild.roles.fetch().then(() => {
-        for (const defaultRole of server.defaultRoles) {
-            const role = parseCachedRole(member.guild, defaultRole);
-            if (!role) {
-                continue;
-            }
-            member.roles.add(role)
-                .catch(reportError);
+    await member.guild.roles.fetch();
+    for (const defaultRole of server.defaultRoles) {
+        const role = member.guild.roles.cache.get(defaultRole);
+        if (!role) {
+            continue;
         }
-    });
+        await member.roles.add(role).catch(reportError);
+    }
 }
