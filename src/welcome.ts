@@ -3,7 +3,7 @@ import { getCachedChannel, parseCachedRole } from './utils';
 import { ErrorFunc } from './error';
 import { findServer } from './settings';
 
-export function welcome(member: GuildMember, reportError: ErrorFunc): void {
+export async function welcome(member: GuildMember, reportError: ErrorFunc): Promise<void> {
     const server = findServer(member.guild);
     if (!server) {
         return;

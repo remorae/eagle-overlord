@@ -2,8 +2,8 @@ import { MessageReaction, GuildMember } from 'discord.js';
 import { ErrorFunc } from './error';
 import { findServer } from './settings';
 
-export function handleReaction(reaction: MessageReaction,
-    member: GuildMember, added: boolean, reportError: ErrorFunc): void {
+export async function handleReaction(reaction: MessageReaction,
+    member: GuildMember, added: boolean, reportError: ErrorFunc): Promise<void> {
     const roleIDToToggle = roleIDFromReaction(reaction);
 
     if (!roleIDToToggle) {
@@ -15,14 +15,22 @@ export function handleReaction(reaction: MessageReaction,
     if (added && !memberRole) {
         const guildRole = member.guild.roles.cache.find(r => r.id === roleIDToToggle);
         if (guildRole) {
-            member.roles.add(guildRole)
-                .catch(reportError);
+            try {
+                await member.roles.add(guildRole);
+            }
+            catch (e) {
+                await reportError(e);
+            }
         } else {
-            reportError(`Role id not found for reaction: ${roleIDToToggle}, ${reaction}`);
+            await reportError(`Role id not found for reaction: ${roleIDToToggle}, ${reaction}`);
         }
     } else if (memberRole) {
-        member.roles.remove(memberRole)
-            .catch(reportError);
+        try {
+            await member.roles.remove(memberRole);
+        }
+        catch (e) {
+            await reportError(e);
+        }
     }
 }
 

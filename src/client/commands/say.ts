@@ -34,7 +34,7 @@ class Say implements Command {
         }
         if (channel instanceof TextChannel) {
             await channel.send(message);
-            await interaction.reply({ content: 'Done!', ephemeral: true });
+            await interaction.reply({ content: 'Done 2!', ephemeral: true });
             }
         else {
             await interaction.reply({ content: 'Channel is not a text channel.', ephemeral: true });

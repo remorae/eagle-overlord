@@ -3,11 +3,11 @@ import { findServer } from './settings';
 import { getCachedChannel, giveCaseWarning } from './utils'
 import * as config from './config.json'
 
-export function displayHelpMessage(message: Message, args: string[]): void {
+export async function displayHelpMessage(message: Message, args: string[]): Promise<void> {
     const server = findServer(message.guild);
     if (args.length === 0) {
         const helpChannel = (server) ? getCachedChannel(message.guild!, server.helpChannel) : null;
-        message.channel.send(`If you'd like help with specific command syntax, please use \`!help <commandName>\`.` +
+        await message.channel.send(`If you'd like help with specific command syntax, please use \`!help <commandName>\`.` +
             `\nIf you'd like to see available commands, please use \`!commands\`.` +
             (helpChannel ? `\nIf you need help with Discord or something not specific to a class, please ask a question in ${helpChannel}.` : ``));
     } else {
@@ -16,13 +16,13 @@ export function displayHelpMessage(message: Message, args: string[]): void {
         for (const command of commands) {
             if (commandArg.toLowerCase() === `${command.symbol}`.toLowerCase()) {
                 if (commandArg === command.symbol) {
-                    message.channel.send(`Usage: ${command.usage}\nInfo: ${command.info}`);
+                    await message.channel.send(`Usage: ${command.usage}\nInfo: ${command.info}`);
                 } else {
-                    giveCaseWarning(message, command.symbol);
+                    await giveCaseWarning(message, command.symbol);
                 }
                 return;
             }
         }
-        message.channel.send(`Unrecognized command. See !help for more information or !commands for a list of valid commands.`);
+        await message.channel.send(`Unrecognized command. See !help for more information or !commands for a list of valid commands.`);
     }
 }

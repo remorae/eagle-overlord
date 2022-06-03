@@ -1,5 +1,7 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
 import { ApplicationCommandPermissionData, CommandInteraction, Guild, PermissionResolvable, Role } from "discord.js";
+import * as path from 'path';
+import * as fs from 'fs';
 
 export interface Command {
     build(builder: SlashCommandBuilder): void,
@@ -25,4 +27,13 @@ export function commandUserPermission(user: string, allow: boolean): Application
 
 export function rolesWithPermissions(guild: Guild, permissions: PermissionResolvable): IterableIterator<Role> {
     return guild.roles.cache.filter(r => r.permissions.has(permissions)).values();
+}
+
+export async function getCommandsOnDisk(): Promise<Command[]> {
+    const commandsDir = path.resolve(path.dirname(require.main!.filename), 'client', 'commands');
+    const commandFiles = (await fs.promises.readdir(commandsDir)).filter(file => file.endsWith('.js'));
+    return commandFiles.map(file => {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        return require(path.resolve(commandsDir, file)).command as Command;
+    });
 }

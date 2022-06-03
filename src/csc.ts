@@ -3,15 +3,15 @@ import { getCachedRole, hasRole } from './roles';
 import { findServer } from './settings';
 import { getAuthorMember, getCachedChannel } from './utils';
 
-export function handleCSC(message: Message, args: string[]): void {
+export async function handleCSC(message: Message, args: string[]): Promise<void> {
     if (args.length < 1) {
-        message.channel.send(`Missing parameter. Use \`!help csc\` for more info.`);
+        await message.channel.send(`Missing parameter. Use \`!help csc\` for more info.`);
         return;
     }
 
     const server = findServer(message.guild);
     if (!server) {
-        message.channel.send(`This command requires a guild.`);
+        await message.channel.send(`This command requires a guild.`);
         return;
     }
     const author = getAuthorMember(message);
@@ -20,19 +20,19 @@ export function handleCSC(message: Message, args: string[]): void {
         case `info`:
             {
                 const cscGeneralChannel = getCachedChannel(message.guild!, server.cscGeneralChannel);
-                message.channel.send(`CSC stands for Cyber Security Club. See ${cscGeneralChannel} for more info.`);
+                await message.channel.send(`CSC stands for Cyber Security Club. See ${cscGeneralChannel} for more info.`);
             }
             return;
         case `join`:
             if (role && author && !hasRole(author, role)) {
-                author.roles.add(role);
-                author.send(`Welcome to the CSC!`);
+                await author.roles.add(role);
+                await author.send(`Welcome to the CSC!`);
             }
             break;
         case `leave`:
             if (role && author && hasRole(author, role)) {
-                author?.roles.add(role);
-                author?.send(`The CSC will miss you.`);
+                await author?.roles.remove(role);
+                await author?.send(`The CSC will miss you.`);
             }
             break;
     }

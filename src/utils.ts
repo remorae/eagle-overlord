@@ -1,13 +1,13 @@
 import { Message, Guild, GuildMember, Role, GuildChannel, ThreadChannel, User } from 'discord.js';
 import { getCachedRole } from './roles';
 
-export function parseCachedUser(message: Message, arg: string): GuildMember | Iterable<GuildMember> | null {
+export async function parseCachedUser(message: Message, arg: string): Promise<GuildMember | Iterable<GuildMember> | null> {
     if (message.guild == null) {
-        message.channel.send(`This command requires a guild.`);
+        await message.channel.send(`This command requires a guild.`);
         return null;
     }
     if (arg == null) {
-        message.channel.send(`You must enter a user.`);
+        await message.channel.send(`You must enter a user.`);
         return null;
     }
     if (arg === `all`) {
@@ -52,8 +52,8 @@ export function parseCachedChannel(message: Message, arg: string): GuildChannel 
     return ch ? ch : null;
 }
 
-export function giveCaseWarning(message: Message, symbol: string): void {
-    message.reply(`did you mean "${symbol}"? Commands are cASe-SeNsiTIvE.`);
+export async function giveCaseWarning(message: Message, symbol: string): Promise<void> {
+    await message.reply(`did you mean "${symbol}"? Commands are cASe-SeNsiTIvE.`);
 }
 
 export function getCachedMember(guild: Guild, user: string | User): GuildMember | null {
