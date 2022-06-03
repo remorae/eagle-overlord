@@ -27,5 +27,9 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
     - run: npm ci
+    - shell: bash
+      env:
+        CONFIG_JSON_CONTENTS: ${{ secrets.CONFIG_JSON_CONTENTS }}
+      run: echo "$CONFIG_JSON_CONTENTS" > src/config.json
     - run: npm run build --if-present
     - run: npm test
