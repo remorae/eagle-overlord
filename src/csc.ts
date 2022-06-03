@@ -1,5 +1,7 @@
 import { Message } from 'discord.js';
-import { ClientSettings } from './settings';
+import { getCachedRole, hasRole } from './roles';
+import { ClientSettings, findServer } from './settings';
+import { getAuthorMember, getCachedChannel } from './utils';
 
 export function handleCSC(message: Message, args: string[],
     settings: ClientSettings): void {
@@ -8,30 +10,28 @@ export function handleCSC(message: Message, args: string[],
         return;
     }
 
-    const server = message.guild
-        ? settings.servers.find(s => s.id == message.guild?.id)
-        : null;
+    const server = findServer(settings, message.guild);
     if (!server) {
         message.channel.send(`This command requires a guild.`);
         return;
     }
-    const member = message.guild?.members.cache.get(message.author.id);
-    const role = message.guild?.roles.cache.get(server.cscRole);
+    const author = getAuthorMember(message);
+    const role = getCachedRole(message.guild!, server.cscRole);
     switch (args[0].toLowerCase()) {
         case `info`:
-            const cscGeneralChannel = message.guild?.channels.cache.get(server.cscGeneralChannel);
+            const cscGeneralChannel = getCachedChannel(message.guild!, server.cscGeneralChannel);
             message.channel.send(`CSC stands for Cyber Security Club. See ${cscGeneralChannel} for more info.`);
             return;
         case `join`:
-            if (role && !member?.roles.cache.get(role.id)) {
-                member?.roles.add(role);
-                member?.send(`Welcome to the CSC!`);
+            if (role && author && !hasRole(author, role)) {
+                author.roles.add(role);
+                author.send(`Welcome to the CSC!`);
             }
             break;
         case `leave`:
-            if (role && member?.roles.cache.get(role.id)) {
-                member?.roles.add(role);
-                member?.send(`The CSC will miss you.`);
+            if (role && author && hasRole(author, role)) {
+                author?.roles.add(role);
+                author?.send(`The CSC will miss you.`);
             }
             break;
     }

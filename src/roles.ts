@@ -1,5 +1,5 @@
 import { parseRole } from './utils';
-import { Message, TextChannel, GuildMember, Role } from 'discord.js';
+import { Message, TextChannel, GuildMember, Role, Guild, RoleResolvable } from 'discord.js';
 import { ClientSettings } from './settings';
 import { ErrorFunc } from './error';
 
@@ -27,8 +27,12 @@ function addRole(channel: TextChannel, member: GuildMember, role: Role, allowPin
     }
 }
 
+export function hasRole(member: GuildMember, role: Role): boolean {
+    return member.roles.cache.some((toFind: Role) => toFind.id === role.id);
+}
+
 function removeRole(channel: TextChannel, member: GuildMember, role: Role, allowPings: boolean, reportError: ErrorFunc): void {
-    if (member.roles.cache.some((toFind: Role) => toFind.id === role.id)) {
+    if (hasRole(member, role)) {
         member.roles.remove(role)
             .then((member: GuildMember) => {
                 if (allowPings) {
@@ -125,4 +129,8 @@ export function processAddRole(message: Message, args: string[], settings: Clien
     } else {
         message.channel.send(`Invalid role.`);
     }
+}
+
+export function getCachedRole(guild: Guild, role: string): Role | null {
+    return guild.roles.cache.get(role) ?? null;
 }
