@@ -1,15 +1,17 @@
 {
   "name": "eagle-overlord",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Your friendly neighborhood killer avian robot",
-  "main": "bot.js",
+  "main": "main.js",
   "scripts": {
-    "test": "jasmine"
+    "test": "jasmine",
+    "build": "tsc"
   },
   "author": "natrastellar",
   "license": "MIT",
   "dependencies": {
-    "discord.js": "^11.4.2",
+    "@types/node": "^12.12.8",
+    "discord.js": "^11.5.1",
     "readline": "^1.3.0",
     "request": "^2.83.0",
     "strip-ansi": "^4.0.0"
