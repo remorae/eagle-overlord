@@ -1,12 +1,16 @@
-import { Client, Message, PartialMessage, User, PartialUser, MessageReaction, PartialMessageReaction, GuildMember, TextChannel, Interaction, Collection, ApplicationCommandPermissionData, Awaited } from 'discord.js';
+import { Command, getCommandsOnDisk } from './client/command';
 import { handleCommand, handleNonCommand } from './commands';
 import * as config from './config.json';
 import { handleReaction } from './reactions';
-import { welcome } from './welcome';
-import { getCachedChannel, giveCaseWarning } from './utils';
-import { Command, getCommandsOnDisk } from './client/command';
-import { SlashCommandBuilder } from '@discordjs/builders';
 import { findServer } from './settings';
+import { Terminal } from './terminal';
+import { getCachedChannel, giveCaseWarning } from './utils';
+import { welcome } from './welcome';
+
+import { Client, Message, PartialMessage, User, PartialUser, MessageReaction, PartialMessageReaction, GuildMember, TextChannel, Interaction, Collection, ApplicationCommandPermissionData, CommandInteraction } from 'discord.js';
+import { SlashCommandBuilder } from '@discordjs/builders';
+import { REST } from '@discordjs/rest';
+import { Routes } from 'discord-api-types/v9';
 import { EventEmitter } from 'node:events';
 
 export interface ClientInstanceEvents {
@@ -15,7 +19,9 @@ export interface ClientInstanceEvents {
 
 export class ClientInstance extends EventEmitter {
     public shouldRespond = true;
-    private commands: Collection<string, Command> = new Collection()
+    private commands: Collection<string, Command> = new Collection();
+    private rest = new REST({ version: '9' }).setToken(config.client.token);
+    public terminal: Terminal | null = null;
 
     public constructor(public client: Client) {
         super();
@@ -26,14 +32,74 @@ export class ClientInstance extends EventEmitter {
         this.commands.clear();
         for (const command of await getCommandsOnDisk()) {
             const builder = new SlashCommandBuilder();
-            command.build(builder);
+            await command.build(builder);
             this.commands.set(builder.name, command);
         }
         console.log(`Found ${this.commands.size} commands.`);
     }
-    
-    public on<K extends keyof ClientInstanceEvents>(event: K, listener: (...args: ClientInstanceEvents[K]) => Awaited<void>): this {
-        return super.on(event, async (...args) => await listener(...args as ClientInstanceEvents[K]));
+
+    public async deployCommands(this: ClientInstance, global: boolean = false) {
+        try {
+            // Global commands are cached; only guaranteed to be up-to-date after an hour
+            const route = (global) ? Routes.applicationCommands(config.client.id) : Routes.applicationGuildCommands(config.client.id, config.client.devGuildId);
+            await this.rest.put(
+                route,
+                {
+                    body: await Promise.all(this.commands.map(async (command) => {
+                        const builder = new SlashCommandBuilder();
+                        await command.build(builder);
+                        return builder.toJSON();
+                    }))
+                },
+            );
+        }
+        catch (err) {
+            this.reportError(err, "pushCommands");
+        }
+    }
+
+    public async setCommandPermissions(this: ClientInstance) {
+        /* TODO Discord API prevents permissions.set from working w/o bearer token instead of bot token.
+            No Discord.js API for setting default command permissions yet (which would be sufficient for current use cases)
+            https://github.com/discordjs/discord.js/issues/7856
+            https://discord.com/developers/docs/topics/oauth2#client-credentials-grant
+            https://discord.com/developers/docs/interactions/application-commands#application-command-permissions-object-using-default-permissions
+        */
+
+        // await this.client.guilds.fetch();
+        // for (const guild of this.client.guilds.cache.values()) {
+        //     await guild.commands.fetch();
+        //     await guild.roles.fetch();
+        //     await guild.members.fetch();
+        //     for (const [name, command] of this.commands) {
+        //         const permissions: ApplicationCommandPermissionData[] = [];
+        //         await command.getPermissions(guild, permissions);
+        //         if (permissions.length == 0) {
+        //             continue;
+        //         }
+        //         const guildCommand = guild.commands.cache.find(c => c.applicationId == this.client.application?.id && c.name == name);
+        //         await guildCommand?.permissions.set({ permissions });
+        //     }
+        // }
+    }
+
+    public async reportError(this: ClientInstance, message: Error | string, context?: string): Promise<void> {
+        if (message instanceof Error) {
+            message = `${message.message}\n${message.stack}`;
+        }
+        if (context && context.length > 0) {
+            message = `${message}\n"Context: ${context}`;
+        }
+        try {
+            const creator = await this.client.users.fetch(config.client.developerUserId);
+            await creator.send(message as string);
+            console.error(message);
+            this.terminal?.prompt();
+        }
+        catch (err) {
+            console.error(message, err);
+            this.terminal?.prompt();
+        }
     }
 
     private setupEvents(this: ClientInstance) {
@@ -44,25 +110,53 @@ export class ClientInstance extends EventEmitter {
         this.client.on(`messageReactionRemove`, async (reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) => await this.onReactionToggled(reaction, user, false));
         this.client.on(`messageUpdate`, async (_oldMessage: Message | PartialMessage, newMessage: Message | PartialMessage) => {
             try {
+                if (newMessage.author?.bot) {
+                    return;
+                }
                 await this.processMessage(await newMessage.fetch());
             }
             catch (error) {
                 await this.reportError(error, "`messageUpdate` event");
             }
         });
-        this.client.on(`interactionCreate`, async (interaction) => await this.handleInteraction(interaction))
+        this.client.on(`interactionCreate`, async (interaction) => await this.handleInteraction(interaction));
         this.client.on(`ready`, async () => await this.onReady());
+    }
+
+    private async allowInteraction(interaction: CommandInteraction, command: Command): Promise<boolean> {
+        if (interaction.guild) {
+            const permissions: ApplicationCommandPermissionData[] = [];
+            await command.getPermissions(interaction.guild, permissions);
+            return Promise.resolve(permissions.some((perm) => {
+                switch (perm.type) {
+                    case 'ROLE':
+                        if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
+                            return false;
+                        }
+                        return interaction.member.roles.cache.has(perm.id);
+                    case 'USER':
+                        return interaction.user.id == perm.id;
+                }
+                return false;
+            }));
+        }
+        return Promise.resolve(true);
     }
 
     private async handleInteraction(this: ClientInstance, interaction: Interaction) {
         if (!interaction.isCommand()) {
             return;
         }
-        if (!interaction.command) {
-            return;
-        }
         try {
-            const command = this.commands.get(interaction.command.name);
+            const command = this.commands.get(interaction.commandName);
+            if (command && !this.allowInteraction(interaction, command)) {
+                await interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
+                return;
+            }
+            if (interaction.guild) {
+                const permissions: ApplicationCommandPermissionData[] = [];
+                await command?.getPermissions(interaction.guild, permissions);
+            }
             await command?.execute(interaction);
         }
         catch (e) {
@@ -120,27 +214,15 @@ export class ClientInstance extends EventEmitter {
         }
     }
 
-    public async setCommandPermissions(this: ClientInstance) {
-        await this.client.guilds.fetch();
-        for (const guild of this.client.guilds.cache.values()) {
-            await guild.commands.fetch();
-            await guild.roles.fetch();
-            await guild.members.fetch();
-            for (const [name, command] of this.commands) {
-                const permissions: ApplicationCommandPermissionData[] = [];
-                command.getPermissions(guild, permissions);
-                const guildCommand = guild.commands.cache.find(c => c.applicationId == this.client.application?.id && c.name == name);
-                await guildCommand?.permissions.set({ permissions });
-            }
-        }
-    }
-
     private async onReady(this: ClientInstance) {
         console.log(`Setting up servers...`);
         await this.setupServers();
+        console.log(`Pushing commands to Discord (dev guild)...`);
+        await this.deployCommands();
         console.log(`Setting command permissions...`);
         await this.setCommandPermissions();
         console.log(`Ready!`);
+        this.terminal?.prompt();
     }
 
     private async processMessage(this: ClientInstance, message: Message): Promise<void> {
@@ -180,22 +262,6 @@ export class ClientInstance extends EventEmitter {
         }
         catch (e) {
             this.reportError(e, "processMessage");
-        }
-    }
-
-    public async reportError(this: ClientInstance, message: Error | string, context?: string): Promise<void> {
-        if (message instanceof Error) {
-            message = `${message.message}\n${message.stack}`;
-        }
-        if (context && context.length > 0) {
-            message = `${message}\n"Context: ${context}`;
-        }
-        try {
-            const creator = await this.client.users.fetch(config.legacy.botCreatorID);
-            await creator.send(message as string);
-        }
-        catch (err) {
-            console.error(message, err);
         }
     }
 }

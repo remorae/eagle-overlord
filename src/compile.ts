@@ -2,22 +2,22 @@ import { CompileLanguage } from './settings';
 import { Message } from 'discord.js';
 import { ErrorFunc } from './error';
 import * as bent from 'bent';
-import * as config from './config.json'
+import * as config from './config.json';
 
 const maxCompileResultLength = 1900;
 
 async function compile(source: string, language: CompileLanguage): Promise<{ error: unknown; output: unknown; statusCode: number; cpuTime: unknown; memory: unknown; }> {
     const request = bent('POST', 'json', 200);
     const body = await request(`https://api.jdoodle.com/v1/execute`, {
-            script: source,
-            language: language.id,
-            versionIndex: language.index,
-            clientId: config.jdoodle.id,
-            clientSecret: config.jdoodle.token
-        },
+        script: source,
+        language: language.id,
+        versionIndex: language.index,
+        clientId: config.jdoodle.id,
+        clientSecret: config.jdoodle.token
+    },
         {
             'content-type': `application/json`
-    });
+        });
     return {
         error: body.error,
         output: body.output,
@@ -78,7 +78,7 @@ export async function doCompileCommand(message: Message, args: string[], reportE
         const results = await compile(input.replace(/```/g, ``), language);
         if (results.error) {
             await reportError(`Error: ${results.error}\nStatusCode: ${results.statusCode}`);
-            await message.channel.send(`Go poke <@${config.legacy.botCreatorID}>!`);
+            await message.channel.send(`Go poke <@${config.client.developerUserId}>!`);
         } else if (results.output) {
             await message.channel.send(`Results for <@${message.author.id}>: \`\`\`${escapeString(results.output as string)}\`\`\`` +
                 `\nMemory: ${results.memory}, CPU Time: ${results.cpuTime}`);

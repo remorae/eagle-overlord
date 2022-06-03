@@ -18,8 +18,8 @@ async function main() {
     });
     const instance = new ClientInstance(client);
     await instance.setupCommands();
-    
-    new Terminal(instance);
+
+    instance.terminal = new Terminal(instance);
 
     await instance.client.login(config.client.token);
 }

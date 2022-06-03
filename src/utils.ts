@@ -1,5 +1,4 @@
-import { Message, Guild, GuildMember, Role, GuildChannel, ThreadChannel, User } from 'discord.js';
-import { getCachedRole } from './roles';
+import { Message, Guild, GuildMember, GuildChannel, ThreadChannel, User } from 'discord.js';
 
 export async function parseCachedUser(message: Message, arg: string): Promise<GuildMember | Iterable<GuildMember> | null> {
     if (message.guild == null) {
@@ -24,19 +23,6 @@ export async function parseCachedUser(message: Message, arg: string): Promise<Gu
         gm = message.guild.members.cache.find(m => m.displayName === memberName) ?? null;
     }
     return gm ? gm : null;
-}
-
-export function parseCachedRole(guild: Guild, arg: string): Role | null {
-    let role = getCachedRole(guild, arg);
-    if (!role) {
-        role = guild.roles.cache.find(r => r.name === arg) ?? null;
-    }
-    if (!role && arg.length > 2 &&
-        arg[0] === arg[arg.length - 1] &&
-        (arg[0] === `"` || arg[0] === `'` || arg[0] === '`')) {
-        role = guild.roles.cache.find(r => r.name === arg.substr(1, arg.length - 2)) ?? null;
-    }
-    return role ? role : null;
 }
 
 export function parseCachedChannel(message: Message, arg: string): GuildChannel | ThreadChannel | null {

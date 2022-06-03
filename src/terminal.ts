@@ -16,9 +16,6 @@ export class Terminal {
     }
 
     private setupEvents() {
-        this.instance.on('ready', () => {
-            this.cli.prompt();
-        });
         this.cli.on('line', async (line) => {
             try {
                 await this.processInput(line);
@@ -28,6 +25,10 @@ export class Terminal {
             }
             this.cli.prompt();
         });
+    }
+
+    public prompt(this: Terminal): void {
+        this.cli.prompt();
     }
 
     public close(this: Terminal): void {
@@ -96,8 +97,12 @@ export class Terminal {
         }
     }
 
-    private async refreshCommands(this: Terminal): Promise<void> {
+    private async refreshCommands(this: Terminal, global: boolean): Promise<void> {
+        console.log(`Setting up commands...`);
         await this.instance.setupCommands();
+        console.log(`Pushing commands to Discord...`);
+        await this.instance.deployCommands(global);
+        console.log(`Setting command permissions...`);
         await this.instance.setCommandPermissions();
         console.log(`Refreshed commands.`);
     }
@@ -115,7 +120,10 @@ export class Terminal {
                 this.disconnectClient();
                 break;
             case 'refresh-commands':
-                await this.refreshCommands();
+                await this.refreshCommands(false);
+                break;
+            case 'refresh-global-commands':
+                await this.refreshCommands(true);
                 break;
             default:
                 {
