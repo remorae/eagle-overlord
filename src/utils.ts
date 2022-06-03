@@ -1,4 +1,4 @@
-import { Message, Guild, GuildMember, Role, GuildChannel, ThreadChannel } from 'discord.js';
+import { Message, Guild, GuildMember, Role, GuildChannel, ThreadChannel, User } from 'discord.js';
 
 export function parseUser(message: Message, arg: string): GuildMember | Iterable<GuildMember> | null {
     if (message.guild == null) {
@@ -56,3 +56,18 @@ export function giveCaseWarning(message: Message, symbol: string): void {
 }
 
 export function ignoreUnused(_val: any) { }
+
+export function getCachedMember(guild: Guild, user: User): GuildMember | null {
+    return guild.members.cache.get(user.id) ?? null;
+}
+
+export function getAuthorMember(message: Message): GuildMember | null {
+    if (message.guild) {
+        return getCachedMember(message.guild, message.author);
+    }
+    return null;
+}
+
+export function getCachedChannel(guild: Guild, channel: string): GuildChannel | ThreadChannel | null {
+    return guild.channels.cache.get(channel) ?? null;
+}

@@ -1,3 +1,5 @@
+import { Guild } from "discord.js";
+
 export interface ReactionSettings {
   name: string;
   roleID: string;
@@ -29,6 +31,7 @@ export interface ServerSettings {
   generalChannel: string;
   helpChannel: string;
   acmRole: string;
+  acmLeaderRole: string;
   acmGeneralChannel: string;
   cscRole: string;
   cscCompetitionRole: string;
@@ -68,4 +71,12 @@ export interface ClientSettings {
   commands: CommandSettings[];
   hungID: string;
   stuID: string;
+}
+
+export function findServer(settings: ClientSettings, guild: Guild | null): ServerSettings | null {
+  if (!guild) {
+    return null;
+  }
+  const found = settings.servers.find((s) => s.id == guild.id);
+  return found ?? null;
 }
