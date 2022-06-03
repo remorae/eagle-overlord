@@ -37,14 +37,3 @@ export class ClientInstance extends EventEmitter {
 ```
 
 This file stores obvious secrets, specific Discord ids, and legacy command information that is being phased out.
-
-# Remaining Tasks
-
-I'm currently in the process of updating the bot to use Discord's slash commands.
-
-- [ ] Convert remaining text commands to slash commands
-- [ ] Remove unnecessary data from config.json
-- [ ] Support programmable commands from within Discord?
-- [ ] Reduce dependencies on specific IDs
-- [ ] Code cleanup
-- [ ] Fix/write tests
