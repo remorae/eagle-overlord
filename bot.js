@@ -532,7 +532,7 @@ String.prototype.escape = function() {
 
 client.on(`ready`, () => {
     console.log(`Boot sequence complete.`);
-    client.user.setActivity(`with elves`);
+    client.user.setActivity(`a smol violin`);
     const mainServer = client.guilds.get(servers.find(s => s.name === `mainServer`).id);
     if (mainServer) {
         console.log("Setting up main server...");
