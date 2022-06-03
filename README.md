@@ -2,7 +2,7 @@
 
 A Discord bot created for my old college CS Majors server.
 
-I created, hosted, and used this bot over the course of many years starting in April 2017.
+I created, hosted, and used this bot over the course of many years starting in April 2017. Since I am long since graduated, responsibility is currently shifting to active students.
 
 # Architecture
 
