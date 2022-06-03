@@ -1,10 +1,10 @@
 const Discord = require("discord.js");
-const client = new Discord.Client({autoReconnect: true});
 const infoFile = require("./package.json");
 const settingsFile = require("./Settings/settings.json");
 //const fs = require(`fs`);
 const request = require(`request`);
 const stripAnsi = require(`strip-ansi`);
+const readline = require('readline');
 
 const token = settingsFile.token;
 const botCreatorID = settingsFile.botCreatorID;
@@ -20,8 +20,13 @@ const hungID = settingsFile.hungID;
 const stuID = settingsFile.stuID;
 const cachedMessages = settingsFile.messagesToCache;
 const servers = settingsFile.servers;
-const aocURL = settingsFile.aocURL;
-const aocSession = settingsFile.aocSession;
+const aoc = settingsFile.aoc;
+
+const client = new Discord.Client({
+    autoReconnect: true
+});
+let terminal = null;
+let clientShouldRespond = true;
 
 function isValidPrefix(roleName) {
     let result = false;
@@ -61,7 +66,7 @@ function removeRole(channel, member, role, roleName, allowPings) {
     }
 }
 
-function changeRolesForMember(member, message, args, adding, isForOther, checkPrefix, allowPings) {    
+function changeRolesForMember(member, message, args, adding, isForOther, checkPrefix, allowPings) {
     if (message.guild == null) {
         message.channel.send(`Command requires a guild.`);
     }
@@ -100,15 +105,14 @@ function changeRolesForMember(member, message, args, adding, isForOther, checkPr
         if (member instanceof Array) {
             // Changing roles for multiple members
             member.forEach(guildMember => addOrRemove(message.channel, guildMember, role, roleName, allowPings));
-        }
-        else {
+        } else {
             addOrRemove(message.channel, member, role, roleName, allowPings);
         }
     }
 }
 
 function listCommands(message) {
-    let commandList = ""; 
+    let commandList = "";
     let visibleCommands = [];
     const authorMember = (message.guild != null) ? message.guild.member(message.author) : null;
 
@@ -117,7 +121,7 @@ function listCommands(message) {
             visibleCommands.push(commands[i]);
         } else if (authorMember != null) {
             let hasNeededPermissions = true;
-            commands[i].permissions.forEach(perm => { 
+            commands[i].permissions.forEach(perm => {
                 if (!authorMember.hasPermission(perm)) {
                     hasNeededPermissions = false;
                 }
@@ -135,14 +139,18 @@ function listCommands(message) {
 }
 
 function welcome(member) {
-    const welcomeChannel = member.guild.channels.get(serverChannels.find(ch => { return (ch.name === `welcome`); }).id);
-    const generalChannel = member.guild.channels.get(serverChannels.find(ch => { return (ch.name === `general`); }).id);
+    const welcomeChannel = member.guild.channels.get(serverChannels.find(ch => {
+        return (ch.name === `welcome`);
+    }).id);
+    const generalChannel = member.guild.channels.get(serverChannels.find(ch => {
+        return (ch.name === `general`);
+    }).id);
     generalChannel.send(`${member.user} has logged on!` +
-                        `\nPlease take a look at ${welcomeChannel} before you get started.`);
+        `\nPlease take a look at ${welcomeChannel} before you get started.`);
     for (let i = 0; i < defaultRoles.length; ++i) {
         const role = parseRole(member.guild, defaultRoles[i]);
         member.addRole(role)
-        .catch(err => client.fetchUser(botCreatorID).then(user => user.send(err)));
+            .catch(err => client.fetchUser(botCreatorID).then(user => user.send(err)));
     }
 }
 
@@ -151,12 +159,16 @@ function handleACM(message, args) {
         message.channel.send(`Missing parameter. Use \`!help acm\` for more info.`);
         return;
     }
-    
+
     const member = message.guild.member(message.author);
-    const role = message.guild.roles.get(serverRoles.find(role => { return role.name === `ACM Members`; }).id);
+    const role = message.guild.roles.get(serverRoles.find(role => {
+        return role.name === `ACM Members`;
+    }).id);
     switch (args[0].toLowerCase()) {
         case `info`:
-            const acmGeneralChannel = message.guild.channels.get(serverChannels.find(channel => { return channel.name === `acm-general`; }).id);
+            const acmGeneralChannel = message.guild.channels.get(serverChannels.find(channel => {
+                return channel.name === `acm-general`;
+            }).id);
             message.channel.send(`ACM stands for Association for Computing Machinery. See ${acmGeneralChannel} for more info.`);
             return;
         case `join`:
@@ -179,12 +191,16 @@ function handleCSC(message, args) {
         message.channel.send(`Missing parameter. Use \`!help csc\` for more info.`);
         return;
     }
-    
+
     const member = message.guild.member(message.author);
-    const role = message.guild.roles.get(serverRoles.find(role => { return role.name === `CSC Members`; }).id);
+    const role = message.guild.roles.get(serverRoles.find(role => {
+        return role.name === `CSC Members`;
+    }).id);
     switch (args[0].toLowerCase()) {
         case `info`:
-            const cscGeneralChannel = message.guild.channels.get(serverChannels.find(channel => { return channel.name === `csc-general`; }).id);
+            const cscGeneralChannel = message.guild.channels.get(serverChannels.find(channel => {
+                return channel.name === `csc-general`;
+            }).id);
             message.channel.send(`CSC stands for Cyber Security Club. See ${cscGeneralChannel} for more info.`);
             return;
         case `join`:
@@ -212,7 +228,7 @@ function getID(message, args) {
             const gm = parseUser(message, args[1]);
             if (gm == null)
                 message.author.send(`User not found.`);
-            else 
+            else
                 message.author.send(`User ` + args[1] + `: ` + gm.id);
             break;
         }
@@ -220,7 +236,7 @@ function getID(message, args) {
             let channel = parseChannel(message, args[1]);
             if (channel == null)
                 message.author.send(`Channel not found.`);
-            else 
+            else
                 message.author.send(`Channel ` + args[1] + `: ` + channel.id);
             break;
         }
@@ -228,7 +244,7 @@ function getID(message, args) {
             const role = parseRole(message.guild, args[1]);
             if (role == null)
                 message.author.send(`Role not found.`);
-            else 
+            else
                 message.author.send(`Role ` + args[1] + `: ` + role.id);
             break;
         }
@@ -241,10 +257,12 @@ function giveCaseWarning(message, commandSymbol) {
 
 function displayHelpMessage(message, args) {
     if (args.length === 0) {
-        const helpChannel = (message.guild != null) ? message.guild.channels.get(serverChannels.find(channel => { return (channel.name === "help"); }).id) : null;
+        const helpChannel = (message.guild != null) ? message.guild.channels.get(serverChannels.find(channel => {
+            return (channel.name === "help");
+        }).id) : null;
         message.channel.send(`If you'd like help with specific command syntax, please use \`!help <commandName>\`.` +
-                                    `\nIf you'd like to see available commands, please use \`!commands\`.` +
-                                    ((helpChannel != null) ? `\nIf you need help with Discord or something not specific to a class, please ask a question in ${helpChannel}.` : ``));
+            `\nIf you'd like to see available commands, please use \`!commands\`.` +
+            ((helpChannel != null) ? `\nIf you need help with Discord or something not specific to a class, please ask a question in ${helpChannel}.` : ``));
     } else {
         let commandArg = args[0];
         var isValidCommand = false;
@@ -258,21 +276,21 @@ function displayHelpMessage(message, args) {
                 }
             }
         });
-        
+
         if (!isValidCommand) {
             message.channel.send(`Unrecognized command. See !help for more information or !commands for a list of valid commands.`);
         }
     }
 }
 
-function logMessage(message) {
+function logDiscordMessage(message) {
     console.log(`[${message.createdAt}] ${message.author} (${message.author.username}): ${message.content}`);
 }
 
 function handleNonCommand(message) {
     var matches = message.content.match(/(^|[^\w]+)\/r\/\w+/i);
     if (matches != null) {
-        logMessage(message);
+        logDiscordMessage(message);
         let url = matches[0].trim().toLowerCase();
         message.channel.send(`<http://www.reddit.com` + url + `>`);
     }
@@ -290,13 +308,17 @@ function parseUser(message, arg) {
     if (arg === `all`) {
         return message.guild.members.array();
     }
-    let gm = message.guild.members.find(member => { return member.user.id === arg; });
+    let gm = message.guild.members.find(member => {
+        return member.user.id === arg;
+    });
     if (gm == null) {
-        gm = message.guild.members.find(member => { return (member.user.username === arg); });
+        gm = message.guild.members.find(member => {
+            return (member.user.username === arg);
+        });
     }
-    if (gm == null && arg.length > 2
-        && arg[0] == arg[arg.length - 1]
-        && (arg[0] === `"` || arg[0] === `'` || arg[0] === '`')) {
+    if (gm == null && arg.length > 2 &&
+        arg[0] == arg[arg.length - 1] &&
+        (arg[0] === `"` || arg[0] === `'` || arg[0] === '`')) {
         const memberName = arg.substr(1, arg.length - 2); // Assume quotes around name
         gm = message.guild.members.find(member => member.displayName === memberName);
     }
@@ -304,14 +326,20 @@ function parseUser(message, arg) {
 }
 
 function parseRole(guild, arg) {
-    let role = guild.roles.find(role => { return role.id === arg; });
+    let role = guild.roles.find(role => {
+        return role.id === arg;
+    });
     if (role == null) {
-        role = guild.roles.find(role => { return role.name === arg; });
+        role = guild.roles.find(role => {
+            return role.name === arg;
+        });
     }
-    if (role == null && arg.length > 2
-        && arg[0] === arg[arg.length - 1]
-        && (arg[0] === `"` || arg[0] === `'` || arg[0] === '`')) {
-        role = guild.roles.find(role => { return role.name === arg.substr(1, arg.length - 2); });
+    if (role == null && arg.length > 2 &&
+        arg[0] === arg[arg.length - 1] &&
+        (arg[0] === `"` || arg[0] === `'` || arg[0] === '`')) {
+        role = guild.roles.find(role => {
+            return role.name === arg.substr(1, arg.length - 2);
+        });
     }
     return role;
 }
@@ -321,37 +349,39 @@ function parseChannel(message, arg) {
     if (ch == null) {
         ch = message.guild.channels.find(channel => channel.name === arg);
     }
-    if (ch == null && arg.length > 2
-        && arg[0] === arg[arg.length - 1]
-        && (arg[0] === `"` || arg[0] === `'` || arg[0] === '`')) {
-        ch = message.guild.channels.find(channel => { return channel.name === arg.substr(1, arg.length - 2); });
+    if (ch == null && arg.length > 2 &&
+        arg[0] === arg[arg.length - 1] &&
+        (arg[0] === `"` || arg[0] === `'` || arg[0] === '`')) {
+        ch = message.guild.channels.find(channel => {
+            return channel.name === arg.substr(1, arg.length - 2);
+        });
     }
     return ch;
 }
 
 function compile(source, language, cb) {
-	request.post({
-		url: "https://api.jdoodle.com/v1/execute",
-		json: {
-			script: source,
+    request.post({
+        url: "https://api.jdoodle.com/v1/execute",
+        json: {
+            script: source,
             language: language.id,
             versionIndex: language.index,
-			clientId: settingsFile.jdoodleID,
-			clientSecret: settingsFile.jdoodleSecret
+            clientId: settingsFile.jdoodleID,
+            clientSecret: settingsFile.jdoodleSecret
         },
         headers: {
             "content-type": "application/json"
         }
-	}, function(err, response, body) {
+    }, function (err, response, body) {
         if (err) throw err;
-		cb({
+        cb({
             error: body.error,
-			output: body.output,
-			statusCode: body.statusCode,
-			cpuTime: body.cpuTime,
+            output: body.output,
+            statusCode: body.statusCode,
+            cpuTime: body.cpuTime,
             memory: body.memory
-		});
-	})
+        });
+    })
 }
 
 function doCompileCommand(message, args) {
@@ -379,16 +409,16 @@ function doCompileCommand(message, args) {
     }
 
     message.channel.send(`Compiling ${language.full}...`);
-    compile(source[2].replace(/```/g, ""), language, function(results) {
+    compile(source[2].replace(/```/g, ""), language, function (results) {
         if (results.error != null) {
             reportError(`Error: ${results.error}\nStatusCode: ${results.statusCode}`);
             message.channel.send(`<@${botCreatorID}> messed up, go poke him!`);
         } else if (results.output != null) {
-            message.channel.send(`Results for <@${message.author.id}>: \`\`\`${results.output.escape()}\`\`\``
-            + `\nMemory: ${results.memory}, CPU Time: ${results.cpuTime}`);
+            message.channel.send(`Results for <@${message.author.id}>: \`\`\`${results.output.escape()}\`\`\`` +
+                `\nMemory: ${results.memory}, CPU Time: ${results.cpuTime}`);
         } else {
             client.fetchUser(botCreatorID)
-            .then(user => user.send(`Bad compile:\n${message.content}\n${JSON.stringify(results)}`));
+                .then(user => user.send(`Bad compile:\n${message.content}\n${JSON.stringify(results)}`));
         }
     });
 }
@@ -409,17 +439,16 @@ function processAddRole(message, args) {
     }
     if (role) {
         addRole(message.channel, member, role, role.name, true);
-    }
-    else {
+    } else {
         message.channel.send(`Invalid role.`);
     }
 }
 
 function createEmbed(title, color, description) {
     return new Discord.RichEmbed()
-    .setTitle(title)
-    .setColor(color)
-    .setDescription(description);
+        .setTitle(title)
+        .setColor(color)
+        .setDescription(description);
 }
 
 function parseEmbed(message, args) {
@@ -432,17 +461,17 @@ function parseEmbed(message, args) {
         message.channel.send(`Invalid channel.`);
         return;
     }
-    const title = args[1].replace(/(^\"|\"$)/g,``);
+    const title = args[1].replace(/(^\"|\"$)/g, ``);
     const colorStr = args[2];
-    const descStr = args[3].replace(/(^\`\`\`|\`\`\`$)/g,``);
+    const descStr = args[3].replace(/(^\`\`\`|\`\`\`$)/g, ``);
     const toEdit = (args.length > 4) ? args[4] : null;
 
     const embed = createEmbed(title, parseInt(colorStr), descStr);
 
     if (toEdit) {
         destChannel.fetchMessage(toEdit)
-        .then(msg => msg.edit(embed).catch(reportError))
-        .catch(() => message.channel.send(`Invalid message to edit.`));
+            .then(msg => msg.edit(embed).catch(reportError))
+            .catch(() => message.channel.send(`Invalid message to edit.`));
     } else {
         destChannel.send(embed);
     }
@@ -463,7 +492,8 @@ function linkCurrentAdventOfCodePage(channel) {
 
 function nextAdventOfCodeWithin24Hours(now) {
     return (now.getMonth() === 10 && now.getDate() === 30) // November 30
-        || (now.getMonth() === 11 && now.getDate() < 25); // December 1-24
+        ||
+        (now.getMonth() === 11 && now.getDate() < 25); // December 1-24
 }
 
 function toHoursMinutesSeconds(millis) {
@@ -478,7 +508,6 @@ function toHoursMinutesSeconds(millis) {
 }
 
 function displayNextUnlock(channel) {
-    const utc = new Date();
     const eastern = getEasternTime();
     if (nextAdventOfCodeWithin24Hours(eastern)) {
         const nextDay = new Date(Date.UTC(eastern.getUTCFullYear(), 11, ((eastern.getUTCMonth() === 10) ? 1 : eastern.getUTCDate() + 1), 0));
@@ -490,49 +519,59 @@ function displayNextUnlock(channel) {
     }
 }
 
-function displayLeaderboard(channel) {
+function displayLeaderboard(channel, year) {
+    const aocYearInfo = aoc.find(info => info.year === year);
+    if (aocYearInfo == null) {
+        channel.send(`Invalid year.`);
+        return;
+    }
     request.get({
-		url: aocURL,
+        url: aocYearInfo.url,
         headers: {
             "content-type": "application/json",
-            "cookie": `session=${aocSession}`
+            "cookie": `session=${aocYearInfo.session}`
         }
-	}, (err, response, body) => {
+    }, (err, response, body) => {
         if (err)
             throw err;
         if (response.statusCode != 200) {
             reportError(`Bad AOC post: Responded w/ ${response.statusCode}`);
             return;
         }
-        const result = JSON.parse(body);
-        var board = "";
-        const members = Object.keys(result.members).map(k => result.members[k]); // Turn members into an array
-        members.sort((x, y) => {
-            if (x != y)
-                return y.local_score - x.local_score; // Descending scores
-            return new Date(x.last_star_ts) - new Date(y.last_star_ts); // Ascending timestamps (chronological)
-        });
-        members.forEach((member, i) => {
-            board += `${i}. ${member.name} ${member.local_score}\n`;
-        });
-        const now = new Date().toLocaleString('en-US', { timezone: 'America/Los_Angeles'});
-        const embed = createEmbed(`2018 Leaderboard - ${now} UTC`, 0x990000, board);
-        channel.send(embed);
-	})
+        try {
+            const result = JSON.parse(body);
+            var board = "";
+            const members = Object.keys(result.members).map(k => result.members[k]); // Turn members into an array
+            members.sort((x, y) => {
+                if (x != y)
+                    return y.local_score - x.local_score; // Descending scores
+                return new Date(x.last_star_ts) - new Date(y.last_star_ts); // Ascending timestamps (chronological)
+            });
+            members.forEach((member, i) => {
+                board += `${i}. ${member.name} ${member.local_score}\n`;
+            });
+            const now = new Date().toLocaleString('en-US', {
+                timezone: 'America/Los_Angeles'
+            });
+            const embed = createEmbed(`${year} Leaderboard - ${now} UTC`, 0x990000, board);
+            channel.send(embed);
+        } catch (e) {
+            reportError(e);
+        }
+    })
 }
 
-String.prototype.escape = function() {
-	let str = stripAnsi(this).replace(/[^\x00-\x7F]/g, "").replace(/```/g, "\\`\\`\\`");
-	if (str.length > maxCompileResultLength) {
-		str = str.substr(0, maxCompileResultLength);
-		str += "\n(...)";
-	}
-	return str;
+String.prototype.escape = function () {
+    let str = stripAnsi(this).replace(/[^\x00-\x7F]/g, "").replace(/```/g, "\\`\\`\\`");
+    if (str.length > maxCompileResultLength) {
+        str = str.substr(0, maxCompileResultLength);
+        str += "\n(...)";
+    }
+    return str;
 }
 
 client.on(`ready`, () => {
     console.log(`Boot sequence complete.`);
-    client.user.setActivity(`a smol violin`);
     const mainServer = client.guilds.get(servers.find(s => s.name === `mainServer`).id);
     if (mainServer) {
         console.log("Setting up main server...");
@@ -541,20 +580,24 @@ client.on(`ready`, () => {
             console.log(`Setting up main server #announcements...`);
             cachedMessages.forEach(message => {
                 announceChannel.fetchMessage(message.id)
-                .catch(reportError);
+                    .catch(reportError);
             });
         }
     }
     console.log(`Ready!`);
+    terminal = setupTerminal();
 });
 
 client.on("messageUpdate", (oldMessage, newMessage) => {
-    process(newMessage);
+    processMessage(newMessage);
 });
 
-client.on("message", process);
+client.on("message", processMessage);
 
-function process(message) {
+function processMessage(message) {
+    if (!clientShouldRespond) {
+        return;
+    }
     try {
         if (message.author.bot) {
             return;
@@ -566,7 +609,9 @@ function process(message) {
 
         let args = message.content.trim().match(/[\w-_]+|"(?:\\"|[^"])+"|```(\w+\n)?([\s\S]+)```/gm);
         const messageCommandText = args.shift();
-        const givenCommand = commands.find(com => { return (com.symbol === messageCommandText); });
+        const givenCommand = commands.find(com => {
+            return (com.symbol === messageCommandText);
+        });
 
         if (givenCommand == null) {
             // No valid command was found; check if the message didn't match casing
@@ -588,7 +633,11 @@ function process(message) {
 
         if (authorMember != null) {
             let hasNeededPermissions = true;
-            givenCommand.permissions.forEach(perm => { if (!authorMember.hasPermission(perm)) { hasNeededPermissions = false; }  });
+            givenCommand.permissions.forEach(perm => {
+                if (!authorMember.hasPermission(perm)) {
+                    hasNeededPermissions = false;
+                }
+            });
             if (!hasNeededPermissions) {
                 message.reply(`you do not have permission to use this command.`);
                 return;
@@ -606,8 +655,7 @@ function process(message) {
                 listCommands(message);
                 break;
             case `addClassCommand`:
-            case `removeClassCommand`:
-            {
+            case `removeClassCommand`: {
                 if (message.guild == null) {
                     message.reply("No guild to change roles. Please note that this command does not work in private messages.");
                     return;
@@ -618,8 +666,7 @@ function process(message) {
                 break;
             }
             case `addRoleToOtherCommand`:
-            case `removeRoleFromOtherCommand`:
-            {
+            case `removeRoleFromOtherCommand`: {
                 if (args.length < 1) {
                     message.channel.send(`Missing argument(s).`);
                 }
@@ -628,8 +675,7 @@ function process(message) {
                 changeRolesForMember(member, message, args, adding, true, false, !(member instanceof Array));
                 break;
             }
-            case `testWelcomeCommand`:
-            {
+            case `testWelcomeCommand`: {
                 if (args.length < 1) {
                     message.channel.send(`Missing argument(s).`);
                 }
@@ -646,8 +692,7 @@ function process(message) {
             case `shrugCommand`:
                 message.channel.send(`¯\\\_(ツ)\_/¯`);
                 break;
-            case `sayCommand`:
-            {
+            case `sayCommand`: {
                 if (args.length === 0) {
                     message.channel.send(`Missing message. See \`!help say\` for more info.`)
                     return;
@@ -669,16 +714,14 @@ function process(message) {
             case `hungCommand`:
                 if (message.author.id === hungID) {
                     message.author.send(`Hello there.`);
-                }
-                else {
+                } else {
                     message.channel.send(`No.`);
                 }
                 break;
             case `stuCommand`:
                 if (message.author.id === stuID) {
                     message.author.send(`ʕ •ᴥ•ʔ All aboard Stu's Happyland Express ʕ •ᴥ•ʔ`);
-                }
-                else {
+                } else {
                     message.channel.send(`Stu.`);
                 }
                 break;
@@ -695,13 +738,16 @@ function process(message) {
                 if (args.length == 0) {
                     linkCurrentAdventOfCodePage(message.channel);
                     displayNextUnlock(message.channel);
-                }
-                else {
-                    switch(args[0]) {
+                } else {
+                    switch (args[0]) {
                         default:
                             break;
                         case `leaderboard`:
-                            displayLeaderboard(message.channel);
+                            let year = new Date().getFullYear().toString();
+                            if (args.length > 1) {
+                                year = args[1];
+                            }
+                            displayLeaderboard(message.channel, year);
                             break;
                     }
                 }
@@ -710,7 +756,7 @@ function process(message) {
                 parseEmbed(message, args);
                 break;
             default:
-                throw(`Bad command name.`);
+                throw (`Bad command name.`);
         }
     } catch (err) {
         reportError(`Error on message event:\n` + err.message + ` ` + err.fileName + ` ` + err.lineNumber);
@@ -730,16 +776,19 @@ function welcomeNewMember(member) {
 client.on("error", reportError);
 
 function reportError(message) {
+    if (message instanceof Error) {
+        message = `${message.message}\n${message.stack}`;
+    }
     client.fetchUser(botCreatorID)
-    .then(user => {
-        user.send(message)
+        .then(user => {
+            user.send(message)
+                .catch(err => {
+                    console.error(message, err);
+                });
+        })
         .catch(err => {
-            console.log(message);
+            console.error(message, err);
         });
-    })
-    .catch(err => {
-        console.log(message);
-    });
 }
 
 client.on("messageReactionAdd", (reaction, user) => onReactionToggled(reaction, user, true));
@@ -751,8 +800,8 @@ function onReactionToggled(reaction, user, added) {
         return;
 
     guild.fetchMember(user)
-    .then(member => checkReaction(reaction, member, added))
-    .catch(reportError);
+        .then(member => checkReaction(reaction, member, added))
+        .catch(reportError);
 }
 
 function checkReaction(reaction, member, added) {
@@ -764,11 +813,12 @@ function checkReaction(reaction, member, added) {
     let roleFound = member.roles.get(roleIDToToggle);
 
     if (added && roleFound == null) {
-        const roleFound = member.guild.roles.find(role => { return role.id === roleIDToToggle; });
+        const roleFound = member.guild.roles.find(role => {
+            return role.id === roleIDToToggle;
+        });
         if (roleFound != null) {
             member.addRole(roleFound).catch(reportError);
-        }
-        else {
+        } else {
             reportError(`Role id not found for reaction: ${roleIDToToggle}, ${reaction}`);
         }
     } else if (roleFound != null) {
@@ -790,18 +840,113 @@ function roleIDFromReaction(reaction) {
 }
 
 function login() {
-    try {
-        client.login(token);
-    }
-    catch (err) {
-        console.log(err);
-        login();
+    let delay = false;
+    while (true) {
+        if (delay) {
+            continue;
+        }
+        try {
+            client.login(token);
+            break;
+        } catch (err) {
+            if (terminal != null) {
+                terminal.close();
+                terminal = null;
+            }
+            console.error(err);
+            setTimeout(function () {
+                delay = false;
+            }, 1000);
+            delay = true;
+        }
     }
 }
 
-if(require.main === module) {
-    login();
+function processTerminalInput(line) {
+    switch (line.trim()) {
+        case 'quit':
+        case 'exit':
+            console.log('Exiting...');
+            process.exit(0);
+            break;
+        case 'connect':
+            clientShouldRespond = true;
+            console.log(`Now handling server commands.`);
+            break;
+        case 'disconnect':
+            clientShouldRespond = false;
+            console.log(`No longer handling server commands.`);
+            break;
+        default:
+            const args = line.split(' ');
+            if (args.length === 0) {
+                break;
+            }
+            switch (args[0]) {
+                case `status`:
+                    if (args.length === 1) {
+                        console.log(client.user.presence);
+                    } else {
+                        switch (args[1]) {
+                            case `set`:
+                                if (args.length === 2) {
+                                    console.error(`Missing argument "type".`);
+                                } else if (args.length === 3) {
+                                    console.error(`Missing argument "name".`);
+                                } else {
+                                    const typeArg = args[2];
+                                    const type = typeArg.toUpperCase();
+                                    switch (type) {
+                                        case "PLAYING":
+                                        case "STREAMING":
+                                        case "LISTENING":
+                                        case "WATCHING":
+                                            const name = args.slice(3).join(' ');
+                                            client.user.setActivity(name, {
+                                                    type: type
+                                                })
+                                                .then(presence => console.log(`Activity set to `, presence))
+                                                .catch(reportError);
+                                            break;
+                                        default:
+                                            console.error(`Unknown type "${typeArg}"`);
+                                            break;
+                                    }
+                                }
+                                break;
+                            default:
+                                console.error(`Unknown argument "${args[1]}".`);
+                                break;
+                        }
+                    }
+                    break;
+                default:
+                    console.error(`Unknown command.`);
+                    break;
+            }
+            break;
+    }
+    return new Promise(function (resolve, reject) {
+        resolve();
+    });
 }
-else {
+
+function setupTerminal() {
+    const terminal = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+        prompt: 'Eagle Overlord> '
+    });
+    terminal.prompt();
+    terminal.on('line', (line) => {
+        processTerminalInput(line)
+            .then(() => terminal.prompt());
+    });
+    return terminal;
+}
+
+if (require.main === module) {
+    login();
+} else {
     module.exports.isValidPrefix = isValidPrefix;
 }
