@@ -131,7 +131,7 @@ export function handleCommand(givenCommand: CommandSettings,
             displayHelpMessage(message, args, settings);
             break;
         case `aboutCommand`:
-            message.channel.send(`Currently running on version ${infoFile.version}. Created in 2019 by Natrastellar.`);
+            message.channel.send(`Currently running on version ${infoFile.version}. Created in 2020 by ${settings.botCreatorName}.`);
             break;
         case `listCommandsCommand`:
             listCommands(message, settings);
