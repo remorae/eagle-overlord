@@ -9,8 +9,7 @@ export function welcome(member: GuildMember, settings: ClientSettings, reportErr
         return;
     }
     const welcomeChannel = member.guild.channels.get(server.welcomeChannel) as TextChannel;
-    const rulesChannel = member.guild.channels.get(server.rulesChannel) as TextChannel;
-    if (!welcomeChannel || !rulesChannel) {
+    if (!welcomeChannel) {
         return;
     }
 
