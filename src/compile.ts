@@ -3,6 +3,7 @@ import { Message } from 'discord.js';
 import { ErrorFunc } from './error';
 import * as bent from 'bent';
 import * as config from './config.json';
+import stripAnsi from 'strip-ansi';
 
 const maxCompileResultLength = 1900;
 
@@ -28,10 +29,7 @@ async function compile(source: string, language: CompileLanguage): Promise<{ err
 }
 
 function escapeString(str: string): string {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const stripAnsi = require('strip-ansi');
-    // eslint-disable-next-line no-control-regex
-    let result = stripAnsi(str).replace(/[^\x00-\x7F]/g, '').replace(/```/g, '\\`\\`\\`');
+    let result = stripAnsi(str).replace(/[^\x20-\x7E]/g, '').replace(/```/g, '\\`\\`\\`');
     if (result.length > maxCompileResultLength) {
         result = result.substr(0, maxCompileResultLength);
         result += '\n(...)';
