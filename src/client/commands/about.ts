@@ -16,7 +16,7 @@ class AboutCommand implements Command {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const config = require(path.resolve(require.main!.filename, '..', 'config.json'));
         const infoFile = require(path.resolve(require.main!.filename, '..', '..', 'package.json'));
-        await interaction.reply({ content: `Currently running on version ${infoFile.version}. Created in 2021 by ${config.legacy.botCreatorName}.`, allowedMentions: { users: [] } });
+        await interaction.reply({ content: `Currently running on version ${infoFile.version}. Created in ${config.client.deployYear} by ${config.client.developerUserName}.`, allowedMentions: { users: [] } });
     }
 }
 

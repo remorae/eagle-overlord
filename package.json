@@ -1,6 +1,6 @@
 {
   "name": "eagle-overlord",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "Your friendly neighborhood killer avian robot",
   "main": "main.js",
   "scripts": {
