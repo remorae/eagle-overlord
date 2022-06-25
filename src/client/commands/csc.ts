@@ -1,5 +1,6 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { Guild, ApplicationCommandPermissionData, CommandInteraction, GuildMember } from 'discord.js';
+import { ClientInstance } from '../../client';
 import { Command } from '../command';
 import { addRoleToOther, addRoleToSelf, removeRoleFromOther, removeRoleFromSelf } from './role';
 
@@ -45,7 +46,7 @@ class CscCommand implements Command {
     }
     async getPermissions(_guild: Guild, _permissions: ApplicationCommandPermissionData[]): Promise<void> {
     }
-    async execute(interaction: CommandInteraction): Promise<void> {
+    async execute(interaction: CommandInteraction, _client: ClientInstance): Promise<void> {
         if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
             await interaction.reply({ content: 'You must be in a guild to use this command.', ephemeral: true });
             return;

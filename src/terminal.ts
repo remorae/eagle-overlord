@@ -68,7 +68,7 @@ export class Terminal {
             if (type in validTypes) {
                 const name = args.slice(3).join(' ');
                 const presence = this.instance.client.user?.setActivity(name, {
-                    type: type as ActivityType
+                    type: type as Exclude<ActivityType, "CUSTOM">
                 });
                 console.log(`Activity set to `, presence);
             }

@@ -1,5 +1,6 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { ApplicationCommandPermissionData, Channel, CommandInteraction, Guild, GuildMember, Permissions, Role, User } from 'discord.js';
+import { ClientInstance } from '../../client';
 import { Command, commandRolePermission, rolesWithPermissions } from '../command';
 
 class GetIdCommand implements Command {
@@ -46,7 +47,7 @@ class GetIdCommand implements Command {
             permissions.push(commandRolePermission(role.id, true));
         }
     }
-    async execute(interaction: CommandInteraction): Promise<void> {
+    async execute(interaction: CommandInteraction, _client: ClientInstance): Promise<void> {
         if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
             await interaction.reply({ content: 'You must be in a guild to use this command.', ephemeral: true });
             return;
