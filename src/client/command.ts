@@ -2,11 +2,12 @@ import { SlashCommandBuilder } from "@discordjs/builders";
 import { ApplicationCommandPermissionData, CommandInteraction, Guild, PermissionResolvable, Role } from "discord.js";
 import * as path from 'path';
 import * as fs from 'fs';
+import { ClientInstance } from '../client';
 
 export interface Command {
     build(builder: SlashCommandBuilder): Promise<void>,
     getPermissions(guild: Guild, permissions: ApplicationCommandPermissionData[]): Promise<void>,
-    execute(interaction: CommandInteraction): Promise<void>;
+    execute(interaction: CommandInteraction, client: ClientInstance): Promise<void>;
 }
 
 export function commandRolePermission(role: string, allow: boolean): ApplicationCommandPermissionData {
