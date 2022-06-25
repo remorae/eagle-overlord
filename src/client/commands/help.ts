@@ -45,8 +45,9 @@ export const command: Command = new HelpCommand();
 function getRequiredOptions(command: ApplicationCommand, client: ClientInstance): string[] {
     const cachedCommand = client.getCachedCommands().get(command.name);
     const builder = (cachedCommand) ? new SlashCommandBuilder() : undefined;
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    cachedCommand?.build(builder!);
+    if (builder) {
+        cachedCommand?.build(builder);
+    }
     const builtOptions = builder?.options.map((o) => o.toJSON());
     return command.options.map(o => o.name).filter((name) => {
         const deployedOption = builtOptions?.find((o) => o.name == name);

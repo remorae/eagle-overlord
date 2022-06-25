@@ -3,6 +3,7 @@ import { ApplicationCommandPermissionData, CommandInteraction, Guild, Permission
 import * as path from 'path';
 import * as fs from 'fs';
 import { ClientInstance } from '../client';
+import { loadAtRuntime, resolveRelativeToMain } from '../utils';
 
 export interface Command {
     build(builder: SlashCommandBuilder): Promise<void>,
@@ -31,8 +32,10 @@ export function rolesWithPermissions(guild: Guild, permissions: PermissionResolv
 }
 
 export async function getCommandsOnDisk(reload = true): Promise<Command[]> {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const commandsDir = path.resolve(path.dirname(require.main!.filename), 'client', 'commands');
+    const commandsDir = resolveRelativeToMain('client/commands');
+    if (!commandsDir) {
+        return Promise.reject();
+    }
     const commandFiles = (await fs.promises.readdir(commandsDir)).filter(file => file.endsWith('.js'));
     return commandFiles.map(file => {
         const commandPath = path.resolve(commandsDir, file);
@@ -40,7 +43,6 @@ export async function getCommandsOnDisk(reload = true): Promise<Command[]> {
             // Update command in memory if the .js file has been modified (may need to hotfix things without restarting the bot)
             delete require.cache[commandPath];
         }
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        return require(commandPath).command as Command;
+        return loadAtRuntime(commandPath).command as Command;
     });
 }

@@ -1,4 +1,5 @@
 import { Message, Guild, GuildMember, GuildChannel, ThreadChannel, User } from 'discord.js';
+import * as path from 'path';
 
 export async function parseCachedUser(message: Message, arg: string): Promise<GuildMember | Iterable<GuildMember> | null> {
     if (message.guild == null) {
@@ -56,4 +57,23 @@ export function getAuthorMember(message: Message): GuildMember | null {
 
 export function getCachedChannel(guild: Guild, channel: string): GuildChannel | ThreadChannel | null {
     return guild.channels.cache.get(channel) ?? null;
+}
+
+export function loadAtRuntime(path: string) {
+    return require(path);
+}
+
+export function resolveRelativeToMain(relativePath: string) {
+    if (require.main) {
+        return path.resolve(require.main.filename, ...relativePath.split('/'));
+    }
+    return null;
+}
+
+export function loadRelativeToMain(relativePath: string) {
+    const absolutePath = resolveRelativeToMain(relativePath);
+    if (absolutePath) {
+        return loadAtRuntime(absolutePath);
+    }
+    return null;
 }
