@@ -20,6 +20,7 @@ class HelpCommand implements Command {
                     }))
             );
     }
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     async getPermissions(_guild: Guild, _permissions: ApplicationCommandPermissionData[]): Promise<void> {
     }
     async execute(interaction: CommandInteraction, client: ClientInstance): Promise<void> {
@@ -33,7 +34,7 @@ class HelpCommand implements Command {
                 await sendCommandHelp(command, interaction, client);
             }
             else {
-                await interaction.reply({ content: `Unrecognized command. Slash commands may still be deploying.`, ephemeral: true });
+                await interaction.reply({ content: 'Unrecognized command. Slash commands may still be deploying.', ephemeral: true });
             }
         }
     }
@@ -44,12 +45,13 @@ export const command: Command = new HelpCommand();
 function getRequiredOptions(command: ApplicationCommand, client: ClientInstance): string[] {
     const cachedCommand = client.getCachedCommands().get(command.name);
     const builder = (cachedCommand) ? new SlashCommandBuilder() : undefined;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     cachedCommand?.build(builder!);
     const builtOptions = builder?.options.map((o) => o.toJSON());
     return command.options.map(o => o.name).filter((name) => {
         const deployedOption = builtOptions?.find((o) => o.name == name);
         if (!deployedOption) {
-            client.reportError(`Couldn't find deployed option with name: ${name}`, "getRequiredOptions");
+            client.reportError(`Couldn't find deployed option with name: ${name}`, 'getRequiredOptions');
         }
         return deployedOption?.required;
     });
@@ -71,9 +73,9 @@ async function sendCommandHelp(command: ApplicationCommand<{ guild?: GuildResolv
 async function sendGeneralHelp(interaction: CommandInteraction): Promise<void> {
     const helpChannel = interaction.guild?.channels.cache.get('273687752392966155');
     await interaction.reply({
-        content: `If you'd like help with specific command syntax, please use \`/help <commandName>\`.` +
-            `\nIf you'd like to see available commands, please use \`/commands\`.` +
-            (helpChannel ? `\nIf you need help with Discord or something not specific to a class, please ask a question in ${helpChannel}.` : ``)
+        content: 'If you\'d like help with specific command syntax, please use `/help <commandName>`.' +
+            '\nIf you\'d like to see available commands, please use `/commands`.' +
+            (helpChannel ? `\nIf you need help with Discord or something not specific to a class, please ask a question in ${helpChannel}.` : '')
     });
 }
 

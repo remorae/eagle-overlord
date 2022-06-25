@@ -1,5 +1,5 @@
-import { SlashCommandBuilder } from "@discordjs/builders";
-import { ApplicationCommandPermissionData, CommandInteraction, Guild, PermissionResolvable, Role } from "discord.js";
+import { SlashCommandBuilder } from '@discordjs/builders';
+import { ApplicationCommandPermissionData, CommandInteraction, Guild, PermissionResolvable, Role } from 'discord.js';
 import * as path from 'path';
 import * as fs from 'fs';
 import { ClientInstance } from '../client';
@@ -30,7 +30,8 @@ export function rolesWithPermissions(guild: Guild, permissions: PermissionResolv
     return guild.roles.cache.filter(r => r.permissions.has(permissions)).values();
 }
 
-export async function getCommandsOnDisk(reload: boolean = true): Promise<Command[]> {
+export async function getCommandsOnDisk(reload = true): Promise<Command[]> {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const commandsDir = path.resolve(path.dirname(require.main!.filename), 'client', 'commands');
     const commandFiles = (await fs.promises.readdir(commandsDir)).filter(file => file.endsWith('.js'));
     return commandFiles.map(file => {

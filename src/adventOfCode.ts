@@ -61,17 +61,17 @@ export async function displayLeaderboard(channel: TextChannel | ThreadChannel, y
         ? server.adventOfCode.find(info => info.year === year)
         : null;
     if (!aocYearInfo) {
-        await channel.send(`Invalid year.`);
+        await channel.send('Invalid year.');
         return;
     }
     try {
         const request = bent('GET', 'json', 200);
         const body = await request(aocYearInfo.url, undefined, {
-            'content-type': `application/json`,
+            'content-type': 'application/json',
             'cookie': `session=${aocYearInfo.session}`
         });
         const result = JSON.parse(body);
-        let board = ``;
+        let board = '';
         const members = Object.keys(result.members).map(k => result.members[k]); // Turn members into an array
         members.sort((x, y) => {
             if (x != y)

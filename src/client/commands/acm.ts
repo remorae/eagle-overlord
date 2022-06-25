@@ -35,6 +35,7 @@ class AcmCommand implements Command {
                     .setDescription('Get information about ACM.')
             );
     }
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     async getPermissions(_guild: Guild, _permissions: ApplicationCommandPermissionData[]): Promise<void> {
     }
     async execute(interaction: CommandInteraction, _client: ClientInstance): Promise<void> {
@@ -44,30 +45,30 @@ class AcmCommand implements Command {
         }
         const subCommand = interaction.options.getSubcommand();
         switch (subCommand) {
-            case 'join':
-                await joinAcm(interaction);
-                break;
-            case 'leave':
-                await leaveAcm(interaction);
-                break;
-            case 'info':
-                await sendAcmInfo(interaction);
-                break;
-            default:
-                await interaction.reply({ content: 'Invalid subcommand.', ephemeral: true });
-                break;
+        case 'join':
+            await joinAcm(interaction);
+            break;
+        case 'leave':
+            await leaveAcm(interaction);
+            break;
+        case 'info':
+            await sendAcmInfo(interaction);
+            break;
+        default:
+            await interaction.reply({ content: 'Invalid subcommand.', ephemeral: true });
+            break;
         }
     }
 }
 
 export const command: Command = new AcmCommand();
 
-export const acmMemberRoleId: string = '360930752730234880';
+export const acmMemberRoleId = '360930752730234880';
 
 async function sendAcmInfo(interaction: CommandInteraction) {
     try {
         const acmGeneralChannel = await interaction.guild?.channels.fetch('360933694443094016');
-        await interaction.reply(`ACM stands for Association for Computing Machinery.${acmGeneralChannel ? `See ${acmGeneralChannel} for more info.` : ``}`);
+        await interaction.reply(`ACM stands for Association for Computing Machinery.${acmGeneralChannel ? `See ${acmGeneralChannel} for more info.` : ''}`);
     }
     catch (err) {
         await interaction.reply('Failed to find the ACM general channel.');
@@ -85,7 +86,7 @@ async function leaveAcm(interaction: CommandInteraction): Promise<void> {
         }
     }
     else {
-        await interaction.reply(`Failed to find the ACM Member role.`);
+        await interaction.reply('Failed to find the ACM Member role.');
     }
 }
 
@@ -100,6 +101,6 @@ async function joinAcm(interaction: CommandInteraction): Promise<void> {
         }
     }
     else {
-        await interaction.reply(`Failed to find the ACM Member role.`);
+        await interaction.reply('Failed to find the ACM Member role.');
     }
 }
