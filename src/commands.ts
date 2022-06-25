@@ -61,9 +61,6 @@ export async function handleCommand(givenCommand: CommandSettings,
             }
             break;
         }
-        case `shrugCommand`:
-            await message.channel.send(`¯\\_(ツ)_/¯`);
-            break;
         case `hungCommand`:
             if (message.author.id === config.legacy.hungID) {
                 await message.author.send(`Hello there.`);
