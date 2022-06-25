@@ -1,5 +1,6 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { Guild, ApplicationCommandPermissionData, CommandInteraction, ApplicationCommand, GuildResolvable } from 'discord.js';
+import { ApplicationCommand, ApplicationCommandPermissionData, CommandInteraction, Guild, GuildResolvable } from 'discord.js';
+import { ClientInstance } from '../../client';
 import { Command, getCommandsOnDisk } from '../command';
 
 class HelpCommand implements Command {
@@ -12,16 +13,16 @@ class HelpCommand implements Command {
                 option
                     .setName('command')
                     .setDescription('The command to get information about.')
-                    .addChoices(otherCommands.map(command => {
+                    .addChoices(...otherCommands.map(command => {
                         const builder = new SlashCommandBuilder();
                         command.build(builder);
-                        return [builder.name, builder.name];
+                        return { name: builder.name, value: builder.name };
                     }))
             );
     }
     async getPermissions(_guild: Guild, _permissions: ApplicationCommandPermissionData[]): Promise<void> {
     }
-    async execute(interaction: CommandInteraction): Promise<void> {
+    async execute(interaction: CommandInteraction, client: ClientInstance): Promise<void> {
         const specifiedCommand = interaction.options.getString('command', false);
         if (!specifiedCommand) {
             await sendGeneralHelp(interaction);
@@ -29,7 +30,7 @@ class HelpCommand implements Command {
         else {
             const command = await getDeployedCommand(interaction, specifiedCommand);
             if (command) {
-                await sendCommandHelp(command, interaction);
+                await sendCommandHelp(command, interaction, client);
             }
             else {
                 await interaction.reply({ content: `Unrecognized command. Slash commands may still be deploying.`, ephemeral: true });
@@ -40,14 +41,29 @@ class HelpCommand implements Command {
 
 export const command: Command = new HelpCommand();
 
-async function sendCommandHelp(command: ApplicationCommand<{ guild?: GuildResolvable; }>, interaction: CommandInteraction): Promise<void> {
+function getRequiredOptions(command: ApplicationCommand, client: ClientInstance): string[] {
+    const cachedCommand = client.getCachedCommands().get(command.name);
+    const builder = (cachedCommand) ? new SlashCommandBuilder() : undefined;
+    cachedCommand?.build(builder!);
+    const builtOptions = builder?.options.map((o) => o.toJSON());
+    return command.options.map(o => o.name).filter((name) => {
+        const deployedOption = builtOptions?.find((o) => o.name == name);
+        if (!deployedOption) {
+            client.reportError(`Couldn't find deployed option with name: ${name}`, "getRequiredOptions");
+        }
+        return deployedOption?.required;
+    });
+}
+
+async function sendCommandHelp(command: ApplicationCommand<{ guild?: GuildResolvable; }>, interaction: CommandInteraction, client: ClientInstance): Promise<void> {
+    const requiredOptions = getRequiredOptions(command, client);
     let usage = `\`/${command.name}`;
     for (const option of command.options) {
-        usage += ` ${(option.required) ? `<${option.name}>` : `[${option.name}]`}`;
+        usage += ` ${(requiredOptions.includes(option.name)) ? `<${option.name}>` : `[${option.name}]`}`;
     }
     usage += '`';
     for (const option of command.options) {
-        usage += `\n\`${option.name}\`: ${option.required ? 'Required' : 'Optional'}. ${option.description}`;
+        usage += `\n\`${option.name}\`: ${requiredOptions.includes(option.name) ? 'Required' : 'Optional'}. ${option.description}`;
     }
     await interaction.reply({ content: `Usage: ${usage}\nInfo: ${command.description}`, ephemeral: true });
 }
