@@ -61,13 +61,6 @@ export async function handleCommand(givenCommand: CommandSettings,
             }
             break;
         }
-        case `stuCommand`:
-            if (message.author.id === config.legacy.stuID) {
-                await message.author.send(`ʕ •ᴥ•ʔ All aboard Stu's Happyland Express ʕ •ᴥ•ʔ`);
-            } else {
-                await message.channel.send(`Stu.`);
-            }
-            break;
         case `compileCommand`:
             await doCompileCommand(message, args, reportError);
             break;
