@@ -42,7 +42,7 @@ export class ClientInstance extends EventEmitter {
         return this.commands;
     }
 
-    public async deployCommands(this: ClientInstance, global: boolean = false) {
+    public async deployCommands(this: ClientInstance, global = false) {
         try {
             // Global commands are cached; only guaranteed to be up-to-date after an hour
             const route = (global) ? Routes.applicationCommands(config.client.id) : Routes.applicationGuildCommands(config.client.id, config.client.devGuildId);
@@ -58,7 +58,7 @@ export class ClientInstance extends EventEmitter {
             );
         }
         catch (err) {
-            this.reportError(err, "pushCommands");
+            this.reportError(err, 'pushCommands');
         }
     }
 
@@ -107,12 +107,12 @@ export class ClientInstance extends EventEmitter {
     }
 
     private setupEvents(this: ClientInstance) {
-        this.client.on(`error`, async (error: Error) => await this.reportError(error, "`error` event"));
-        this.client.on(`guildMemberAdd`, async (member: GuildMember) => await this.onGuildMemberAdd(member));
-        this.client.on(`messageCreate`, async (message: Message) => await this.processMessage(message));
-        this.client.on(`messageReactionAdd`, async (reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) => await this.onReactionToggled(reaction, user, true));
-        this.client.on(`messageReactionRemove`, async (reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) => await this.onReactionToggled(reaction, user, false));
-        this.client.on(`messageUpdate`, async (_oldMessage: Message | PartialMessage, newMessage: Message | PartialMessage) => {
+        this.client.on('error', async (error: Error) => await this.reportError(error, '`error` event'));
+        this.client.on('guildMemberAdd', async (member: GuildMember) => await this.onGuildMemberAdd(member));
+        this.client.on('messageCreate', async (message: Message) => await this.processMessage(message));
+        this.client.on('messageReactionAdd', async (reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) => await this.onReactionToggled(reaction, user, true));
+        this.client.on('messageReactionRemove', async (reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) => await this.onReactionToggled(reaction, user, false));
+        this.client.on('messageUpdate', async (_oldMessage: Message | PartialMessage, newMessage: Message | PartialMessage) => {
             try {
                 if (newMessage.author?.bot) {
                     return;
@@ -120,11 +120,11 @@ export class ClientInstance extends EventEmitter {
                 await this.processMessage(await newMessage.fetch());
             }
             catch (error) {
-                await this.reportError(error, "`messageUpdate` event");
+                await this.reportError(error, '`messageUpdate` event');
             }
         });
-        this.client.on(`interactionCreate`, async (interaction) => await this.handleInteraction(interaction));
-        this.client.on(`ready`, async () => await this.onReady());
+        this.client.on('interactionCreate', async (interaction) => await this.handleInteraction(interaction));
+        this.client.on('ready', async () => await this.onReady());
     }
 
     private async allowInteraction(interaction: CommandInteraction, command: Command): Promise<boolean> {
@@ -133,13 +133,13 @@ export class ClientInstance extends EventEmitter {
             await command.getPermissions(interaction.guild, permissions);
             return Promise.resolve(permissions.some((perm) => {
                 switch (perm.type) {
-                    case 'ROLE':
-                        if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
-                            return false;
-                        }
-                        return interaction.member.roles.cache.has(perm.id);
-                    case 'USER':
-                        return interaction.user.id == perm.id;
+                case 'ROLE':
+                    if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
+                        return false;
+                    }
+                    return interaction.member.roles.cache.has(perm.id);
+                case 'USER':
+                    return interaction.user.id == perm.id;
                 }
                 return false;
             }));
@@ -164,7 +164,7 @@ export class ClientInstance extends EventEmitter {
             await command?.execute(interaction, this);
         }
         catch (e) {
-            await this.reportError(e, "handleInteraction");
+            await this.reportError(e, 'handleInteraction');
         }
     }
 
@@ -172,7 +172,7 @@ export class ClientInstance extends EventEmitter {
         if (!this.shouldRespond) {
             return;
         }
-        await welcome(member, async (msg) => await this.reportError(msg, "welcome"));
+        await welcome(member, async (msg) => await this.reportError(msg, 'welcome'));
     }
 
     private async onReactionToggled(this: ClientInstance, reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser, added: boolean): Promise<void> {
@@ -186,10 +186,10 @@ export class ClientInstance extends EventEmitter {
                 return;
             const fullUser = await user.fetch();
             const member = await guild.members.fetch(fullUser);
-            handleReaction(fullReaction, member, added, (msg) => this.reportError(msg, "handleReaction"));
+            handleReaction(fullReaction, member, added, (msg) => this.reportError(msg, 'handleReaction'));
         }
         catch (err) {
-            this.reportError(err, "onReactionToggled");
+            this.reportError(err, 'onReactionToggled');
         }
     }
 
@@ -211,7 +211,7 @@ export class ClientInstance extends EventEmitter {
                         await channel.messages.fetch(message.messageID);
                     }
                     catch (err) {
-                        this.reportError(err, "setupServers");
+                        this.reportError(err, 'setupServers');
                     }
                 }
             }
@@ -219,13 +219,13 @@ export class ClientInstance extends EventEmitter {
     }
 
     private async onReady(this: ClientInstance) {
-        console.log(`Setting up servers...`);
+        console.log('Setting up servers...');
         await this.setupServers();
-        console.log(`Pushing commands to Discord (dev guild)...`);
+        console.log('Pushing commands to Discord (dev guild)...');
         await this.deployCommands();
-        console.log(`Setting command permissions...`);
+        console.log('Setting command permissions...');
         await this.setCommandPermissions();
-        console.log(`Ready!`);
+        console.log('Ready!');
         this.terminal?.prompt();
     }
 
@@ -262,10 +262,10 @@ export class ClientInstance extends EventEmitter {
                 return;
             }
 
-            await handleCommand(givenCommand, message, (err) => this.reportError(err, "handleCommand"));
+            await handleCommand(givenCommand, message, (err) => this.reportError(err, 'handleCommand'));
         }
         catch (e) {
-            this.reportError(e, "processMessage");
+            this.reportError(e, 'processMessage');
         }
     }
 }

@@ -7,7 +7,6 @@ import { doCompileCommand } from './compile';
 import { handleEmbed } from './embed';
 import { ErrorFunc } from './error';
 import { NonVoiceChannel } from './types';
-import * as config from './config.json';
 
 export async function handleNonCommand(message: Message): Promise<void> {
     const matches = message.content.match(/(^|[^\w]+)\/r\/\w+/i);
@@ -23,7 +22,7 @@ export async function handleCommand(givenCommand: CommandSettings,
 
     if (givenCommand.requiresGuild) {
         if (!message.guild) {
-            await message.reply(`the given command requires a guild. Please make sure you aren't using this command in a private message.`);
+            await message.reply('the given command requires a guild. Please make sure you aren\'t using this command in a private message.');
             return;
         }
 
@@ -35,7 +34,7 @@ export async function handleCommand(givenCommand: CommandSettings,
         for (const permission of givenCommand.permissions) {
             const required = permission as PermissionString;
             if (!authorMember.permissions.has(required)) {
-                await message.reply(`you do not have permission to use this command.`);
+                await message.reply('you do not have permission to use this command.');
                 return;
             }
         }
@@ -49,55 +48,55 @@ export async function handleCommand(givenCommand: CommandSettings,
     args.shift();
 
     switch (givenCommand.name) {
-        case `testWelcomeCommand`: {
-            if (args.length < 1) {
-                await message.channel.send(`Missing argument(s).`);
-                return;
-            }
-            await message.guild?.members.fetch();
-            const member = await parseCachedUser(message, args[0]);
-            if (member instanceof GuildMember) {
-                await welcome(member, reportError);
-            }
-            break;
+    case 'testWelcomeCommand': {
+        if (args.length < 1) {
+            await message.channel.send('Missing argument(s).');
+            return;
         }
-        case `compileCommand`:
-            await doCompileCommand(message, args, reportError);
-            break;
-        case `adventOfCodeCommand`:
-            if (args.length == 0 && !(message.channel instanceof NewsChannel)) {
-                try {
-                    const fullChannel = await message.channel.fetch() as NonVoiceChannel;
-                    await linkCurrentAdventOfCodePage(fullChannel);
-                    await displayNextUnlock(fullChannel);
-                }
-                catch (e) {
-                    await reportError(e);
-                }
-            } else {
-                switch (args[0]) {
-                    default:
-                        break;
-                    case `leaderboard`:
-                        if (!message.guild) {
-                            return;
-                        }
-                        {
-                            let year = new Date().getFullYear().toString();
-                            if (args.length > 1) {
-                                year = args[1];
-                            }
-                            await displayLeaderboard(message.channel as (TextChannel | ThreadChannel), year, reportError);
-                        }
-                        break;
-                }
+        await message.guild?.members.fetch();
+        const member = await parseCachedUser(message, args[0]);
+        if (member instanceof GuildMember) {
+            await welcome(member, reportError);
+        }
+        break;
+    }
+    case 'compileCommand':
+        await doCompileCommand(message, args, reportError);
+        break;
+    case 'adventOfCodeCommand':
+        if (args.length == 0 && !(message.channel instanceof NewsChannel)) {
+            try {
+                const fullChannel = await message.channel.fetch() as NonVoiceChannel;
+                await linkCurrentAdventOfCodePage(fullChannel);
+                await displayNextUnlock(fullChannel);
             }
-            break;
-        case `embedCommand`:
-            await handleEmbed(message, args, reportError);
-            break;
-        default:
-            await reportError(`Bad command name: ${givenCommand.name}`);
-            break;
+            catch (e) {
+                await reportError(e);
+            }
+        } else {
+            switch (args[0]) {
+            default:
+                break;
+            case 'leaderboard':
+                if (!message.guild) {
+                    return;
+                }
+                {
+                    let year = new Date().getFullYear().toString();
+                    if (args.length > 1) {
+                        year = args[1];
+                    }
+                    await displayLeaderboard(message.channel as (TextChannel | ThreadChannel), year, reportError);
+                }
+                break;
+            }
+        }
+        break;
+    case 'embedCommand':
+        await handleEmbed(message, args, reportError);
+        break;
+    default:
+        await reportError(`Bad command name: ${givenCommand.name}`);
+        break;
     }
 }

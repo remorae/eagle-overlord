@@ -8,6 +8,7 @@ class ListCommandsCommand implements Command {
             .setName('commands')
             .setDescription('Lists all available commands that I recognize. Usage is case-sensitive.');
     }
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     async getPermissions(_guild: Guild, _permissions: ApplicationCommandPermissionData[]): Promise<void> {
     }
     async execute(interaction: CommandInteraction): Promise<void> {

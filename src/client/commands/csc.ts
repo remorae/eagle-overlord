@@ -4,15 +4,6 @@ import { ClientInstance } from '../../client';
 import { Command } from '../command';
 import { addRoleToOther, addRoleToSelf, removeRoleFromOther, removeRoleFromSelf } from './role';
 
-/*
-            "name": "cscCommand",
-            "symbol": "csc",
-            "usage": "!csc <join|leave|info>",
-            "info": "Configures CSC membership or displays information.",
-            "visible": true,
-            "requiresGuild": true,
-            "permissions": []
-            */
 class CscCommand implements Command {
     async build(builder: SlashCommandBuilder): Promise<void> {
         builder
@@ -44,6 +35,7 @@ class CscCommand implements Command {
                     .setDescription('Get information about CSC.')
             );
     }
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     async getPermissions(_guild: Guild, _permissions: ApplicationCommandPermissionData[]): Promise<void> {
     }
     async execute(interaction: CommandInteraction, _client: ClientInstance): Promise<void> {
@@ -53,31 +45,31 @@ class CscCommand implements Command {
         }
         const subCommand = interaction.options.getSubcommand();
         switch (subCommand) {
-            case 'join':
-                await joinCsc(interaction);
-                break;
-            case 'leave':
-                await leaveCsc(interaction);
-                break;
-            case 'info':
-                await sendCscInfo(interaction);
-                break;
-            default:
-                await interaction.reply({ content: 'Invalid subcommand.', ephemeral: true });
-                break;
+        case 'join':
+            await joinCsc(interaction);
+            break;
+        case 'leave':
+            await leaveCsc(interaction);
+            break;
+        case 'info':
+            await sendCscInfo(interaction);
+            break;
+        default:
+            await interaction.reply({ content: 'Invalid subcommand.', ephemeral: true });
+            break;
         }
     }
 }
 
 export const command: Command = new CscCommand();
 
-export const cscMemberRoleId: string = '497912984958402580';
-export const cscCompetitionRoleId: string = '507354887655522347';
+export const cscMemberRoleId = '497912984958402580';
+export const cscCompetitionRoleId = '507354887655522347';
 
 async function sendCscInfo(interaction: CommandInteraction) {
     try {
         const cscGeneralChannel = await interaction.guild?.channels.fetch('497914273373224960');
-        await interaction.reply(`CSC stands for Cyber Security Club.${cscGeneralChannel ? `See ${cscGeneralChannel} for more info.` : ``}`);
+        await interaction.reply(`CSC stands for Cyber Security Club.${cscGeneralChannel ? `See ${cscGeneralChannel} for more info.` : ''}`);
     }
     catch (err) {
         await interaction.reply('Failed to find the CSC general channel.');
@@ -95,7 +87,7 @@ async function leaveCsc(interaction: CommandInteraction): Promise<void> {
         }
     }
     else {
-        await interaction.reply(`Failed to find the CSC Member role.`);
+        await interaction.reply('Failed to find the CSC Member role.');
     }
 }
 
@@ -110,6 +102,6 @@ async function joinCsc(interaction: CommandInteraction): Promise<void> {
         }
     }
     else {
-        await interaction.reply(`Failed to find the CSC Member role.`);
+        await interaction.reply('Failed to find the CSC Member role.');
     }
 }

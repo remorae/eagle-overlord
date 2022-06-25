@@ -2,14 +2,14 @@ import { Message, Guild, GuildMember, GuildChannel, ThreadChannel, User } from '
 
 export async function parseCachedUser(message: Message, arg: string): Promise<GuildMember | Iterable<GuildMember> | null> {
     if (message.guild == null) {
-        await message.channel.send(`This command requires a guild.`);
+        await message.channel.send('This command requires a guild.');
         return null;
     }
     if (arg == null) {
-        await message.channel.send(`You must enter a user.`);
+        await message.channel.send('You must enter a user.');
         return null;
     }
-    if (arg === `all`) {
+    if (arg === 'all') {
         return message.guild.members.cache.values();
     }
     let gm = getCachedMember(message.guild, arg);
@@ -18,7 +18,7 @@ export async function parseCachedUser(message: Message, arg: string): Promise<Gu
     }
     if (!gm && arg.length > 2 &&
         arg[0] == arg[arg.length - 1] &&
-        (arg[0] === `"` || arg[0] === `'` || arg[0] === '`')) {
+        (arg[0] === '"' || arg[0] === '\'' || arg[0] === '`')) {
         const memberName = arg.substr(1, arg.length - 2); // Assume quotes around name
         gm = message.guild.members.cache.find(m => m.displayName === memberName) ?? null;
     }
@@ -32,7 +32,7 @@ export function parseCachedChannel(message: Message, arg: string): GuildChannel 
     }
     if (!ch && arg.length > 2 &&
         arg[0] === arg[arg.length - 1] &&
-        (arg[0] === `"` || arg[0] === `'` || arg[0] === '`')) {
+        (arg[0] === '"' || arg[0] === '\'' || arg[0] === '`')) {
         ch = message.guild?.channels.cache.find(c => c.name === arg.substr(1, arg.length - 2));
     }
     return ch ? ch : null;

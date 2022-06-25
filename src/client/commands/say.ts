@@ -1,6 +1,6 @@
-import { SlashCommandBuilder } from "@discordjs/builders";
-import { ApplicationCommandPermissionData, Channel, CommandInteraction, Guild, GuildChannel, PartialDMChannel, Permissions, TextChannel, ThreadChannel } from "discord.js";
-import { Command, commandRolePermission, rolesWithPermissions } from "../command";
+import { SlashCommandBuilder } from '@discordjs/builders';
+import { ApplicationCommandPermissionData, Channel, CommandInteraction, Guild, GuildChannel, PartialDMChannel, Permissions, TextChannel, ThreadChannel } from 'discord.js';
+import { Command, commandRolePermission, rolesWithPermissions } from '../command';
 
 class SayCommand implements Command {
     async build(builder: SlashCommandBuilder): Promise<void> {
