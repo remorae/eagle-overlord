@@ -38,6 +38,10 @@ export class ClientInstance extends EventEmitter {
         console.log(`Found ${this.commands.size} commands.`);
     }
 
+    public getCachedCommands(this: ClientInstance): Collection<string, Command> {
+        return this.commands;
+    }
+
     public async deployCommands(this: ClientInstance, global: boolean = false) {
         try {
             // Global commands are cached; only guaranteed to be up-to-date after an hour
@@ -157,7 +161,7 @@ export class ClientInstance extends EventEmitter {
                 const permissions: ApplicationCommandPermissionData[] = [];
                 await command?.getPermissions(interaction.guild, permissions);
             }
-            await command?.execute(interaction);
+            await command?.execute(interaction, this);
         }
         catch (e) {
             await this.reportError(e, "handleInteraction");
