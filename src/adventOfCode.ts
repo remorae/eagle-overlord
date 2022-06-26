@@ -71,16 +71,15 @@ export async function displayLeaderboard(channel: TextChannel | ThreadChannel, y
             'cookie': `session=${aocYearInfo.session}`
         });
         const result = JSON.parse(body);
-        let board = '';
         const members = Object.keys(result.members).map(k => result.members[k]); // Turn members into an array
         members.sort((x, y) => {
             if (x != y)
                 return y.local_score - x.local_score; // Descending scores
             return new Date(x.last_star_ts).getTime() - new Date(y.last_star_ts).getTime(); // Ascending timestamps (chronological)
         });
-        members.forEach((member, i) => {
-            board += `${i}. ${member.name} ${member.local_score}\n`;
-        });
+        const board = members
+            .map((member, i) => `${i}. ${member.name} ${member.local_score}`)
+            .join('\n');
         const now = new Date().toLocaleString('en-US', {
             timeZone: 'America/Los_Angeles'
         });
