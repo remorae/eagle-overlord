@@ -15,7 +15,7 @@ class AboutCommand implements Command {
     async getPermissions(_guild: Guild, _permissions: ApplicationCommandPermissionData[]): Promise<void> {
     }
     async execute(interaction: CommandInteraction, _client: ClientInstance): Promise<void> {
-        const infoFile = loadRelativeToMain('../../package.json');
+        const infoFile = loadRelativeToMain('../../package.json', false);
         if (config && infoFile) {
             await interaction.reply({ content: `Currently running on version ${infoFile.version}. Created in ${config.client.deployYear} by ${config.client.developerUserName}.`, allowedMentions: { users: [] } });
         }

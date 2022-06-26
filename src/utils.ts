@@ -59,21 +59,24 @@ export function getCachedChannel(guild: Guild, channel: string): GuildChannel | 
     return guild.channels.cache.get(channel) ?? null;
 }
 
-export function loadAtRuntime(path: string) {
+export function loadAtRuntime(path: string, reload: boolean) {
+    if (reload) {
+        delete require.cache[path];
+    }
     return require(path);
 }
 
-export function resolveRelativeToMain(relativePath: string) {
+export function resolveRelativeToMain(relativePath: string): string | null {
     if (require.main) {
-        return path.resolve(require.main.filename, ...relativePath.split('/'));
+        return path.resolve(path.dirname(require.main.filename), ...relativePath.split('/'));
     }
     return null;
 }
 
-export function loadRelativeToMain(relativePath: string) {
+export function loadRelativeToMain(relativePath: string, reload: boolean) {
     const absolutePath = resolveRelativeToMain(relativePath);
     if (absolutePath) {
-        return loadAtRuntime(absolutePath);
+        return loadAtRuntime(absolutePath, reload);
     }
     return null;
 }

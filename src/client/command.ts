@@ -1,7 +1,7 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
 import type { ApplicationCommandPermissionData, CommandInteraction, Guild, PermissionResolvable, Role } from 'discord.js';
 import path from 'path';
-import fs from 'fs';
+import { readdir } from 'fs/promises';
 import type { ClientInstance } from '../client.js';
 import { loadAtRuntime, resolveRelativeToMain } from '../utils.js';
 
@@ -36,13 +36,9 @@ export async function getCommandsOnDisk(reload = true): Promise<Command[]> {
     if (!commandsDir) {
         return Promise.reject();
     }
-    const commandFiles = (await fs.promises.readdir(commandsDir)).filter(file => file.endsWith('.js'));
+    const commandFiles = (await readdir(commandsDir)).filter(file => file.endsWith('.js'));
     return commandFiles.map(file => {
         const commandPath = path.resolve(commandsDir, file);
-        if (reload) {
-            // Update command in memory if the .js file has been modified (may need to hotfix things without restarting the bot)
-            delete require.cache[commandPath];
-        }
-        return loadAtRuntime(commandPath).command as Command;
+        return loadAtRuntime(commandPath, reload).command as Command;
     });
 }
