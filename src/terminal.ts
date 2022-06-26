@@ -1,7 +1,7 @@
 import { Interface, createInterface } from 'readline';
-import { ClientInstance } from './client';
-import { ActivityType } from 'discord.js';
-import { UnionProperties } from './types';
+import type { ClientInstance } from './client.js';
+import type { ActivityType } from 'discord.js';
+import type { UnionProperties } from './types.js';
 
 export class Terminal {
     private readonly cli: Interface;
@@ -51,12 +51,12 @@ export class Terminal {
     }
 
     private setActivity(this: Terminal, args: string[]) {
-        if (args.length === 2) {
+        const [typeArg, name] = args.slice(2, 4);
+        if (!typeArg) {
             console.error('Missing argument "type".');
-        } else if (args.length === 3) {
+        } else if (!name) {
             console.error('Missing argument "name".');
         } else {
-            const typeArg = args[2];
             const type = typeArg.toUpperCase();
             const validTypes: UnionProperties<Exclude<ActivityType, 'CUSTOM'>> = {
                 PLAYING: undefined,

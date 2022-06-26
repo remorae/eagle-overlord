@@ -28,7 +28,7 @@ Currently the expected interface of this is determined almost entirely by usage 
 See lines such as:
 ```ts
 // client.ts
-import * as config from './config.json';
+import config from './config.json';
 // ...
 export class ClientInstance extends EventEmitter {
     private rest = new REST({ version: '9' }).setToken(config.client.token);

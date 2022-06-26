@@ -1,7 +1,7 @@
 import { Client, Intents } from 'discord.js';
-import { ClientInstance } from './client';
-import { Terminal } from './terminal';
-import * as config from './config.json';
+import { ClientInstance } from './client.js';
+import { Terminal } from './terminal.js';
+import config from './config.js';
 
 async function main() {
     const client = new Client({

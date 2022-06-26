@@ -1,6 +1,6 @@
-import { MessageReaction, GuildMember } from 'discord.js';
-import { ErrorFunc } from './error';
-import { findServer } from './settings';
+import type { MessageReaction, GuildMember } from 'discord.js';
+import type { ErrorFunc } from './error.js';
+import { findServer } from './settings.js';
 
 export async function handleReaction(reaction: MessageReaction,
     member: GuildMember, added: boolean, reportError: ErrorFunc): Promise<void> {

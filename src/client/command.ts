@@ -1,9 +1,9 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
-import { ApplicationCommandPermissionData, CommandInteraction, Guild, PermissionResolvable, Role } from 'discord.js';
-import * as path from 'path';
-import * as fs from 'fs';
-import { ClientInstance } from '../client';
-import { loadAtRuntime, resolveRelativeToMain } from '../utils';
+import type { SlashCommandBuilder } from '@discordjs/builders';
+import type { ApplicationCommandPermissionData, CommandInteraction, Guild, PermissionResolvable, Role } from 'discord.js';
+import path from 'path';
+import fs from 'fs';
+import type { ClientInstance } from '../client.js';
+import { loadAtRuntime, resolveRelativeToMain } from '../utils.js';
 
 export interface Command {
     build(builder: SlashCommandBuilder): Promise<void>,

@@ -1,7 +1,8 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
+import type { SlashCommandBuilder } from '@discordjs/builders';
 import { Guild, ApplicationCommandPermissionData, CommandInteraction, GuildMember, Role, Permissions } from 'discord.js';
-import { Command } from '../command';
-import { acmMemberRoleId } from './acm';
+import type { ClientInstance } from '../../client.js';
+import type { Command } from '../command.js';
+import { acmMemberRoleId } from './acm.js';
 
 class RoleCommand implements Command {
     async build(builder: SlashCommandBuilder): Promise<void> {
@@ -100,7 +101,7 @@ class RoleCommand implements Command {
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     async getPermissions(_guild: Guild, _permissions: ApplicationCommandPermissionData[]): Promise<void> {
     }
-    async execute(interaction: CommandInteraction): Promise<void> {
+    async execute(interaction: CommandInteraction, _client: ClientInstance): Promise<void> {
         if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
             await interaction.reply({ content: 'You must be in a guild to use this command.', ephemeral: true });
             return;

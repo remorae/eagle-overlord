@@ -1,8 +1,8 @@
-import { CompileLanguage } from './settings';
-import { Message } from 'discord.js';
-import { ErrorFunc } from './error';
-import * as bent from 'bent';
-import * as config from './config.json';
+import type { CompileLanguage } from './settings.js';
+import type { Message } from 'discord.js';
+import type { ErrorFunc } from './error.js';
+import bent from 'bent';
+import config from './config.js';
 import stripAnsi from 'strip-ansi';
 
 const maxCompileResultLength = 1900;
@@ -38,11 +38,12 @@ function escapeString(str: string): string {
 }
 
 export async function doCompileCommand(message: Message, args: string[], reportError: ErrorFunc): Promise<void> {
-    if (args.length === 0) {
+    const [lang, code] = args.slice(0, 2);
+    if (!lang || !code) {
         await message.channel.send('Missing argument. See `!help compile` for more info.');
         return;
     }
-    if (args[0] === 'langs') {
+    if (lang === 'langs') {
         let msg = 'Available languages:\n';
         for (const lang of config.legacy.jdoodle.langs) {
             msg += `${lang.full}: ${lang.id}\n`;
@@ -50,12 +51,12 @@ export async function doCompileCommand(message: Message, args: string[], reportE
         await message.author.send(msg);
         return;
     }
-    const language = config.legacy.jdoodle.langs.find(l => l.id === args[0]);
+    const language = config.legacy.jdoodle.langs.find(l => l.id === code);
     if (!language) {
         await message.channel.send('Invalid language. Use `!compile langs` to receive a PM with available languages.');
         return;
     }
-    const source = /```(\w+\n)?([\s\S]+)```/m.exec(args[1]);
+    const source = /```(\w+\n)?([\s\S]+)```/m.exec(code);
     if (!source) {
         await message.channel.send('Malformatted code. See `!help compile` for more info.');
         return;

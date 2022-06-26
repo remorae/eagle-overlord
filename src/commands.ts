@@ -1,17 +1,17 @@
-import { Message, GuildMember, TextChannel, PermissionString, NewsChannel, ThreadChannel } from 'discord.js';
-import { parseCachedUser, getAuthorMember } from './utils';
-import { CommandSettings } from './settings';
-import { welcome } from './welcome';
-import { displayLeaderboard, linkCurrentAdventOfCodePage, displayNextUnlock } from './adventOfCode';
-import { doCompileCommand } from './compile';
-import { handleEmbed } from './embed';
-import { ErrorFunc } from './error';
-import { NonVoiceChannel } from './types';
+import { Message, TextChannel, PermissionString, NewsChannel, ThreadChannel, GuildMember } from 'discord.js';
+import { getAuthorMember, parseCachedUser } from './utils.js';
+import type { CommandSettings } from './settings.js';
+import { displayLeaderboard, linkCurrentAdventOfCodePage, displayNextUnlock } from './adventOfCode.js';
+import { doCompileCommand } from './compile.js';
+import { handleEmbed } from './embed.js';
+import type { ErrorFunc } from './error.js';
+import type { NonVoiceChannel } from './types.js';
+import { welcome } from './welcome.js';
 
 export async function handleNonCommand(message: Message): Promise<void> {
     const matches = message.content.match(/(^|[^\w]+)\/r\/\w+/i);
     if (matches) {
-        const url = matches[0].trim().toLowerCase();
+        const url = matches[0]?.trim().toLowerCase();
         await message.channel.send(`<http://www.reddit.com${url}>`);
     }
 }
@@ -49,12 +49,13 @@ export async function handleCommand(givenCommand: CommandSettings,
 
     switch (givenCommand.name) {
     case 'testWelcomeCommand': {
-        if (args.length < 1) {
+        const arg = args[0];
+        if (!arg) {
             await message.channel.send('Missing argument(s).');
             return;
         }
         await message.guild?.members.fetch();
-        const member = await parseCachedUser(message, args[0]);
+        const member = await parseCachedUser(message, arg);
         if (member instanceof GuildMember) {
             await welcome(member, reportError);
         }
@@ -82,10 +83,7 @@ export async function handleCommand(givenCommand: CommandSettings,
                     return;
                 }
                 {
-                    let year = new Date().getFullYear().toString();
-                    if (args.length > 1) {
-                        year = args[1];
-                    }
+                    const year = args[1] ?? new Date().getFullYear().toString();
                     await displayLeaderboard(message.channel as (TextChannel | ThreadChannel), year, reportError);
                 }
                 break;

@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { ApplicationCommand, ApplicationCommandPermissionData, CommandInteraction, Guild, GuildResolvable } from 'discord.js';
-import { ClientInstance } from '../../client';
-import { Command, getCommandsOnDisk } from '../command';
+import type { ApplicationCommand, ApplicationCommandPermissionData, CommandInteraction, Guild, GuildResolvable } from 'discord.js';
+import type { ClientInstance } from '../../client.js';
+import { Command, getCommandsOnDisk } from '../command.js';
 
 class HelpCommand implements Command {
     async build(builder: SlashCommandBuilder): Promise<void> {

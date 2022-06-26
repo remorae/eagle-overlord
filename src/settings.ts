@@ -1,5 +1,5 @@
-import { Guild } from 'discord.js';
-import * as config from './config.json';
+import type { Guild } from 'discord.js';
+import config from './config.js';
 
 export interface CommandSettings {
   name: string;

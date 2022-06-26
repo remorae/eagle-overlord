@@ -1,11 +1,11 @@
-import { Command, getCommandsOnDisk } from './client/command';
-import { handleCommand, handleNonCommand } from './commands';
-import * as config from './config.json';
-import { handleReaction } from './reactions';
-import { findServer } from './settings';
-import { Terminal } from './terminal';
-import { getCachedChannel, giveCaseWarning } from './utils';
-import { welcome } from './welcome';
+import { Command, getCommandsOnDisk } from './client/command.js';
+import { handleCommand, handleNonCommand } from './commands.js';
+import config from './config.js';
+import { handleReaction } from './reactions.js';
+import { findServer } from './settings.js';
+import type { Terminal } from './terminal.js';
+import { getCachedChannel, giveCaseWarning } from './utils.js';
+import { welcome } from './welcome.js';
 
 import { Client, Message, PartialMessage, User, PartialUser, MessageReaction, PartialMessageReaction, GuildMember, TextChannel, Interaction, Collection, ApplicationCommandPermissionData, CommandInteraction } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
@@ -87,7 +87,7 @@ export class ClientInstance extends EventEmitter {
         // }
     }
 
-    public async reportError(this: ClientInstance, message: Error | string, context?: string): Promise<void> {
+    public async reportError(this: ClientInstance, message: Error | string | unknown, context?: string): Promise<void> {
         if (message instanceof Error) {
             message = `${message.message}\n${message.stack}`;
         }
@@ -96,7 +96,7 @@ export class ClientInstance extends EventEmitter {
         }
         try {
             const creator = await this.client.users.fetch(config.client.developerUserId);
-            await creator.send(message as string);
+            await creator.send(`${message}`);
             console.error(message);
             this.terminal?.prompt();
         }
@@ -172,7 +172,7 @@ export class ClientInstance extends EventEmitter {
         if (!this.shouldRespond) {
             return;
         }
-        await welcome(member, async (msg) => await this.reportError(msg, 'welcome'));
+        await welcome(member, async (msg) => await this.reportError(msg, 'onGuildMemberAdd'));
     }
 
     private async onReactionToggled(this: ClientInstance, reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser, added: boolean): Promise<void> {
@@ -246,7 +246,7 @@ export class ClientInstance extends EventEmitter {
                 return;
             }
 
-            const messageCommandText = message.content.split(' ')[0].substr(1);
+            const messageCommandText = message.content.slice(1, message.content.indexOf(' '));
 
             const commands = (server) ? server.commands : config.legacy.commands;
             const givenCommand = commands.find(c => c.symbol === messageCommandText);

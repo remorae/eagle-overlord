@@ -1,1 +1,1 @@
-export type ErrorFunc = (error: Error | string) => Promise<void>;
+export type ErrorFunc = (error: Error | string | unknown) => Promise<void>;
