@@ -3,7 +3,6 @@ import type { Message } from 'discord.js';
 import type { ErrorFunc } from './error.js';
 import bent from 'bent';
 import config from './config.js';
-import stripAnsi from 'strip-ansi';
 
 const maxCompileResultLength = 1900;
 
@@ -28,7 +27,8 @@ async function compile(source: string, language: CompileLanguage): Promise<{ err
     };
 }
 
-function escapeString(str: string): string {
+async function escapeString(str: string): Promise<string> {
+    const { default: stripAnsi } = await import('strip-ansi');
     let result = stripAnsi(str).replace(/[^\x20-\x7E]/g, '').replace(/```/g, '\\`\\`\\`');
     if (result.length > maxCompileResultLength) {
         result = result.substr(0, maxCompileResultLength);
@@ -79,7 +79,7 @@ export async function doCompileCommand(message: Message, args: string[], reportE
             await reportError(`Error: ${results.error}\nStatusCode: ${results.statusCode}`);
             await message.channel.send(`Go poke <@${config.client.developerUserId}>!`);
         } else if (results.output) {
-            await message.channel.send(`Results for <@${message.author.id}>: \`\`\`${escapeString(results.output as string)}\`\`\`` +
+            await message.channel.send(`Results for <@${message.author.id}>: \`\`\`${await escapeString(results.output as string)}\`\`\`` +
                 `\nMemory: ${results.memory}, CPU Time: ${results.cpuTime}`);
         } else if (results.statusCode !== 200) {
             await reportError(`Bad compile:\n${message.content}\n${JSON.stringify(results)}`);
