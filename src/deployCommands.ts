@@ -10,7 +10,7 @@ async function main() {
         command.build(builder);
         return builder.toJSON();
     });
-    
+
     try {
         const rest = new REST({ version: '9' }).setToken(config.client.token);
         const route = Routes.applicationGuildCommands(config.client.id, config.client.devGuildId);

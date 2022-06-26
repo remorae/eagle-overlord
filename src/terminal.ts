@@ -87,12 +87,12 @@ export class Terminal {
             }
         } else {
             switch (args[1]) {
-            case 'set':
-                this.setActivity(args);
-                break;
-            default:
-                console.error(`Unknown argument "${args[1]}".`);
-                break;
+                case 'set':
+                    this.setActivity(args);
+                    break;
+                default:
+                    console.error(`Unknown argument "${args[1]}".`);
+                    break;
             }
         }
     }
@@ -109,38 +109,38 @@ export class Terminal {
 
     private async processInput(this: Terminal, line: string): Promise<void> {
         switch (line.trim()) {
-        case 'quit':
-        case 'exit':
-            this.exit();
-            break;
-        case 'connect':
-            this.connectClient();
-            break;
-        case 'disconnect':
-            this.disconnectClient();
-            break;
-        case 'refresh-commands':
-            await this.refreshCommands(false);
-            break;
-        case 'refresh-global-commands':
-            await this.refreshCommands(true);
-            break;
-        default:
-            {
-                const args = line.split(' ');
-                if (args.length === 0) {
-                    break;
+            case 'quit':
+            case 'exit':
+                this.exit();
+                break;
+            case 'connect':
+                this.connectClient();
+                break;
+            case 'disconnect':
+                this.disconnectClient();
+                break;
+            case 'refresh-commands':
+                await this.refreshCommands(false);
+                break;
+            case 'refresh-global-commands':
+                await this.refreshCommands(true);
+                break;
+            default:
+                {
+                    const args = line.split(' ');
+                    if (args.length === 0) {
+                        break;
+                    }
+                    switch (args[0]) {
+                        case 'activity':
+                            this.processActivity(args);
+                            break;
+                        default:
+                            console.error('Unknown command.');
+                            break;
+                    }
                 }
-                switch (args[0]) {
-                case 'activity':
-                    this.processActivity(args);
-                    break;
-                default:
-                    console.error('Unknown command.');
-                    break;
-                }
-            }
-            break;
+                break;
         }
     }
 }
