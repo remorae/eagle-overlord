@@ -1,8 +1,7 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
-import { ApplicationCommandPermissionData, CommandInteraction, Guild } from 'discord.js';
-import { Command } from '../command';
-import * as Config from '../../config.json';
-import { loadRelativeToMain } from '../../utils';
+import type { SlashCommandBuilder } from '@discordjs/builders';
+import type { ApplicationCommandPermissionData, CommandInteraction, Guild } from 'discord.js';
+import type { Command } from '../command';
+import config from '../../config.js';
 
 class StuCommand implements Command {
     async build(builder: SlashCommandBuilder): Promise<void> {
@@ -15,7 +14,6 @@ class StuCommand implements Command {
     async getPermissions(_guild: Guild, _permissions: ApplicationCommandPermissionData[]) {
     }
     async execute(interaction: CommandInteraction) {
-        const config: typeof Config = loadRelativeToMain('../config.json');
         if (interaction.user.id == config.client.stuID) {
             await interaction.reply({ content: 'ʕ •ᴥ•ʔ All aboard Stu\'s Happyland Express ʕ •ᴥ•ʔ', ephemeral: true});
         }

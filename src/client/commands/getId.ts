@@ -1,7 +1,7 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
+import type { SlashCommandBuilder } from '@discordjs/builders';
 import { ApplicationCommandPermissionData, Channel, CommandInteraction, Guild, GuildMember, Permissions, Role, User } from 'discord.js';
-import { ClientInstance } from '../../client';
-import { Command, commandRolePermission, rolesWithPermissions } from '../command';
+import type { ClientInstance } from '../../client.js';
+import { Command, commandRolePermission, rolesWithPermissions } from '../command.js';
 
 class GetIdCommand implements Command {
     async build(builder: SlashCommandBuilder): Promise<void> {

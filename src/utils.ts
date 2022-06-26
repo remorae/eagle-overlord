@@ -1,5 +1,5 @@
 import { Message, Guild, GuildMember, GuildChannel, ThreadChannel, User } from 'discord.js';
-import * as path from 'path';
+import path from 'path';
 
 export async function parseCachedUser(message: Message, arg: string): Promise<GuildMember | Iterable<GuildMember> | null> {
     if (message.guild == null) {

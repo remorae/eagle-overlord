@@ -1,6 +1,6 @@
 import { MessageEmbed, Message, ColorResolvable, TextChannel, HexColorString } from 'discord.js';
-import { parseCachedChannel } from './utils';
-import { ErrorFunc } from './error';
+import { parseCachedChannel } from './utils.js';
+import type { ErrorFunc } from './error.js';
 
 export function createEmbed(title: string, color: ColorResolvable,
     description: string): MessageEmbed {
@@ -12,22 +12,21 @@ export function createEmbed(title: string, color: ColorResolvable,
 
 export async function handleEmbed(message: Message, args: string[],
     reportError: ErrorFunc): Promise<void> {
-    if (args.length < 4) {
-        await message.channel.send('Missing message. See `!help embed` for more info.');
+    const [channel, titleStr, colorStr, descStr, toEdit] = args.slice(0, 5);
+    if (!channel || !titleStr || !colorStr || !descStr) {
+        await message.channel.send('Missing argument. See `!help embed` for more info.');
         return;
     }
-    const destChannel = parseCachedChannel(message, args[0]) as TextChannel;
+    const destChannel = parseCachedChannel(message, channel) as TextChannel;
     if (!destChannel) {
         await message.channel.send('Invalid channel.');
         return;
     }
-    const title = args[1].replace(/(^"|"$)/g, '');
-    const colorStr = args[2];
+    const title = titleStr.replace(/(^"|"$)/g, '');
     const color = colorStr.startsWith('0x') ? (`#${colorStr.slice(2)}`) as HexColorString : parseInt(colorStr);
-    const descStr = args[3].replace(/(^```|```$)/g, '');
-    const toEdit = (args.length > 4) ? args[4] : null;
+    const desc = descStr.replace(/(^```|```$)/g, '');
 
-    const embed = createEmbed(title, color, descStr);
+    const embed = createEmbed(title, color, desc);
 
     if (toEdit) {
         try {

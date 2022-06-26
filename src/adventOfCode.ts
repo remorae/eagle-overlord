@@ -1,9 +1,9 @@
-import { TextChannel, ThreadChannel } from 'discord.js';
-import { createEmbed } from './embed';
-import { ErrorFunc } from './error';
-import { NonVoiceChannel } from './types';
-import * as bent from 'bent';
-import { findServer } from './settings';
+import type { TextChannel, ThreadChannel } from 'discord.js';
+import { createEmbed } from './embed.js';
+import type { ErrorFunc } from './error.js';
+import type { NonVoiceChannel } from './types.js';
+import bent from 'bent';
+import { findServer } from './settings.js';
 
 function getEasternTime(): Date {
     const utc = new Date();

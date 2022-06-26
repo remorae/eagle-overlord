@@ -1,6 +1,7 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
+import type { SlashCommandBuilder } from '@discordjs/builders';
 import { ApplicationCommandPermissionData, Channel, CommandInteraction, Guild, GuildChannel, PartialDMChannel, Permissions, TextChannel, ThreadChannel } from 'discord.js';
-import { Command, commandRolePermission, rolesWithPermissions } from '../command';
+import type { ClientInstance } from '../../client.js';
+import { Command, commandRolePermission, rolesWithPermissions } from '../command.js';
 
 class SayCommand implements Command {
     async build(builder: SlashCommandBuilder): Promise<void> {
@@ -23,7 +24,7 @@ class SayCommand implements Command {
             permissions.push(commandRolePermission(role.id, true));
         }
     }
-    async execute(interaction: CommandInteraction) {
+    async execute(interaction: CommandInteraction, _client: ClientInstance) {
         const message = interaction.options.getString('message', true);
         let channel: Channel | PartialDMChannel | null = interaction.channel;
         if (interaction.inGuild()) {
@@ -41,4 +42,5 @@ class SayCommand implements Command {
         }
     }
 }
+
 export const command: Command = new SayCommand();

@@ -1,8 +1,8 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
+import type { SlashCommandBuilder } from '@discordjs/builders';
 import { Guild, ApplicationCommandPermissionData, CommandInteraction, GuildMember } from 'discord.js';
-import { ClientInstance } from '../../client';
-import { Command } from '../command';
-import { addRoleToOther, addRoleToSelf, removeRoleFromOther, removeRoleFromSelf } from './role';
+import type { ClientInstance } from '../../client.js';
+import type { Command } from '../command.js';
+import { addRoleToOther, addRoleToSelf, removeRoleFromOther, removeRoleFromSelf } from './role.js';
 
 class CscCommand implements Command {
     async build(builder: SlashCommandBuilder): Promise<void> {
