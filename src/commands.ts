@@ -1,12 +1,11 @@
-import { Message, TextChannel, PermissionString, NewsChannel, ThreadChannel, GuildMember } from 'discord.js';
-import { getAuthorMember, parseCachedUser } from './utils.js';
+import { Message, TextChannel, PermissionString, NewsChannel, ThreadChannel } from 'discord.js';
+import { getAuthorMember } from './utils.js';
 import type { CommandSettings } from './settings.js';
 import { displayLeaderboard, linkCurrentAdventOfCodePage, displayNextUnlock } from './adventOfCode.js';
 import { doCompileCommand } from './compile.js';
 import { handleEmbed } from './embed.js';
 import type { ErrorFunc } from './error.js';
 import type { NonVoiceChannel } from './types.js';
-import { welcome } from './welcome.js';
 
 export async function handleNonCommand(message: Message): Promise<void> {
     const matches = message.content.match(/(^|[^\w]+)\/r\/\w+/i);
@@ -48,19 +47,6 @@ export async function handleCommand(givenCommand: CommandSettings,
     args.shift();
 
     switch (givenCommand.name) {
-    case 'testWelcomeCommand': {
-        const arg = args[0];
-        if (!arg) {
-            await message.channel.send('Missing argument(s).');
-            return;
-        }
-        await message.guild?.members.fetch();
-        const member = await parseCachedUser(message, arg);
-        if (member instanceof GuildMember) {
-            await welcome(member, reportError);
-        }
-        break;
-    }
     case 'compileCommand':
         await doCompileCommand(message, args, reportError);
         break;
