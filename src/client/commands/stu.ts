@@ -15,10 +15,10 @@ class StuCommand implements Command {
     }
     async execute(interaction: CommandInteraction) {
         if (interaction.user.id == config.client.stuID) {
-            await interaction.reply({ content: 'ʕ •ᴥ•ʔ All aboard Stu\'s Happyland Express ʕ •ᴥ•ʔ', ephemeral: true});
+            await interaction.reply({ content: 'ʕ •ᴥ•ʔ All aboard Stu\'s Happyland Express ʕ •ᴥ•ʔ', ephemeral: true });
         }
         else {
-            await interaction.reply({ content: 'Stu.', ephemeral: true});
+            await interaction.reply({ content: 'Stu.', ephemeral: true });
         }
     }
 }

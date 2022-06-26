@@ -133,13 +133,13 @@ export class ClientInstance extends EventEmitter {
             await command.getPermissions(interaction.guild, permissions);
             return Promise.resolve(permissions.some((perm) => {
                 switch (perm.type) {
-                case 'ROLE':
-                    if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
-                        return false;
-                    }
-                    return interaction.member.roles.cache.has(perm.id);
-                case 'USER':
-                    return interaction.user.id == perm.id;
+                    case 'ROLE':
+                        if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
+                            return false;
+                        }
+                        return interaction.member.roles.cache.has(perm.id);
+                    case 'USER':
+                        return interaction.user.id == perm.id;
                 }
                 return false;
             }));

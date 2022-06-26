@@ -38,7 +38,7 @@ class WelcomeCommand implements Command {
         try {
             const success = await welcome(member, async (msg) => await client.reportError(msg, 'WelcomeCommand.execute'));
             if (success) {
-                await interaction.editReply({ content: 'Done!'});
+                await interaction.editReply({ content: 'Done!' });
             }
             else {
                 await interaction.editReply({ content: 'Failed to welcome user. Welcome/general channels may not be configured.' });

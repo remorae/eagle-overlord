@@ -45,18 +45,18 @@ class AcmCommand implements Command {
         }
         const subCommand = interaction.options.getSubcommand();
         switch (subCommand) {
-        case 'join':
-            await joinAcm(interaction);
-            break;
-        case 'leave':
-            await leaveAcm(interaction);
-            break;
-        case 'info':
-            await sendAcmInfo(interaction);
-            break;
-        default:
-            await interaction.reply({ content: 'Invalid subcommand.', ephemeral: true });
-            break;
+            case 'join':
+                await joinAcm(interaction);
+                break;
+            case 'leave':
+                await leaveAcm(interaction);
+                break;
+            case 'info':
+                await sendAcmInfo(interaction);
+                break;
+            default:
+                await interaction.reply({ content: 'Invalid subcommand.', ephemeral: true });
+                break;
         }
     }
 }

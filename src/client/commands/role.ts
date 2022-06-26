@@ -113,15 +113,15 @@ class RoleCommand implements Command {
             return;
         }
         switch (subCommandGroup) {
-        case 'add':
-            await addRole(interaction, role);
-            break;
-        case 'remove':
-            await removeRole(interaction, role);
-            break;
-        default:
-            await interaction.reply({ content: 'Invalid subcommand group.', ephemeral: true });
-            break;
+            case 'add':
+                await addRole(interaction, role);
+                break;
+            case 'remove':
+                await removeRole(interaction, role);
+                break;
+            default:
+                await interaction.reply({ content: 'Invalid subcommand group.', ephemeral: true });
+                break;
         }
     }
 }
@@ -136,18 +136,18 @@ export async function removeRole(interaction: CommandInteraction, role: Role): P
     else {
         const subCommand = interaction.options.getSubcommand();
         switch (subCommand) {
-        case 'self':
-            await removeRoleFromSelf(interaction, role);
-            break;
-        case 'other':
-            await removeRoleFromOther(interaction, role);
-            break;
-        case 'all':
-            await removeRoleFromAll(interaction, role);
-            break;
-        default:
-            await interaction.reply({ content: 'Invalid subcommand.', ephemeral: true });
-            break;
+            case 'self':
+                await removeRoleFromSelf(interaction, role);
+                break;
+            case 'other':
+                await removeRoleFromOther(interaction, role);
+                break;
+            case 'all':
+                await removeRoleFromAll(interaction, role);
+                break;
+            default:
+                await interaction.reply({ content: 'Invalid subcommand.', ephemeral: true });
+                break;
         }
     }
 }
@@ -235,18 +235,18 @@ async function addRole(interaction: CommandInteraction, role: Role): Promise<voi
     else {
         const subCommand = interaction.options.getSubcommand();
         switch (subCommand) {
-        case 'self':
-            await addRoleToSelf(interaction, role);
-            break;
-        case 'other':
-            await addRoleToOther(interaction, role);
-            break;
-        case 'all':
-            await addRoleToAll(interaction, role);
-            break;
-        default:
-            await interaction.reply({ content: 'Invalid subcommand.', ephemeral: true });
-            break;
+            case 'self':
+                await addRoleToSelf(interaction, role);
+                break;
+            case 'other':
+                await addRoleToOther(interaction, role);
+                break;
+            case 'all':
+                await addRoleToAll(interaction, role);
+                break;
+            default:
+                await interaction.reply({ content: 'Invalid subcommand.', ephemeral: true });
+                break;
         }
     }
 }

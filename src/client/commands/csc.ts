@@ -45,18 +45,18 @@ class CscCommand implements Command {
         }
         const subCommand = interaction.options.getSubcommand();
         switch (subCommand) {
-        case 'join':
-            await joinCsc(interaction);
-            break;
-        case 'leave':
-            await leaveCsc(interaction);
-            break;
-        case 'info':
-            await sendCscInfo(interaction);
-            break;
-        default:
-            await interaction.reply({ content: 'Invalid subcommand.', ephemeral: true });
-            break;
+            case 'join':
+                await joinCsc(interaction);
+                break;
+            case 'leave':
+                await leaveCsc(interaction);
+                break;
+            case 'info':
+                await sendCscInfo(interaction);
+                break;
+            default:
+                await interaction.reply({ content: 'Invalid subcommand.', ephemeral: true });
+                break;
         }
     }
 }

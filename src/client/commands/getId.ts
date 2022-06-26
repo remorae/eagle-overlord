@@ -54,18 +54,18 @@ class GetIdCommand implements Command {
         }
         const subCommand = interaction.options.getSubcommand();
         switch (subCommand) {
-        case 'role':
-            await getRoleId(interaction);
-            break;
-        case 'user':
-            await getUserId(interaction);
-            break;
-        case 'channel':
-            await getChannelId(interaction);
-            break;
-        default:
-            await interaction.reply({ content: 'Invalid subcommand group.', ephemeral: true });
-            break;
+            case 'role':
+                await getRoleId(interaction);
+                break;
+            case 'user':
+                await getUserId(interaction);
+                break;
+            case 'channel':
+                await getChannelId(interaction);
+                break;
+            default:
+                await interaction.reply({ content: 'Invalid subcommand group.', ephemeral: true });
+                break;
         }
     }
 }
