@@ -5,7 +5,7 @@ import { handleReaction } from './reactions.js';
 import { findServer } from './settings.js';
 import type { Terminal } from './terminal.js';
 import { getCachedChannel, giveCaseWarning } from './utils.js';
-import { welcome } from './welcome.js';
+import { welcome } from './client/commands/welcome.js';
 
 import { Client, Message, PartialMessage, User, PartialUser, MessageReaction, PartialMessageReaction, GuildMember, TextChannel, Interaction, Collection, ApplicationCommandPermissionData, CommandInteraction } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
