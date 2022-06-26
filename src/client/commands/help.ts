@@ -68,16 +68,21 @@ async function sendCommandHelp(command: ApplicationCommand<{ guild?: GuildResolv
     for (const option of command.options) {
         usage += `\n\`${option.name}\`: ${requiredOptions.includes(option.name) ? 'Required' : 'Optional'}. ${option.description}`;
     }
-    await interaction.reply({ content: `Usage: ${usage}\nInfo: ${command.description}`, ephemeral: true });
+    const msg =
+`Usage: ${usage}
+Info: ${command.description}`;
+    await interaction.reply({ content: msg, ephemeral: true });
 }
 
 async function sendGeneralHelp(interaction: CommandInteraction): Promise<void> {
     const helpChannel = interaction.guild?.channels.cache.get('273687752392966155');
-    await interaction.reply({
-        content: 'If you\'d like help with specific command syntax, please use `/help <commandName>`.' +
-            '\nIf you\'d like to see available commands, please use `/commands`.' +
-            (helpChannel ? `\nIf you need help with Discord or something not specific to a class, please ask a question in ${helpChannel}.` : '')
-    });
+    let msg =
+`If you'd like help with specific command syntax, please use \`/help <commandName>\`.
+If you'd like to see available commands, please use \`/commands\`.`;
+    if (helpChannel) {
+        msg += `\nIf you need help with Discord or something not specific to a class, please ask a question in ${helpChannel}.`;
+    }
+    await interaction.reply({ content: msg });
 }
 
 async function getDeployedCommand(interaction: CommandInteraction, specifiedCommand: string): Promise<ApplicationCommand<{ guild?: GuildResolvable; }> | undefined> {

@@ -64,8 +64,10 @@ export async function welcome(member: GuildMember, reportError: ErrorFunc): Prom
         return false;
     }
 
-    await generalChannel.send(`${member.user} has logged on!` +
-        `\nPlease take a look at ${welcomeChannel} before you get started.`);
+    const msg =
+`${member.user} has logged on!
+Please take a look at ${welcomeChannel} before you get started.`;
+    await generalChannel.send({ content: msg });
 
     await member.guild.roles.fetch();
     for (const defaultRole of server.defaultRoles) {
