@@ -239,21 +239,22 @@ export class ClientInstance extends EventEmitter {
             }
 
             const server = findServer(message.guild);
-            const prefix = (server) ? server.commandPrefix : config.legacy.defaultCommandPrefix;
+            if (!server) {
+                return;
+            }
 
-            if (!message.content.startsWith(prefix)) {
+            if (!message.content.startsWith(server.commandPrefix)) {
                 await handleNonCommand(message);
                 return;
             }
 
             const messageCommandText = message.content.slice(1, message.content.indexOf(' '));
 
-            const commands = (server) ? server.commands : config.legacy.commands;
-            const givenCommand = commands.find(c => c.symbol === messageCommandText);
+            const givenCommand = server.commands.find(c => c.symbol === messageCommandText);
 
             if (!givenCommand) {
                 // No valid command was found; check if the message didn't match casing
-                for (const command of commands) {
+                for (const command of server.commands) {
                     if (messageCommandText.toLowerCase() === `${command.symbol}`.toLowerCase()) {
                         giveCaseWarning(message, command.symbol);
                         break;
