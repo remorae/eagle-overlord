@@ -2,7 +2,6 @@ import { Message, TextChannel, PermissionString, NewsChannel, ThreadChannel } fr
 import { getAuthorMember } from './utils.js';
 import type { CommandSettings } from './settings.js';
 import { displayLeaderboard, linkCurrentAdventOfCodePage, displayNextUnlock } from './adventOfCode.js';
-import { doCompileCommand } from './compile.js';
 import { handleEmbed } from './embed.js';
 import type { ErrorFunc } from './error.js';
 import type { NonVoiceChannel } from './types.js';
@@ -47,40 +46,37 @@ export async function handleCommand(givenCommand: CommandSettings,
     args.shift();
 
     switch (givenCommand.name) {
-    case 'compileCommand':
-        await doCompileCommand(message, args, reportError);
-        break;
-    case 'adventOfCodeCommand':
-        if (args.length == 0 && !(message.channel instanceof NewsChannel)) {
-            try {
-                const fullChannel = await message.channel.fetch() as NonVoiceChannel;
-                await linkCurrentAdventOfCodePage(fullChannel);
-                await displayNextUnlock(fullChannel);
-            }
-            catch (e) {
-                await reportError(e);
-            }
-        } else {
-            switch (args[0]) {
-            default:
-                break;
-            case 'leaderboard':
-                if (!message.guild) {
-                    return;
+        case 'adventOfCodeCommand':
+            if (args.length == 0 && !(message.channel instanceof NewsChannel)) {
+                try {
+                    const fullChannel = await message.channel.fetch() as NonVoiceChannel;
+                    await linkCurrentAdventOfCodePage(fullChannel);
+                    await displayNextUnlock(fullChannel);
                 }
-                {
-                    const year = args[1] ?? new Date().getFullYear().toString();
-                    await displayLeaderboard(message.channel as (TextChannel | ThreadChannel), year, reportError);
+                catch (e) {
+                    await reportError(e);
                 }
-                break;
+            } else {
+                switch (args[0]) {
+                    default:
+                        break;
+                    case 'leaderboard':
+                        if (!message.guild) {
+                            return;
+                        }
+                        {
+                            const year = args[1] ?? new Date().getFullYear().toString();
+                            await displayLeaderboard(message.channel as (TextChannel | ThreadChannel), year, reportError);
+                        }
+                        break;
+                }
             }
-        }
-        break;
-    case 'embedCommand':
-        await handleEmbed(message, args, reportError);
-        break;
-    default:
-        await reportError(`Bad command name: ${givenCommand.name}`);
-        break;
+            break;
+        case 'embedCommand':
+            await handleEmbed(message, args, reportError);
+            break;
+        default:
+            await reportError(`Bad command name: ${givenCommand.name}`);
+            break;
     }
 }
