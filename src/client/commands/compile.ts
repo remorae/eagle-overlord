@@ -31,7 +31,6 @@ class CompileCommand implements Command {
                             .setName('language')
                             .setDescription('Which language the code is written in.')
                             .setRequired(true)
-                            .setAutocomplete(true)
                             .addChoices(...languageChoices)
                     )
                     .addIntegerOption((option) =>
