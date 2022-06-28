@@ -5,6 +5,7 @@ import type { Command } from '../command.js';
 import { acmMemberRoleId } from './acm.js';
 
 class RoleCommand implements Command {
+    // eslint-disable-next-line max-lines-per-function
     async build(builder: SlashCommandBuilder): Promise<void> {
         builder
             .setName('role')
@@ -130,10 +131,7 @@ export async function removeRole(interaction: CommandInteraction, role: Role): P
     if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
         return;
     }
-    if (!interaction.member.permissions.has(role.permissions)) {
-        await interaction.reply('You do not have permission to remove this role.');
-    }
-    else {
+    if (interaction.member.permissions.has(role.permissions)) {
         const subCommand = interaction.options.getSubcommand();
         switch (subCommand) {
             case 'self':
@@ -150,6 +148,9 @@ export async function removeRole(interaction: CommandInteraction, role: Role): P
                 break;
         }
     }
+    else {
+        await interaction.reply('You do not have permission to remove this role.');
+    }
 }
 
 async function removeRoleFromAll(interaction: CommandInteraction, role: Role): Promise<void> {
@@ -157,24 +158,32 @@ async function removeRoleFromAll(interaction: CommandInteraction, role: Role): P
         return;
     }
     if (await hasPermissionToManageRole(interaction.member, role, true)) {
-        await interaction.deferReply({ ephemeral: true });
-        try {
-            const members = await interaction.guild.members.fetch();
-            let removed = 0;
-            for (const [_id, member] of members) {
-                if (member.roles.cache.has(role.id)) {
-                    await member.roles.remove(role);
-                    ++removed;
-                }
-            }
-            await interaction.editReply({ content: `Removed role ${role} from ${removed} users.`, allowedMentions: { users: [], roles: [] } });
-        }
-        catch (err) {
-            await interaction.editReply({ content: 'Something went wrong! The bot might lack permission to remove the role.' });
-        }
+        await deferredBatchRemove(interaction, interaction.guild, role);
     }
     else {
         await interaction.reply('You do not have permission to remove roles from other users.');
+    }
+}
+
+async function deferredBatchRemove(interaction: CommandInteraction, guild: Guild, role: Role) {
+    await interaction.deferReply({ ephemeral: true });
+    try {
+        const members = await guild.members.fetch();
+        const pendingRemoves = members
+            .map(async (member, _id) => {
+                if (member.roles.cache.has(role.id)) {
+                    await member.roles.remove(role);
+                    return true;
+                }
+                return false;
+            });
+        const numRemoved = (await Promise.all(pendingRemoves))
+            .filter(removed => removed)
+            .length;
+        await interaction.editReply({ content: `Removed role ${role} from ${numRemoved} users.`, allowedMentions: { users: [], roles: [] } });
+    }
+    catch (err) {
+        await interaction.editReply({ content: 'Something went wrong! The bot might lack permission to remove the role.' });
     }
 }
 
@@ -188,14 +197,7 @@ export async function removeRoleFromOther(interaction: CommandInteraction, role:
             await interaction.reply({ content: 'Invalid user.', ephemeral: true });
         }
         else if (member.roles.cache.has(role.id)) {
-            try {
-                await member.roles.remove(role);
-                await interaction.reply({ content: `Removed role ${role} from ${member}.`, allowedMentions: { users: [], roles: [] } });
-            }
-            catch (err) {
-                await interaction.reply({ content: 'Something went wrong! The bot might lack permission to remove the role.' });
-                throw err;
-            }
+            await removeMemberRole(interaction, member, role);
         }
         else {
             await interaction.reply({ content: `${member} does not have this role.`, ephemeral: true, allowedMentions: { users: [] } });
@@ -206,19 +208,28 @@ export async function removeRoleFromOther(interaction: CommandInteraction, role:
     }
 }
 
+async function removeMemberRole(interaction: CommandInteraction, member: GuildMember, role: Role) {
+    try {
+        await member.roles.remove(role);
+        if (member === interaction.member) {
+            await interaction.reply({ content: `Removed role ${role}.`, allowedMentions: { roles: [] } });
+        }
+        else {
+            await interaction.reply({ content: `Removed role ${role} from ${member}.`, allowedMentions: { users: [], roles: [] } });
+        }
+    }
+    catch (err) {
+        await interaction.reply({ content: 'Something went wrong! The bot might lack permission to remove the role.' });
+        throw err;
+    }
+}
+
 export async function removeRoleFromSelf(interaction: CommandInteraction, role: Role): Promise<void> {
     if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
         return;
     }
     if (interaction.member.roles.cache.has(role.id)) {
-        try {
-            await interaction.member.roles.remove(role);
-            await interaction.reply({ content: `Removed role ${role}.`, allowedMentions: { roles: [] } });
-        }
-        catch (err) {
-            await interaction.reply({ content: 'Something went wrong! The bot might lack permission to remove the role.' });
-            throw err;
-        }
+        await removeMemberRole(interaction, interaction.member, role);
     }
     else {
         await interaction.reply({ content: 'You do not have this role.', ephemeral: true });
@@ -229,10 +240,7 @@ async function addRole(interaction: CommandInteraction, role: Role): Promise<voi
     if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
         return;
     }
-    if (!interaction.member.permissions.has(role.permissions)) {
-        await interaction.reply('You do not have permission to add this role.');
-    }
-    else {
+    if (interaction.member.permissions.has(role.permissions)) {
         const subCommand = interaction.options.getSubcommand();
         switch (subCommand) {
             case 'self':
@@ -249,6 +257,9 @@ async function addRole(interaction: CommandInteraction, role: Role): Promise<voi
                 break;
         }
     }
+    else {
+        await interaction.reply('You do not have permission to add this role.');
+    }
 }
 
 async function addRoleToAll(interaction: CommandInteraction, role: Role): Promise<void> {
@@ -256,25 +267,33 @@ async function addRoleToAll(interaction: CommandInteraction, role: Role): Promis
         return;
     }
     if (await hasPermissionToManageRole(interaction.member, role, true)) {
-        await interaction.deferReply({ ephemeral: true });
-        try {
-            const members = await interaction.guild.members.fetch();
-            let added = 0;
-            for (const [_id, member] of members) {
-                if (!member.roles.cache.has(role.id)) {
-                    await member.roles.add(role);
-                    ++added;
-                }
-            }
-            await interaction.editReply({ content: `Added role ${role} to ${added} users.`, allowedMentions: { users: [], roles: [] } });
-        }
-        catch (err) {
-            await interaction.editReply({ content: 'Something went wrong! The bot might lack permission to add the role.' });
-            throw err;
-        }
+        await deferredBatchAdd(interaction, interaction.guild, role);
     }
     else {
         await interaction.reply('You do not have permission to add roles to other users.');
+    }
+}
+
+async function deferredBatchAdd(interaction: CommandInteraction, guild: Guild, role: Role) {
+    await interaction.deferReply({ ephemeral: true });
+    try {
+        const members = await guild.members.fetch();
+        const pendingAdds = members
+            .map(async (member, _id) => {
+                if (!member.roles.cache.has(role.id)) {
+                    await member.roles.add(role);
+                    return true;
+                }
+                return false;
+            });
+        const numAdded = (await Promise.all(pendingAdds))
+            .filter(added => added)
+            .length;
+        await interaction.editReply({ content: `Added role ${role} to ${numAdded} users.`, allowedMentions: { users: [], roles: [] } });
+    }
+    catch (err) {
+        await interaction.editReply({ content: 'Something went wrong! The bot might lack permission to add the role.' });
+        throw err;
     }
 }
 
@@ -287,18 +306,11 @@ export async function addRoleToOther(interaction: CommandInteraction, role: Role
         if (!(member instanceof GuildMember)) {
             await interaction.reply({ content: 'Invalid user.', ephemeral: true });
         }
-        else if (!member.roles.cache.has(role.id)) {
-            try {
-                await member.roles.add(role);
-                await interaction.reply({ content: `Added role ${role} to ${member}.`, allowedMentions: { users: [], roles: [] } });
-            }
-            catch (err) {
-                await interaction.reply({ content: 'Something went wrong! The bot might lack permission to add the role.' });
-                throw err;
-            }
+        else if (member.roles.cache.has(role.id)) {
+            await interaction.reply({ content: `${member} already has this role.`, ephemeral: true, allowedMentions: { users: [] } });
         }
         else {
-            await interaction.reply({ content: `${member} already has this role.`, ephemeral: true, allowedMentions: { users: [] } });
+            await addMemberRole(interaction, member, role);
         }
     }
     else {
@@ -306,22 +318,31 @@ export async function addRoleToOther(interaction: CommandInteraction, role: Role
     }
 }
 
+async function addMemberRole(interaction: CommandInteraction, member: GuildMember, role: Role) {
+    try {
+        await member.roles.add(role);
+        if (member === interaction.member) {
+            await interaction.reply({ content: `Added role ${role}.`, allowedMentions: { roles: [] } });
+        }
+        else {
+            await interaction.reply({ content: `Added role ${role} to ${member}.`, allowedMentions: { users: [], roles: [] } });
+        }
+    }
+    catch (err) {
+        await interaction.reply({ content: 'Something went wrong! The bot might lack permission to add the role.' });
+        throw err;
+    }
+}
+
 export async function addRoleToSelf(interaction: CommandInteraction, role: Role): Promise<void> {
     if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
         return;
     }
-    if (!interaction.member.roles.cache.has(role.id)) {
-        try {
-            await interaction.member.roles.add(role);
-            await interaction.reply({ content: `Added role ${role}.`, allowedMentions: { roles: [] } });
-        }
-        catch (err) {
-            await interaction.reply({ content: 'Something went wrong! The bot might lack permission to add the role.' });
-            throw err;
-        }
+    if (interaction.member.roles.cache.has(role.id)) {
+        await interaction.reply({ content: 'You already have this role.', ephemeral: true });
     }
     else {
-        await interaction.reply({ content: 'You already have this role.', ephemeral: true });
+        await addMemberRole(interaction, interaction.member, role);
     }
 }
 
@@ -335,6 +356,10 @@ async function hasPermissionToManageRole(member: GuildMember, role: Role, forAll
     if (forAll) {
         return false;
     }
+    return hasPermissionToManageSpecificRole(member, role);
+}
+
+async function hasPermissionToManageSpecificRole(member: GuildMember, role: Role) {
     if (await allowAcmManagement(member, role)) {
         return true;
     }
@@ -348,7 +373,7 @@ export const command: Command = new RoleCommand();
 
 async function allowAcmManagement(member: GuildMember, role: Role): Promise<boolean> {
     const acmLeaderRole = await member.guild.roles.fetch('360928722095702019');
-    if (acmLeaderRole && member.roles.cache.has(acmLeaderRole.id) && role.id == acmMemberRoleId) {
+    if (acmLeaderRole && member.roles.cache.has(acmLeaderRole.id) && role.id === acmMemberRoleId) {
         return true;
     }
     return false;
@@ -357,7 +382,7 @@ async function allowAcmManagement(member: GuildMember, role: Role): Promise<bool
 async function allowCscManagement(member: GuildMember, role: Role): Promise<boolean> {
     const cscLeaderRole = await member.guild.roles.fetch('497912789059371009');
     const cscMemberRoleId = '497912984958402580';
-    if (cscLeaderRole && member.roles.cache.has(cscLeaderRole.id) && role.id == cscMemberRoleId) {
+    if (cscLeaderRole && member.roles.cache.has(cscLeaderRole.id) && role.id === cscMemberRoleId) {
         return true;
     }
     return false;

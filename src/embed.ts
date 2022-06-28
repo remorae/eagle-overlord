@@ -10,38 +10,51 @@ export function createEmbed(title: string, color: ColorResolvable,
         .setDescription(description);
 }
 
-export async function handleEmbed(message: Message, args: string[],
-    reportError: ErrorFunc): Promise<void> {
-    const [channel, titleStr, colorStr, descStr, toEdit] = args.slice(0, 5);
-    if (!channel || !titleStr || !colorStr || !descStr) {
-        await message.channel.send('Missing argument. See `!help embed` for more info.');
-        return;
-    }
-    const destChannel = parseCachedChannel(message, channel) as TextChannel;
-    if (!destChannel) {
-        await message.channel.send('Invalid channel.');
-        return;
-    }
-    const title = titleStr.replace(/(^"|"$)/g, '');
-    const color = colorStr.startsWith('0x') ? (`#${colorStr.slice(2)}`) as HexColorString : parseInt(colorStr);
-    const desc = descStr.replace(/(^```|```$)/g, '');
-
-    const embed = createEmbed(title, color, desc);
-
-    if (toEdit) {
-        try {
-            const msg = await destChannel.messages.fetch(toEdit);
+export async function handleEmbed(message: Message, args: string[], reportError: ErrorFunc): Promise<void> {
+    const embedArgs = await parseEmbedArgs(args, message);
+    if (embedArgs) {
+        if (embedArgs.toEdit) {
             try {
-                await msg.edit({ embeds: [embed] });
+                const msg = await embedArgs.channel.messages.fetch(embedArgs.toEdit);
+                try {
+                    await msg.edit({ embeds: [embedArgs.embed] });
+                }
+                catch (e) {
+                    await reportError(e);
+                }
             }
-            catch (e) {
-                await reportError(e);
+            catch (_) {
+                await message.channel.send('Invalid message to edit.');
             }
+        } else {
+            await embedArgs.channel.send({ embeds: [embedArgs.embed] });
         }
-        catch (_) {
-            await message.channel.send('Invalid message to edit.');
-        }
-    } else {
-        await destChannel.send({ embeds: [embed] });
     }
+}
+
+type EmbedArgs = {
+    channel: TextChannel;
+    embed: MessageEmbed;
+    toEdit: string | undefined;
+}
+
+async function parseEmbedArgs(args: string[], message: Message): Promise<EmbedArgs | null> {
+    const [channel, title, color, description, toEdit] = args;
+    if (!channel || !title || !color || !description) {
+        await message.channel.send('Missing argument. See `!help embed` for more info.');
+        return null;
+    }
+    const textChannel = parseCachedChannel(message, channel) as TextChannel;
+    if (!textChannel) {
+        await message.channel.send('Invalid channel.');
+        return null;
+    }
+    return {
+        channel: textChannel,
+        embed: createEmbed(
+            title.replace(/(?:^"|"$)/g, ''),
+            color.startsWith('0x') ? (`#${color.slice('0x'.length)}`) as HexColorString : parseInt(color, 10),
+            description.replace(/(?:^```|```$)/g, '')),
+        toEdit
+    };
 }

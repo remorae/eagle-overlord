@@ -26,15 +26,15 @@ class SayCommand implements Command {
     }
     async execute(interaction: CommandInteraction, _client: ClientInstance) {
         const message = interaction.options.getString('message', true);
-        let channel: Channel | PartialDMChannel | null = interaction.channel;
+        let textChannel: Channel | PartialDMChannel | null = interaction.channel;
         if (interaction.inGuild()) {
             const specifiedChannel = interaction.options.getChannel('channel', false);
             if (specifiedChannel instanceof GuildChannel) {
-                channel = specifiedChannel;
+                textChannel = specifiedChannel;
             }
         }
-        if (channel instanceof TextChannel || channel instanceof ThreadChannel) {
-            await channel.send(message);
+        if (textChannel instanceof TextChannel || textChannel instanceof ThreadChannel) {
+            await textChannel.send(message);
             await interaction.reply({ content: 'Done!', ephemeral: true });
         }
         else {

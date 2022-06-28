@@ -1,4 +1,4 @@
-import type { MessageReaction, GuildMember } from 'discord.js';
+import type { MessageReaction, GuildMember, Role } from 'discord.js';
 import type { ErrorFunc } from './error.js';
 import { findServer } from './settings.js';
 
@@ -15,22 +15,30 @@ export async function handleReaction(reaction: MessageReaction,
     if (added && !memberRole) {
         const guildRole = member.guild.roles.cache.find(r => r.id === roleIDToToggle);
         if (guildRole) {
-            try {
-                await member.roles.add(guildRole);
-            }
-            catch (e) {
-                await reportError(e);
-            }
+            await addRoleToMember(member, guildRole, reportError);
         } else {
             await reportError(`Role id not found for reaction: ${roleIDToToggle}, ${reaction}`);
         }
     } else if (memberRole) {
-        try {
-            await member.roles.remove(memberRole);
-        }
-        catch (e) {
-            await reportError(e);
-        }
+        await removeRoleFromMember(member, memberRole, reportError);
+    }
+}
+
+async function removeRoleFromMember(member: GuildMember, role: Role, reportError: ErrorFunc) {
+    try {
+        await member.roles.remove(role);
+    }
+    catch (e) {
+        await reportError(e);
+    }
+}
+
+async function addRoleToMember(member: GuildMember, role: Role, reportError: ErrorFunc) {
+    try {
+        await member.roles.add(role);
+    }
+    catch (e) {
+        await reportError(e);
     }
 }
 
