@@ -14,9 +14,9 @@ class HelpCommand implements Command {
                     .setName('command')
                     .setDescription('The command to get information about.')
                     .addChoices(...otherCommands.map(command => {
-                        const builder = new SlashCommandBuilder();
-                        command.build(builder);
-                        return { name: builder.name, value: builder.name };
+                        const otherBuilder = new SlashCommandBuilder();
+                        command.build(otherBuilder);
+                        return { name: otherBuilder.name, value: otherBuilder.name };
                     }))
             );
     }
@@ -25,10 +25,7 @@ class HelpCommand implements Command {
     }
     async execute(interaction: CommandInteraction, client: ClientInstance): Promise<void> {
         const specifiedCommand = interaction.options.getString('command', false);
-        if (!specifiedCommand) {
-            await sendGeneralHelp(interaction);
-        }
-        else {
+        if (specifiedCommand) {
             const command = await getDeployedCommand(interaction, specifiedCommand);
             if (command) {
                 await sendCommandHelp(command, interaction, client);
@@ -37,20 +34,23 @@ class HelpCommand implements Command {
                 await interaction.reply({ content: 'Unrecognized command. Slash commands may still be deploying.', ephemeral: true });
             }
         }
+        else {
+            await sendGeneralHelp(interaction);
+        }
     }
 }
 
 export const command: Command = new HelpCommand();
 
-function getRequiredOptions(command: ApplicationCommand, client: ClientInstance): string[] {
-    const cachedCommand = client.getCachedCommands().get(command.name);
+function getRequiredOptions(cmd: ApplicationCommand, client: ClientInstance): string[] {
+    const cachedCommand = client.getCachedCommands().get(cmd.name);
     const builder = (cachedCommand) ? new SlashCommandBuilder() : undefined;
     if (builder) {
         cachedCommand?.build(builder);
     }
     const builtOptions = builder?.options.map((o) => o.toJSON());
-    return command.options.map(o => o.name).filter((name) => {
-        const deployedOption = builtOptions?.find((o) => o.name == name);
+    return cmd.options.map(o => o.name).filter((name) => {
+        const deployedOption = builtOptions?.find((o) => o.name === name);
         if (!deployedOption) {
             client.reportError(`Couldn't find deployed option with name: ${name}`, 'getRequiredOptions');
         }
@@ -58,19 +58,19 @@ function getRequiredOptions(command: ApplicationCommand, client: ClientInstance)
     });
 }
 
-async function sendCommandHelp(command: ApplicationCommand<{ guild?: GuildResolvable; }>, interaction: CommandInteraction, client: ClientInstance): Promise<void> {
-    const requiredOptions = getRequiredOptions(command, client);
-    let usage = `\`/${command.name}`;
-    for (const option of command.options) {
+async function sendCommandHelp(cmd: ApplicationCommand<{ guild?: GuildResolvable; }>, interaction: CommandInteraction, client: ClientInstance): Promise<void> {
+    const requiredOptions = getRequiredOptions(cmd, client);
+    let usage = `\`/${cmd.name}`;
+    for (const option of cmd.options) {
         usage += ` ${(requiredOptions.includes(option.name)) ? `<${option.name}>` : `[${option.name}]`}`;
     }
     usage += '`';
-    for (const option of command.options) {
+    for (const option of cmd.options) {
         usage += `\n\`${option.name}\`: ${requiredOptions.includes(option.name) ? 'Required' : 'Optional'}. ${option.description}`;
     }
     const msg =
 `Usage: ${usage}
-Info: ${command.description}`;
+Info: ${cmd.description}`;
     await interaction.reply({ content: msg, ephemeral: true });
 }
 
@@ -88,8 +88,8 @@ If you'd like to see available commands, please use \`/commands\`.`;
 async function getDeployedCommand(interaction: CommandInteraction, specifiedCommand: string): Promise<ApplicationCommand<{ guild?: GuildResolvable; }> | undefined> {
     if (interaction.guild) {
         await interaction.guild.commands.fetch();
-        return interaction.guild.commands.cache.find((c) => c.name == specifiedCommand);
+        return interaction.guild.commands.cache.find((c) => c.name === specifiedCommand);
     }
     await interaction.client.application?.commands.fetch();
-    return interaction.client.application?.commands.cache.find((c) => c.name == specifiedCommand);
+    return interaction.client.application?.commands.cache.find((c) => c.name === specifiedCommand);
 }

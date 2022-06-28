@@ -2,9 +2,9 @@ import { Command, getCommandsOnDisk } from './client/command.js';
 import { handleCommand, handleNonCommand } from './commands.js';
 import config from './config.js';
 import { handleReaction } from './reactions.js';
-import { findServer } from './settings.js';
+import { CommandSettings, findServer } from './settings.js';
 import type { Terminal } from './terminal.js';
-import { getCachedChannel, giveCaseWarning } from './utils.js';
+import { getCachedChannel } from './utils.js';
 import { welcome } from './client/commands/welcome.js';
 
 import { Client, Message, PartialMessage, User, PartialUser, MessageReaction, PartialMessageReaction, GuildMember, TextChannel, Interaction, Collection, ApplicationCommandPermissionData, CommandInteraction } from 'discord.js';
@@ -30,9 +30,15 @@ export class ClientInstance extends EventEmitter {
 
     public async setupCommands(this: ClientInstance): Promise<void> {
         this.commands.clear();
-        for (const command of await getCommandsOnDisk()) {
-            const builder = new SlashCommandBuilder();
-            await command.build(builder);
+        const readCommands = await getCommandsOnDisk();
+        const builtCommands = await Promise.all(
+            readCommands
+                .map((command) => {
+                    const builder = new SlashCommandBuilder();
+                    command.build(builder);
+                    return { builder, command };
+                }));
+        for (const { builder, command } of builtCommands) {
             this.commands.set(builder.name, command);
         }
         console.log(`Found ${this.commands.size} commands.`);
@@ -87,18 +93,16 @@ export class ClientInstance extends EventEmitter {
         // }
     }
 
-    public async reportError(this: ClientInstance, message: Error | string | unknown, context?: string): Promise<void> {
-        if (message instanceof Error) {
-            message = `${message.message}\n${message.stack}`;
+    public async reportError(this: ClientInstance, reason: Error | string | unknown, context?: string): Promise<void> {
+        let message = ''; 
+        if (reason instanceof Error) {
+            message = `${reason.message}\n${reason.stack}`;
         }
         if (context && context.length > 0) {
             message = `${message}\n"Context: ${context}`;
         }
         try {
-            const creator = await this.client.users.fetch(config.client.developerUserId);
-            await creator.send(`${message}`);
-            console.error(message);
-            this.terminal?.prompt();
+            await this.reportErrorViaDiscord(message);
         }
         catch (err) {
             console.error(message, err);
@@ -106,12 +110,19 @@ export class ClientInstance extends EventEmitter {
         }
     }
 
+    private async reportErrorViaDiscord(message: string) {
+        const creator = await this.client.users.fetch(config.client.developerUserId);
+        await creator.send(`${message}`);
+        console.error(message);
+        this.terminal?.prompt();
+    }
+
     private setupEvents(this: ClientInstance) {
-        this.client.on('error', async (error: Error) => await this.reportError(error, '`error` event'));
-        this.client.on('guildMemberAdd', async (member: GuildMember) => await this.onGuildMemberAdd(member));
-        this.client.on('messageCreate', async (message: Message) => await this.processMessage(message));
-        this.client.on('messageReactionAdd', async (reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) => await this.onReactionToggled(reaction, user, true));
-        this.client.on('messageReactionRemove', async (reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) => await this.onReactionToggled(reaction, user, false));
+        this.client.on('error', async (error: Error) => this.reportError(error, '`error` event'));
+        this.client.on('guildMemberAdd', async (member: GuildMember) => this.onGuildMemberAdd(member));
+        this.client.on('messageCreate', async (message: Message) => this.processMessage(message));
+        this.client.on('messageReactionAdd', async (reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) => this.onReactionToggled(reaction, user, true));
+        this.client.on('messageReactionRemove', async (reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) => this.onReactionToggled(reaction, user, false));
         this.client.on('messageUpdate', async (_oldMessage: Message | PartialMessage, newMessage: Message | PartialMessage) => {
             try {
                 if (newMessage.author?.bot) {
@@ -123,15 +134,15 @@ export class ClientInstance extends EventEmitter {
                 await this.reportError(error, '`messageUpdate` event');
             }
         });
-        this.client.on('interactionCreate', async (interaction) => await this.handleInteraction(interaction));
-        this.client.on('ready', async () => await this.onReady());
+        this.client.on('interactionCreate', async (interaction) => this.handleInteraction(interaction));
+        this.client.on('ready', async () => this.onReady());
     }
 
     private async allowInteraction(interaction: CommandInteraction, command: Command): Promise<boolean> {
         if (interaction.guild) {
             const permissions: ApplicationCommandPermissionData[] = [];
             await command.getPermissions(interaction.guild, permissions);
-            return Promise.resolve(permissions.some((perm) => {
+            return permissions.some((perm) => {
                 switch (perm.type) {
                     case 'ROLE':
                         if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
@@ -139,10 +150,12 @@ export class ClientInstance extends EventEmitter {
                         }
                         return interaction.member.roles.cache.has(perm.id);
                     case 'USER':
-                        return interaction.user.id == perm.id;
+                        return interaction.user.id === perm.id;
+                    default:
+                        break;
                 }
                 return false;
-            }));
+            });
         }
         return Promise.resolve(true);
     }
@@ -157,10 +170,6 @@ export class ClientInstance extends EventEmitter {
                 await interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
                 return;
             }
-            if (interaction.guild) {
-                const permissions: ApplicationCommandPermissionData[] = [];
-                await command?.getPermissions(interaction.guild, permissions);
-            }
             await command?.execute(interaction, this);
         }
         catch (e) {
@@ -172,7 +181,7 @@ export class ClientInstance extends EventEmitter {
         if (!this.shouldRespond) {
             return;
         }
-        await welcome(member, async (msg) => await this.reportError(msg, 'onGuildMemberAdd'));
+        await welcome(member, async (msg) => this.reportError(msg, 'onGuildMemberAdd'));
     }
 
     private async onReactionToggled(this: ClientInstance, reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser, added: boolean): Promise<void> {
@@ -181,7 +190,7 @@ export class ClientInstance extends EventEmitter {
         }
         try {
             const fullReaction = await reaction.fetch();
-            const guild = fullReaction.message.guild;
+            const {guild} = fullReaction.message;
             if (!guild || !guild.available)
                 return;
             const fullUser = await user.fetch();
@@ -195,27 +204,37 @@ export class ClientInstance extends EventEmitter {
 
     private async setupServers(this: ClientInstance) {
         await this.client.guilds.fetch();
-        for (const server of config.legacy.servers) {
-            const guild = this.client.guilds.cache.get(server.id);
-            if (!guild) {
-                continue;
-            }
-            await guild.channels.fetch();
-            for (const message of server.messagesToCache) {
-                const channel = getCachedChannel(guild, message.channelID) as TextChannel;
-                if (!channel) {
-                    continue;
+        const serversWithGuilds = config.legacy.servers
+            .map((server) => {
+                const guild = this.client.guilds.cache.get(server.id);
+                return { server, guild };
+            });
+        const pendingServers = serversWithGuilds
+            .map(async ({ server, guild }) => {
+                if (!guild) {
+                    return;
                 }
-                if (message.messageID.length > 0) {
-                    try {
-                        await channel.messages.fetch(message.messageID);
-                    }
-                    catch (err) {
-                        this.reportError(err, 'setupServers');
-                    }
-                }
-            }
-        }
+                await guild.channels.fetch();
+                const messagesWithChannels = server.messagesToCache
+                    .map((msg) => {
+                        const channel = getCachedChannel(guild, msg.channelID) as TextChannel;
+                        return { msg, channel };
+                    });
+                const pendingFetches = messagesWithChannels
+                    .map(async ({ msg, channel }) => {
+                        if (!channel || msg.messageID.length === 0) {
+                            return;
+                        }
+                        try {
+                            await channel.messages.fetch(msg.messageID);
+                        }
+                        catch (err) {
+                            this.reportError(err, 'setupServers');
+                        }
+                    });
+                await Promise.all(pendingFetches);
+            });
+        await Promise.all(pendingServers);
     }
 
     private async onReady(this: ClientInstance) {
@@ -231,42 +250,56 @@ export class ClientInstance extends EventEmitter {
 
     private async processMessage(this: ClientInstance, message: Message): Promise<void> {
         try {
-            if (!this.shouldRespond) {
+            if (ignoreMessage(this, message)) {
                 return;
             }
-            if (message.author.bot) {
-                return;
-            }
-
             const server = findServer(message.guild);
-            if (!server) {
-                return;
+            if (server && hasCommandPrefix(message, server)) {
+                await this.processCommandMessage(message, server);
             }
-
-            if (!message.content.startsWith(server.commandPrefix)) {
+            else {
                 await handleNonCommand(message);
-                return;
             }
-
-            const messageCommandText = message.content.slice(1, message.content.indexOf(' '));
-
-            const givenCommand = server.commands.find(c => c.symbol === messageCommandText);
-
-            if (!givenCommand) {
-                // No valid command was found; check if the message didn't match casing
-                for (const command of server.commands) {
-                    if (messageCommandText.toLowerCase() === `${command.symbol}`.toLowerCase()) {
-                        giveCaseWarning(message, command.symbol);
-                        break;
-                    }
-                }
-                return;
-            }
-
-            await handleCommand(givenCommand, message, (err) => this.reportError(err, 'handleCommand'));
         }
         catch (e) {
             this.reportError(e, 'processMessage');
         }
     }
+
+    private async processCommandMessage(message: Message, server: { commands: CommandSettings[] }) {
+        const messageCommandText = message.content.slice(1, message.content.indexOf(' '));
+        const serverCommand = server.commands.find((c) => c.symbol === messageCommandText);
+        if (serverCommand) {
+            await handleCommand(serverCommand, message, (err) => this.reportError(err, 'handleCommand'));
+        }
+        else {
+            await giveCaseWarning(message, messageCommandText, server);
+        }
+    }
 }
+
+async function giveCaseWarning(message: Message, messageCommandText: string, server: { commands: CommandSettings[] }): Promise<void> {
+    const similar = server.commands.filter(c => c.symbol.toLowerCase() === messageCommandText.toLowerCase());
+    if (similar.length > 0) {
+        const msg = `did you mean ${similar.length > 1 ? `any of ${similar}` : `"${similar.at(0)}"`}? Commands are cASe-SeNsiTIvE.`;
+        await message.reply(msg);
+    }
+}
+
+function ignoreMessage(client: ClientInstance, message: Message) {
+    if (!client.shouldRespond) {
+        return true;
+    }
+    if (message.author.bot) {
+        return true;
+    }
+    return false;
+}
+
+function hasCommandPrefix(message: Message, server: { commandPrefix: string; }) {
+    if (!server) {
+        return false;
+    }
+    return message.content.startsWith(server.commandPrefix);
+}
+

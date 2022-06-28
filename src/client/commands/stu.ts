@@ -14,7 +14,7 @@ class StuCommand implements Command {
     async getPermissions(_guild: Guild, _permissions: ApplicationCommandPermissionData[]) {
     }
     async execute(interaction: CommandInteraction) {
-        if (interaction.user.id == config.client.stuID) {
+        if (interaction.user.id === config.client.stuID) {
             await interaction.reply({ content: 'ʕ •ᴥ•ʔ All aboard Stu\'s Happyland Express ʕ •ᴥ•ʔ', ephemeral: true });
         }
         else {

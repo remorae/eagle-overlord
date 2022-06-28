@@ -5,47 +5,57 @@ import type { NonVoiceChannel } from './types.js';
 import bent from 'bent';
 import { findServer } from './settings.js';
 
+const millisPerSecond = 1000;
+const secondsPerMinute = 60;
+const minutesPerHour = 60;
+const hoursPerDay = 24;
+const daysPerWeek = 7;
+const secondsPerHour = secondsPerMinute * minutesPerHour;
+
 function getEasternTime(): Date {
     const utc = new Date();
-    return new Date(utc.getTime() - 5 * 3600 * 1000); // -5 hours
+    const estOffset = -5;
+    return new Date(utc.getTime() + (estOffset * secondsPerHour * millisPerSecond)); // -5 hours
 }
+
+const enum Months {
+    november = 10,
+    december
+}
+const christmasDayNum = 25;
 
 export async function linkCurrentAdventOfCodePage(channel: NonVoiceChannel): Promise<void> {
     const eastern = getEasternTime();
     const day = eastern.getDate();
-    if (eastern.getMonth() === 11 && day <= 25) { // December 1-25
+    if (eastern.getMonth() === Months.december && day <= christmasDayNum) { // December 1-25
         await channel.send(`https://adventofcode.com/${eastern.getFullYear()}/day/${day}`);
     }
 }
 
 function nextAdventOfCodeWithin24Hours(now: Date): boolean {
-    return (now.getMonth() === 10 && now.getDate() === 30) // November 30
-        || (now.getMonth() === 11 && now.getDate() < 25); // December 1-24
+    const lastDayOfNovember = 30;
+    return (now.getMonth() === Months.november && now.getDate() === lastDayOfNovember) // November 30
+        || (now.getMonth() === Months.december && now.getDate() < christmasDayNum); // December 1-24
 }
 
 function extractRemainingTime(millis: number) {
-    let seconds = millis / 1000;
-    let minutes = seconds / 60;
-    let hours = minutes / 60;
-    let days = hours / 24;
-    let weeks = days / 7;
-    weeks = Math.floor(weeks);
-    days = Math.floor(days) % 7;
-    hours = Math.floor(hours) % 24;
-    minutes = Math.floor(minutes) % 60;
-    seconds = Math.floor(seconds) % 60;
+    const seconds = millis / millisPerSecond;
+    const minutes = seconds / secondsPerMinute;
+    const hours = minutes / minutesPerHour;
+    const days = hours / hoursPerDay;
+    const weeks = days / daysPerWeek;
     return {
-        'weeks': weeks,
-        'days': days,
-        'hours': hours,
-        'minutes': minutes,
-        'seconds': seconds
+        weeks: Math.floor(weeks),
+        days: Math.floor(days) % daysPerWeek,
+        hours: Math.floor(hours) % hoursPerDay,
+        minutes: Math.floor(minutes) % minutesPerHour,
+        seconds: Math.floor(seconds) % secondsPerMinute
     };
 }
 
 export async function displayNextUnlock(channel: NonVoiceChannel): Promise<void> {
     const eastern = getEasternTime();
-    const nextDay = new Date(Date.UTC(eastern.getUTCFullYear(), 11, ((eastern.getUTCMonth() < 11) ? 1 : eastern.getUTCDate() + 1), 0));
+    const nextDay = new Date(Date.UTC(eastern.getUTCFullYear(), Months.december, ((eastern.getUTCMonth() < Months.december) ? 1 : eastern.getUTCDate() + 1), 0));
     const difference = nextDay.getTime() - eastern.getTime();
     const remaining = extractRemainingTime(difference);
     await channel.send(`Until next unlock: ${remaining.weeks}w ${remaining.days}d ${remaining.hours}h ${remaining.minutes}m ${remaining.seconds}s`);
@@ -65,28 +75,49 @@ export async function displayLeaderboard(channel: TextChannel | ThreadChannel, y
         return;
     }
     try {
-        const request = bent('GET', 'json', 200);
-        const body = await request(aocYearInfo.url, undefined, {
-            'content-type': 'application/json',
-            'cookie': `session=${aocYearInfo.session}`
-        });
-        const result = JSON.parse(body);
-        const members = Object.keys(result.members).map(k => result.members[k]); // Turn members into an array
-        members.sort((x, y) => {
-            if (x != y)
-                return y.local_score - x.local_score; // Descending scores
-            return new Date(x.last_star_ts).getTime() - new Date(y.last_star_ts).getTime(); // Ascending timestamps (chronological)
-        });
-        const board = members
-            .map((member, i) => `${i}. ${member.name} ${member.local_score}`)
-            .join('\n');
-        const now = new Date().toLocaleString('en-US', {
-            timeZone: 'America/Los_Angeles'
-        });
-        const embed = createEmbed(`${year} Leaderboard - ${now} UTC`, 0x990000, board);
-        await channel.send({ embeds: [embed] });
+        const response = await getAdventOfCodeResponse(aocYearInfo.url, aocYearInfo.session);
+        const members = Object.values(response.members);
+        await sendLeaderboardEmbed(members, year, channel);
     }
     catch (e) {
         await reportError(e);
     }
+}
+
+interface AOCMember {
+    local_score: number;
+    last_star_ts: number | string;
+    name: string;
+}
+
+interface AOCResponse {
+    members: { [key: string]: AOCMember; };
+}
+
+async function getAdventOfCodeResponse(url: string, session: string): Promise<AOCResponse> {
+    const request = bent('GET', 'json', StatusCodes.ok);
+    const body = await request(url, undefined, {
+        'content-type': 'application/json',
+        'cookie': `session=${session}`
+    });
+    return JSON.parse(body);
+}
+
+async function sendLeaderboardEmbed(members: AOCMember[], year: string, channel: TextChannel | ThreadChannel) {
+    const msg = members
+        .sort(sortBoardMembers)
+        .map((member, i) => `${i}. ${member.name} ${member.local_score}`)
+        .join('\n');
+    const now = new Date().toLocaleString('en-US', {
+        timeZone: 'America/Los_Angeles'
+    });
+    const red = 0x990000;
+    const embed = createEmbed(`${year} Leaderboard - ${now} UTC`, red, msg);
+    await channel.send({ embeds: [embed] });
+}
+
+function sortBoardMembers(x: AOCMember, y: AOCMember): number {
+    if (x !== y)
+        return y.local_score - x.local_score; // Descending scores
+    return new Date(x.last_star_ts).getTime() - new Date(y.last_star_ts).getTime(); // Ascending timestamps (chronological)
 }

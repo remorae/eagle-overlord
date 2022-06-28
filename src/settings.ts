@@ -8,13 +8,12 @@ export interface CommandSettings {
     info: string;
     visible: boolean;
     permissions: string[];
-    requiresGuild: boolean;
 }
 
 export function findServer(guild: Guild | null) {
     if (!guild) {
         return null;
     }
-    const found = config.legacy.servers.find((s) => s.id == guild.id);
+    const found = config.legacy.servers.find((s) => s.id === guild.id);
     return found ?? null;
 }

@@ -1,29 +1,34 @@
 import { Message, Guild, GuildMember, GuildChannel, ThreadChannel, User } from 'discord.js';
-import path from 'path';
+import Path from 'path';
 
 export async function parseCachedUser(message: Message, arg: string): Promise<GuildMember | Iterable<GuildMember> | null> {
-    if (message.guild == null) {
+    if (!message.guild) {
         await message.channel.send('This command requires a guild.');
         return null;
     }
-    if (arg == null) {
-        await message.channel.send('You must enter a user.');
-        return null;
-    }
-    if (arg === 'all') {
-        return message.guild.members.cache.values();
+    switch (arg) {
+        case null:
+            await message.channel.send('You must enter a user.');
+            return null;
+        case 'all':
+            return message.guild.members.cache.values();
+        default:
+            break;
     }
     let gm = getCachedMember(message.guild, arg);
     if (!gm) {
-        gm = message.guild.members.cache.find(m => m.user.username === arg) ?? null;
+        gm = getMemberByUserName(message.guild, arg);
     }
-    if (!gm && arg.length > 2 &&
-        arg[0] == arg[arg.length - 1] &&
-        (arg[0] === '"' || arg[0] === '\'' || arg[0] === '`')) {
-        const memberName = arg.substr(1, arg.length - 2); // Assume quotes around name
-        gm = message.guild.members.cache.find(m => m.displayName === memberName) ?? null;
+    if (!gm && isQuoteDelimited(arg)) {
+        gm = getMemberByDisplayName(message.guild, arg.slice(1, -1));
     }
-    return gm ? gm : null;
+    return gm;
+}
+
+function isQuoteDelimited(arg: string) {
+    return arg.length > 2 &&
+        arg[0] === arg[-1] &&
+        (arg[0] === '"' || arg[0] === '\'' || arg[0] === '`');
 }
 
 export function parseCachedChannel(message: Message, arg: string): GuildChannel | ThreadChannel | null {
@@ -39,13 +44,17 @@ export function parseCachedChannel(message: Message, arg: string): GuildChannel 
     return ch ? ch : null;
 }
 
-export async function giveCaseWarning(message: Message, symbol: string): Promise<void> {
-    await message.reply(`did you mean "${symbol}"? Commands are cASe-SeNsiTIvE.`);
-}
-
 export function getCachedMember(guild: Guild, user: string | User): GuildMember | null {
     const id = user instanceof User ? user.id : user;
     return guild.members.cache.get(id) ?? null;
+}
+
+export function getMemberByUserName(guild: Guild, name: string): GuildMember | null {
+    return guild.members.cache.find(m => m.user.username === name) ?? null;
+}
+
+export function getMemberByDisplayName(guild: Guild, name: string): GuildMember | null {
+    return guild.members.cache.find(m => m.displayName === name) ?? null;
 }
 
 export function getAuthorMember(message: Message): GuildMember | null {
@@ -68,7 +77,7 @@ export function loadAtRuntime(path: string, reload: boolean) {
 
 export function resolveRelativeToMain(relativePath: string): string | null {
     if (require.main) {
-        return path.resolve(path.dirname(require.main.filename), ...relativePath.split('/'));
+        return Path.resolve(Path.dirname(require.main.filename), ...relativePath.split('/'));
     }
     return null;
 }

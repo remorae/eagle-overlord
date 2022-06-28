@@ -1,5 +1,5 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
-import type { Guild, ApplicationCommandPermissionData, CommandInteraction, GuildMember, ApplicationCommand, GuildResolvable, Collection } from 'discord.js';
+import { Guild, ApplicationCommandPermissionData, CommandInteraction, GuildMember, ApplicationCommand, GuildResolvable, Collection } from 'discord.js';
 import type { ClientInstance } from '../../client.js';
 import type { Command } from '../command.js';
 
@@ -35,17 +35,30 @@ class ListCommandsCommand implements Command {
 export const command: Command = new ListCommandsCommand();
 
 async function sendCommandList(commands: Collection<string, ApplicationCommand<{ guild?: GuildResolvable; }>>, interaction: CommandInteraction): Promise<void> {
-    const available = new Array<ApplicationCommand<{ guild: GuildResolvable; }>>();
-    for (const [_id, command] of commands) {
-        if (interaction.member && interaction.guild) {
-            const guild = interaction.guild;
-            if (await command.permissions.has({ guild: guild, permissionId: interaction.member as GuildMember })
-                || (interaction.member as GuildMember).roles.cache.map((r) => Promise.resolve(r)).some(async (role) => {
-                    return await command.permissions.has({ guild: guild, permissionId: await role });
-                })) {
-                available.push(command);
-            }
-        }
+    const { guild, member } = interaction;
+    if (guild && member instanceof GuildMember) {
+        const commandPermissions = commands
+            .map(async (cmd, _id) => {
+                return { cmd, allowed: hasRoleOrMemberPermission(cmd, guild, member) };
+            });
+        const resolvedPermissions = await Promise.all(commandPermissions);
+        const availableNames = resolvedPermissions
+            .filter(({ allowed }) => allowed)
+            .map(({ cmd }) => cmd.name)
+            .sort();
+        const msg = `Current commands: ${availableNames.join(', ')}`;
+        await interaction.reply({ content: msg, ephemeral: true });
     }
-    await interaction.reply({ content: `Current commands: ${available.map(c => c.name).sort().join(', ')}`, ephemeral: true });
+    else {
+        await interaction.reply({ content: 'No available commands.', ephemeral: true });
+    }
+}
+
+async function hasRoleOrMemberPermission(cmd: ApplicationCommand<{ guild?: GuildResolvable }>, guild: Guild, member: GuildMember) {
+    if (await cmd.permissions.has({ guild, permissionId: member })) {
+        return true;
+    }
+    const rolePermissions = member.roles.cache
+        .map(async (role) => cmd.permissions.has({ guild, permissionId: role }));
+    return Promise.any(rolePermissions);
 }

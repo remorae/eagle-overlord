@@ -1,0 +1,426 @@
+{
+    "languages": [
+        {
+            "id": "java",
+            "full": "Java",
+            "index": 4,
+            "alias": "java"
+        },
+        {
+            "id": "c",
+            "full": "C",
+            "index": 5,
+            "alias": "c"
+        },
+        {
+            "id": "c99",
+            "full": "C-99",
+            "index": 4,
+            "alias": "c"
+        },
+        {
+            "id": "cpp",
+            "full": "C++",
+            "index": 5,
+            "alias": "cpp"
+        },
+        {
+            "id": "cpp14",
+            "full": "C++14",
+            "index": 4,
+            "alias": "cpp"
+        },
+        {
+            "id": "cpp17",
+            "full": "C++17",
+            "index": 1,
+            "alias": "cpp"
+        },
+        {
+            "id": "php",
+            "full": "PHP",
+            "index": 4,
+            "alias": "php"
+        },
+        {
+            "id": "perl",
+            "full": "Perl",
+            "index": 4,
+            "alias": "perl"
+        },
+        {
+            "id": "python2",
+            "full": "Python 2",
+            "index": 3,
+            "alias": "py"
+        },
+        {
+            "id": "python3",
+            "full": "Python 3",
+            "index": 4,
+            "alias": "py"
+        },
+        {
+            "id": "ruby",
+            "full": "Ruby",
+            "index": 4,
+            "alias": "ruby"
+        },
+        {
+            "id": "go",
+            "full": "GO Lang",
+            "index": 4,
+            "alias": "go"
+        },
+        {
+            "id": "scala",
+            "full": "Scala",
+            "index": 4,
+            "alias": "scala"
+        },
+        {
+            "id": "bash",
+            "full": "Bash Shell",
+            "index": 4,
+            "alias": "bash"
+        },
+        {
+            "id": "sql",
+            "full": "SQL",
+            "index": 4,
+            "alias": "sql"
+        },
+        {
+            "id": "pascal",
+            "full": "Pascal",
+            "index": 3,
+            "alias": "pas"
+        },
+        {
+            "id": "csharp",
+            "full": "C#",
+            "index": 4,
+            "alias": "cs"
+        },
+        {
+            "id": "vbn",
+            "full": "VB.Net",
+            "index": 4,
+            "alias": "vb"
+        },
+        {
+            "id": "haskell",
+            "full": "Haskell",
+            "index": 4,
+            "alias": "hs"
+        },
+        {
+            "id": "objc",
+            "full": "Objective C",
+            "index": 4,
+            "alias": "objc"
+        },
+        {
+            "id": "swift",
+            "full": "Swift",
+            "index": 4,
+            "alias": "sqift"
+        },
+        {
+            "id": "groovy",
+            "full": "Groovy",
+            "index": 4,
+            "alias": "groovy"
+        },
+        {
+            "id": "fortran",
+            "full": "Fortran",
+            "index": 4,
+            "alias": "fortran"
+        },
+        {
+            "id": "brainfuck",
+            "full": "Brainf**k",
+            "index": 0,
+            "alias": "bf"
+        },
+        {
+            "id": "lua",
+            "full": "Lua",
+            "index": 3,
+            "alias": "lua"
+        },
+        {
+            "id": "tcl",
+            "full": "TCL",
+            "index": 4
+        },
+        {
+            "id": "hack",
+            "full": "Hack",
+            "index": 0
+        },
+        {
+            "id": "rust",
+            "full": "RUST",
+            "index": 4,
+            "alias": "rs"
+        },
+        {
+            "id": "d",
+            "full": "D",
+            "index": 2,
+            "alias": "d"
+        },
+        {
+            "id": "ada",
+            "full": "Ada",
+            "index": 4,
+            "alias": "ada"
+        },
+        {
+            "id": "r",
+            "full": "R Language",
+            "index": 4,
+            "alias": "r"
+        },
+        {
+            "id": "freebasic",
+            "full": "FREE BASIC",
+            "index": 2
+        },
+        {
+            "id": "verilog",
+            "full": "VERILOG",
+            "index": 3,
+            "alias": "v"
+        },
+        {
+            "id": "cobol",
+            "full": "COBOL",
+            "index": 3
+        },
+        {
+            "id": "dart",
+            "full": "Dart",
+            "index": 4,
+            "alias": "dart"
+        },
+        {
+            "id": "yabasic",
+            "full": "YaBasic",
+            "index": 1
+        },
+        {
+            "id": "clojure",
+            "full": "Clojure",
+            "index": 3,
+            "alias": "clj"
+        },
+        {
+            "id": "nodejs",
+            "full": "NodeJS",
+            "index": 4,
+            "alias": "js"
+        },
+        {
+            "id": "scheme",
+            "full": "Scheme",
+            "index": 3,
+            "alias": "scheme"
+        },
+        {
+            "id": "forth",
+            "full": "Forth",
+            "index": 0
+        },
+        {
+            "id": "prolog",
+            "full": "Prolog",
+            "index": 2,
+            "alias": "prolog"
+        },
+        {
+            "id": "octave",
+            "full": "Octave",
+            "index": 4
+        },
+        {
+            "id": "coffeescript",
+            "full": "CoffeeScript",
+            "index": 4,
+            "alias": "coffee"
+        },
+        {
+            "id": "icon",
+            "full": "Icon",
+            "index": 1
+        },
+        {
+            "id": "fsharp",
+            "full": "F#",
+            "index": 1,
+            "alias": "fs"
+        },
+        {
+            "id": "nasm",
+            "full": "Assembler - NASM",
+            "index": 4
+        },
+        {
+            "id": "gccasm",
+            "full": "Assembler - GCC",
+            "index": 3
+        },
+        {
+            "id": "intercal",
+            "full": "Intercal",
+            "index": 0
+        },
+        {
+            "id": "nemerle",
+            "full": "Nemerle",
+            "index": 0
+        },
+        {
+            "id": "ocaml",
+            "full": "Ocaml",
+            "index": 2,
+            "alias": "ml"
+        },
+        {
+            "id": "unlambda",
+            "full": "Unlambda",
+            "index": 1,
+            "alias": "d"
+        },
+        {
+            "id": "picolisp",
+            "full": "Picolisp",
+            "index": 4
+        },
+        {
+            "id": "spidermonkey",
+            "full": "SpiderMonkey",
+            "index": 1
+        },
+        {
+            "id": "rhino",
+            "full": "Rhino JS",
+            "index": 2
+        },
+        {
+            "id": "bc",
+            "full": "BC",
+            "index": 1
+        },
+        {
+            "id": "clisp",
+            "full": "CLISP",
+            "index": 7,
+            "alias": "lisp"
+        },
+        {
+            "id": "elixer",
+            "full": "Elixer",
+            "index": 4,
+            "alias": "elixer"
+        },
+        {
+            "id": "factor",
+            "full": "Factor",
+            "index": 3
+        },
+        {
+            "id": "falcon",
+            "full": "Falcon",
+            "index": 0
+        },
+        {
+            "id": "fantom",
+            "full": "Fantom",
+            "index": 0
+        },
+        {
+            "id": "nim",
+            "full": "Nim",
+            "index": 3,
+            "alias": "nim"
+        },
+        {
+            "id": "pike",
+            "full": "Pike",
+            "index": 1
+        },
+        {
+            "id": "smalltalk",
+            "full": "SmallTalk",
+            "index": 0,
+            "alias": "st"
+        },
+        {
+            "id": "mozart",
+            "full": "OZ Mozart",
+            "index": 0
+        },
+        {
+            "id": "lolcode",
+            "full": "LOLCODE",
+            "index": 0
+        },
+        {
+            "id": "racket",
+            "full": "Racket",
+            "index": 3
+        },
+        {
+            "id": "kotlin",
+            "full": "Kotlin",
+            "index": 3,
+            "alias": "kt"
+        },
+        {
+            "id": "whitespace",
+            "full": "Whitespace",
+            "index": 0
+        },
+        {
+            "id": "erlang",
+            "full": "Erlang",
+            "index": 1,
+            "alias": "erl"
+        },
+        {
+            "id": "jlang",
+            "full": "J Language",
+            "index": 0
+        },
+        {
+            "id": "haxe",
+            "full": "Haxe",
+            "index": 0,
+            "alias": "hx"
+        },
+        {
+            "id": "awk",
+            "full": "AWK",
+            "index": 0,
+            "alias": "awk"
+        },
+        {
+            "id": "fasm",
+            "full": "FASM",
+            "index": 0
+        },
+        {
+            "id": "algol",
+            "full": "Algol 68",
+            "index": 0
+        },
+        {
+            "id": "befunge",
+            "full": "Befunge",
+            "index": 0
+        }
+    ]
+}

@@ -34,48 +34,79 @@ class WelcomeCommand implements Command {
             await interaction.reply({ content: 'Invalid user.', ephemeral: true });
             return;
         }
-        await interaction.deferReply({ ephemeral: true });
-        try {
-            const success = await welcome(member, async (msg) => await client.reportError(msg, 'WelcomeCommand.execute'));
-            if (success) {
-                await interaction.editReply({ content: 'Done!' });
-            }
-            else {
-                await interaction.editReply({ content: 'Failed to welcome user. Welcome/general channels may not be configured.' });
-            }
-        }
-        catch (err) {
-            await interaction.editReply({ content: 'Something went wrong!' });
-            throw err;
-        }
+        await deferredWelcome(interaction, client, member);
     }
 }
 
 export const command: Command = new WelcomeCommand();
+
+async function deferredWelcome(interaction: CommandInteraction, client: ClientInstance, member: GuildMember) {
+    await interaction.deferReply({ ephemeral: true });
+    try {
+        const success = await welcome(member, async (msg) => client.reportError(msg, 'WelcomeCommand.execute'));
+        if (success) {
+            await interaction.editReply({ content: 'Done!' });
+        }
+        else {
+            await interaction.editReply({ content: 'Failed to welcome user. Welcome/general channels may not be configured.' });
+        }
+    }
+    catch (err) {
+        await interaction.editReply({ content: 'Something went wrong!' });
+        throw err;
+    }
+}
 
 export async function welcome(member: GuildMember, reportError: ErrorFunc): Promise<boolean> {
     const server = findServer(member.guild);
     if (!server) {
         return false;
     }
+    let success = await sendWelcomeMessage(member, server, reportError);
+    success &&= await addDefaultRoles(member, server, reportError);
+    return success;
+}
+
+interface ServerSettings {
+    welcomeChannel: string;
+    generalChannel: string;
+    defaultRoles: string[];
+}
+
+async function sendWelcomeMessage(member: GuildMember, server: ServerSettings, reportError: ErrorFunc) {
     const welcomeChannel = getCachedChannel(member.guild, server.welcomeChannel) as TextChannel;
     const generalChannel = getCachedChannel(member.guild, server.generalChannel) as TextChannel;
     if (!welcomeChannel || !generalChannel) {
         return false;
     }
 
-    const msg =
-`${member.user} has logged on!
+    try {
+        const msg =
+        `${member.user} has logged on!
 Please take a look at ${welcomeChannel} before you get started.`;
-    await generalChannel.send({ content: msg });
-
-    await member.guild.roles.fetch();
-    for (const defaultRole of server.defaultRoles) {
-        const role = member.guild.roles.cache.get(defaultRole);
-        if (!role) {
-            continue;
-        }
-        await member.roles.add(role).catch(reportError);
+        await generalChannel.send({ content: msg });
+        return true;
     }
-    return true;
+    catch (err) {
+        reportError(err);
+        return false;
+    }
+}
+
+async function addDefaultRoles(member: GuildMember, server: ServerSettings, reportError: ErrorFunc) {
+    try {
+        const serverRoles = await member.guild.roles.fetch();
+        const pendingAdds = server.defaultRoles
+            .map(async (role) => {
+                if (serverRoles.has(role)) {
+                    await member.roles.add(role);
+                }
+            });
+        await Promise.all(pendingAdds);
+        return true;
+    }
+    catch (err) {
+        reportError(err);
+        return false;
+    }
 }

@@ -50,49 +50,55 @@ export class Terminal {
         console.log('No longer handling server commands.');
     }
 
-    private setActivity(this: Terminal, args: string[]) {
-        const [typeArg, name] = args.slice(2, 4);
+    private handleSetActivity(this: Terminal, args: string[]) {
+        const typeArg = args.shift();
         if (!typeArg) {
             console.error('Missing argument "type".');
-        } else if (!name) {
+        } else if (args.length === 0) {
             console.error('Missing argument "name".');
         } else {
-            const type = typeArg.toUpperCase();
-            const validTypes: UnionProperties<Exclude<ActivityType, 'CUSTOM'>> = {
-                PLAYING: undefined,
-                STREAMING: undefined,
-                LISTENING: undefined,
-                WATCHING: undefined,
-                COMPETING: undefined,
-            };
-            if (type in validTypes) {
-                const name = args.slice(3).join(' ');
-                const presence = this.instance.client.user?.setActivity(name, {
-                    type: type as Exclude<ActivityType, 'CUSTOM'>
-                });
-                console.log('Activity set to ', presence);
-            }
-            else {
-                console.error(`Unknown type "${typeArg}"`);
-            }
+            const name = args.join(' ');
+            this.setActivity(typeArg, name);
+        }
+    }
+
+    private setActivity(typeArg: string, name: string) {
+        const type = typeArg.toUpperCase();
+        const validTypes: UnionProperties<Exclude<ActivityType, 'CUSTOM'>> = {
+            PLAYING: undefined,
+            STREAMING: undefined,
+            LISTENING: undefined,
+            WATCHING: undefined,
+            COMPETING: undefined,
+        };
+        if (type in validTypes) {
+            const presence = this.instance.client.user?.setActivity(name, {
+                type: type as Exclude<ActivityType, 'CUSTOM'>
+            });
+            console.log('Activity set to ', presence);
+        }
+        else {
+            console.error(`Unknown type "${typeArg}"`);
         }
     }
 
     private processActivity(this: Terminal, args: string[]) {
-        if (args.length === 1) {
-            const user = this.instance.client.user;
+        const subcommand = args.shift();
+        if (subcommand) {
+            switch (subcommand) {
+                case 'set':
+                    this.handleSetActivity(args);
+                    break;
+                default:
+                    console.error(`Unknown argument "${subcommand}".`);
+                    break;
+            }
+        }
+        else {
+            const {user} = this.instance.client;
             const guild = this.instance.client.guilds.cache.first();
             if (user && guild) {
                 console.log(`Activity: ${guild.members.cache.get(user.id)?.presence}`);
-            }
-        } else {
-            switch (args[1]) {
-                case 'set':
-                    this.setActivity(args);
-                    break;
-                default:
-                    console.error(`Unknown argument "${args[1]}".`);
-                    break;
             }
         }
     }
@@ -125,12 +131,10 @@ export class Terminal {
             case 'refresh-global-commands':
                 await this.refreshCommands(true);
                 break;
-            default:
-                {
-                    const args = line.split(' ');
-                    if (args.length === 0) {
-                        break;
-                    }
+            default: {
+                const args = line.split(' ');
+                const subcommand = args.shift();
+                if (subcommand) {
                     switch (args[0]) {
                         case 'activity':
                             this.processActivity(args);
@@ -141,6 +145,7 @@ export class Terminal {
                     }
                 }
                 break;
+            }
         }
     }
 }
