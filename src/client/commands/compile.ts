@@ -63,8 +63,10 @@ class CompileCommand implements Command {
         const focusedOption = interaction.options.getFocused(true);
         switch (focusedOption.name) {
             case 'language': {
+                const maxChoices = 25;
                 const languageChoices = jdoodleLanguages
                     .filter((lang) => lang.id.startsWith(focusedOption.value))
+                    .slice(0, maxChoices)
                     .map((lang) => ({ name: lang.full, value: lang.id }));
                 await interaction.respond(languageChoices);
                 break;
