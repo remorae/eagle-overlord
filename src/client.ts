@@ -7,7 +7,7 @@ import type { Terminal } from './terminal.js';
 import { getCachedChannel } from './utils.js';
 import { welcome } from './client/commands/welcome.js';
 
-import { Client, Message, PartialMessage, User, PartialUser, MessageReaction, PartialMessageReaction, GuildMember, TextChannel, Interaction, Collection, ApplicationCommandPermissionData, CommandInteraction } from 'discord.js';
+import { Client, Message, PartialMessage, User, PartialUser, MessageReaction, PartialMessageReaction, GuildMember, TextChannel, Interaction, Collection, ApplicationCommandPermissionData, CommandInteraction, AutocompleteInteraction } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v9';
@@ -140,30 +140,38 @@ export class ClientInstance extends EventEmitter {
 
     private async allowInteraction(interaction: CommandInteraction, command: Command): Promise<boolean> {
         if (interaction.guild) {
-            const permissions: ApplicationCommandPermissionData[] = [];
-            await command.getPermissions(interaction.guild, permissions);
-            return permissions.some((perm) => {
-                switch (perm.type) {
-                    case 'ROLE':
-                        if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
-                            return false;
-                        }
-                        return interaction.member.roles.cache.has(perm.id);
-                    case 'USER':
-                        return interaction.user.id === perm.id;
-                    default:
-                        break;
-                }
-                return false;
-            });
+            if (command.getPermissions) {
+                const permissions: ApplicationCommandPermissionData[] = [];
+                await command.getPermissions(interaction.guild, permissions);
+                return permissions.some((perm) => {
+                    switch (perm.type) {
+                        case 'ROLE':
+                            if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
+                                return false;
+                            }
+                            return interaction.member.roles.cache.has(perm.id);
+                        case 'USER':
+                            return interaction.user.id === perm.id;
+                        default:
+                            break;
+                    }
+                    return false;
+                });
+            }
         }
-        return Promise.resolve(true);
+        return true;
     }
 
     private async handleInteraction(this: ClientInstance, interaction: Interaction) {
-        if (!interaction.isCommand()) {
-            return;
+        if (interaction.isCommand()) {
+            await this.handleCommandInteraction(interaction);
         }
+        else if (interaction.isAutocomplete()) {
+            await this.handleAutocompleteInteraction(interaction);
+        }
+    }
+
+    private async handleCommandInteraction(this: ClientInstance, interaction: CommandInteraction) {
         try {
             const command = this.commands.get(interaction.commandName);
             if (command && !this.allowInteraction(interaction, command)) {
@@ -173,7 +181,19 @@ export class ClientInstance extends EventEmitter {
             await command?.execute(interaction, this);
         }
         catch (e) {
-            await this.reportError(e, 'handleInteraction');
+            await this.reportError(e, 'handleCommandInteraction');
+        }
+    }
+
+    private async handleAutocompleteInteraction(this: ClientInstance, interaction: AutocompleteInteraction) {
+        try {
+            const command = this.commands.get(interaction.commandName);
+            if (command?.autocomplete) {
+                await command.autocomplete(interaction, this);
+            }
+        }
+        catch (e) {
+            await this.reportError(e, 'handleAutocompleteInteraction');
         }
     }
 

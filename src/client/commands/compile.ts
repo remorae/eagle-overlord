@@ -1,5 +1,5 @@
 import { codeBlock, SlashCommandBuilder } from '@discordjs/builders';
-import type { ApplicationCommandPermissionData, CommandInteraction, Guild } from 'discord.js';
+import type { AutocompleteInteraction, CommandInteraction } from 'discord.js';
 import type { Command } from '../command.js';
 import type { ClientInstance } from '../../client.js';
 import config from '../../config.js';
@@ -10,9 +10,6 @@ import { languages as jdoodleLanguages } from './languages.json';
 
 class CompileCommand implements Command {
     async build(builder: SlashCommandBuilder): Promise<void> {
-        const languageChoices = jdoodleLanguages.map((lang) => {
-            return { name: lang.full, value: lang.id };
-        });
         const maxVersion = Math.max(...jdoodleLanguages.map((lang) => lang.index));
         builder
             .setName('compile')
@@ -31,7 +28,7 @@ class CompileCommand implements Command {
                             .setName('language')
                             .setDescription('Which language the code is written in.')
                             .setRequired(true)
-                            .addChoices(...languageChoices)
+                            .setAutocomplete(true)
                     )
                     .addIntegerOption((option) =>
                         option
@@ -48,9 +45,6 @@ class CompileCommand implements Command {
                     )
             );
     }
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    async getPermissions(_guild: Guild, _permissions: ApplicationCommandPermissionData[]) {
-    }
     async execute(interaction: CommandInteraction, client: ClientInstance) {
         const subcommand = interaction.options.getSubcommand(true);
         switch (subcommand) {
@@ -62,6 +56,21 @@ class CompileCommand implements Command {
                 break;
             default:
                 await interaction.reply({ content: 'Invalid subcommand.', ephemeral: true });
+                break;
+        }
+    }
+    async autocomplete(interaction: AutocompleteInteraction, _client: ClientInstance) {
+        const focusedOption = interaction.options.getFocused(true);
+        switch (focusedOption.name) {
+            case 'language': {
+                const languageChoices = jdoodleLanguages
+                    .filter((lang) => lang.id.startsWith(focusedOption.value))
+                    .map((lang) => ({ name: lang.full, value: lang.id }));
+                await interaction.respond(languageChoices);
+                break;
+            }
+            default:
+                await interaction.respond([]);
                 break;
         }
     }

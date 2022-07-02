@@ -1,5 +1,5 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
-import type { ApplicationCommandPermissionData, CommandInteraction, Guild, PermissionResolvable, Role } from 'discord.js';
+import type { ApplicationCommandPermissionData, AutocompleteInteraction, CommandInteraction, Guild, PermissionResolvable, Role } from 'discord.js';
 import path from 'path';
 import { readdir } from 'fs/promises';
 import type { ClientInstance } from '../client.js';
@@ -7,8 +7,9 @@ import { loadAtRuntime, resolveRelativeToMain } from '../utils.js';
 
 export interface Command {
     build(builder: SlashCommandBuilder): Promise<void>,
-    getPermissions(guild: Guild, permissions: ApplicationCommandPermissionData[]): Promise<void>,
+    getPermissions?(guild: Guild, permissions: ApplicationCommandPermissionData[]): Promise<void>,
     execute(interaction: CommandInteraction, client: ClientInstance): Promise<void>;
+    autocomplete?(interaction: AutocompleteInteraction, client: ClientInstance): Promise<void>;
 }
 
 export function commandRolePermission(role: string, allow: boolean): ApplicationCommandPermissionData {
