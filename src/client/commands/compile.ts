@@ -1,5 +1,5 @@
 import { codeBlock, SlashCommandBuilder } from '@discordjs/builders';
-import type { AutocompleteInteraction, CommandInteraction } from 'discord.js';
+import type { AutocompleteFocusedOption, AutocompleteInteraction, CommandInteraction } from 'discord.js';
 import type { Command } from '../command.js';
 import type { ClientInstance } from '../../client.js';
 import config from '../../config.js';
@@ -10,7 +10,6 @@ import { languages as jdoodleLanguages } from './languages.json';
 
 class CompileCommand implements Command {
     async build(builder: SlashCommandBuilder): Promise<void> {
-        const maxVersion = Math.max(...jdoodleLanguages.map((lang) => lang.index));
         builder
             .setName('compile')
             .setDescription('Compile code.')
@@ -40,8 +39,7 @@ class CompileCommand implements Command {
                         option
                             .setName('version')
                             .setDescription('Which compiler/language version to use.')
-                            .setMinValue(0)
-                            .setMaxValue(maxVersion)
+                            .setAutocomplete(true)
                     )
             );
     }
@@ -62,13 +60,11 @@ class CompileCommand implements Command {
     async autocomplete(interaction: AutocompleteInteraction, _client: ClientInstance) {
         const focusedOption = interaction.options.getFocused(true);
         switch (focusedOption.name) {
-            case 'language': {
-                const maxChoices = 25;
-                const languageChoices = jdoodleLanguages
-                    .filter((lang) => lang.id.startsWith(focusedOption.value))
-                    .slice(0, maxChoices)
-                    .map((lang) => ({ name: lang.full, value: lang.id }));
-                await interaction.respond(languageChoices);
+            case 'language':
+                await autocompleteLanguage(interaction, focusedOption);
+                break;
+            case 'version': {
+                await autocompleteVersion(interaction);
                 break;
             }
             default:
@@ -79,6 +75,29 @@ class CompileCommand implements Command {
 }
 
 export const command: Command = new CompileCommand();
+
+const maxChoices = 25;
+
+async function autocompleteVersion(interaction: AutocompleteInteraction) {
+    const langId = interaction.options.getString('language');
+    const lang = jdoodleLanguages.find((l) => l.id === langId);
+    if (lang) {
+        const versionChoices = Array.from({ length: lang.index + 1 }, (_, i) => ({ name: i.toString(), value: i }))
+            .slice(0, maxChoices);
+        await interaction.respond(versionChoices);
+    }
+    else {
+        await interaction.respond([]);
+    }
+}
+
+async function autocompleteLanguage(interaction: AutocompleteInteraction, focusedOption: AutocompleteFocusedOption) {
+    const languageChoices = jdoodleLanguages
+        .filter((lang) => lang.id.startsWith(focusedOption.value))
+        .slice(0, maxChoices)
+        .map((lang) => ({ name: lang.full, value: lang.id }));
+    await interaction.respond(languageChoices);
+}
 
 async function listLanguages(interaction: CommandInteraction) {
     const langs = jdoodleLanguages.map((lang) => `${lang.full}: ${lang.id}`);
