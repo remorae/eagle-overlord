@@ -30,18 +30,18 @@ class CompileCommand implements Command {
                             .setRequired(true)
                             .setAutocomplete(true)
                     )
+                    .addStringOption((option) =>
+                        option
+                            .setName('code')
+                            .setDescription('The code to compile.')
+                            .setRequired(true)
+                    )
                     .addIntegerOption((option) =>
                         option
                             .setName('version')
                             .setDescription('Which compiler/language version to use.')
                             .setMinValue(0)
                             .setMaxValue(maxVersion)
-                    )
-                    .addStringOption((option) =>
-                        option
-                            .setName('code')
-                            .setDescription('The code to compile.')
-                            .setRequired(true)
                     )
             );
     }
