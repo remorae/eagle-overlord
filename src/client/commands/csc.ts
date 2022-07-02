@@ -1,5 +1,5 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
-import { Guild, ApplicationCommandPermissionData, CommandInteraction, GuildMember } from 'discord.js';
+import { CommandInteraction, GuildMember } from 'discord.js';
 import type { ClientInstance } from '../../client.js';
 import type { Command } from '../command.js';
 import { addRoleToOther, addRoleToSelf, removeRoleFromOther, removeRoleFromSelf } from './role.js';
@@ -34,9 +34,6 @@ class CscCommand implements Command {
                     .setName('info')
                     .setDescription('Get information about CSC.')
             );
-    }
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    async getPermissions(_guild: Guild, _permissions: ApplicationCommandPermissionData[]): Promise<void> {
     }
     async execute(interaction: CommandInteraction, _client: ClientInstance): Promise<void> {
         if (!(interaction.member instanceof GuildMember) || !interaction.guild) {

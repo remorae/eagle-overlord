@@ -1,5 +1,5 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
-import type { Guild, ApplicationCommandPermissionData, CommandInteraction } from 'discord.js';
+import type { CommandInteraction } from 'discord.js';
 import type { ClientInstance } from '../../client.js';
 import config from '../../config.js';
 import { loadRelativeToMain } from '../../utils.js';
@@ -10,9 +10,6 @@ class AboutCommand implements Command {
         builder
             .setName('about')
             .setDescription('Displays information about, well, me.');
-    }
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    async getPermissions(_guild: Guild, _permissions: ApplicationCommandPermissionData[]): Promise<void> {
     }
     async execute(interaction: CommandInteraction, _client: ClientInstance): Promise<void> {
         const infoFile = loadRelativeToMain('../../package.json', false);

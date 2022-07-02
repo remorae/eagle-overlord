@@ -1,5 +1,5 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
-import { Guild, ApplicationCommandPermissionData, CommandInteraction, GuildMember, Role, Permissions } from 'discord.js';
+import { Guild, CommandInteraction, GuildMember, Role, Permissions } from 'discord.js';
 import type { ClientInstance } from '../../client.js';
 import type { Command } from '../command.js';
 import { acmMemberRoleId } from './acm.js';
@@ -98,9 +98,6 @@ class RoleCommand implements Command {
                             )
                     )
             );
-    }
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    async getPermissions(_guild: Guild, _permissions: ApplicationCommandPermissionData[]): Promise<void> {
     }
     async execute(interaction: CommandInteraction, _client: ClientInstance): Promise<void> {
         if (!(interaction.member instanceof GuildMember) || !interaction.guild) {

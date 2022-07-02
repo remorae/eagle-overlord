@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import type { ApplicationCommand, ApplicationCommandPermissionData, CommandInteraction, Guild, GuildResolvable } from 'discord.js';
+import type { ApplicationCommand, CommandInteraction, GuildResolvable } from 'discord.js';
 import type { ClientInstance } from '../../client.js';
 import { Command, getCommandsOnDisk } from '../command.js';
 
@@ -19,9 +19,6 @@ class HelpCommand implements Command {
                         return { name: otherBuilder.name, value: otherBuilder.name };
                     }))
             );
-    }
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    async getPermissions(_guild: Guild, _permissions: ApplicationCommandPermissionData[]): Promise<void> {
     }
     async execute(interaction: CommandInteraction, client: ClientInstance): Promise<void> {
         const specifiedCommand = interaction.options.getString('command', false);

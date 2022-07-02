@@ -1,5 +1,5 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
-import type { ApplicationCommandPermissionData, CommandInteraction, Guild } from 'discord.js';
+import type { CommandInteraction } from 'discord.js';
 import type { Command } from '../command';
 import config from '../../config.js';
 
@@ -9,9 +9,6 @@ class StuCommand implements Command {
             .setName('stu')
             .setDescription('Stu.')
             .setDefaultPermission(false);
-    }
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    async getPermissions(_guild: Guild, _permissions: ApplicationCommandPermissionData[]) {
     }
     async execute(interaction: CommandInteraction) {
         if (interaction.user.id === config.client.stuID) {
