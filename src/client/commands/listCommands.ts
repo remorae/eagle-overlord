@@ -44,10 +44,10 @@ async function sendCommandList(commands: Collection<string, ApplicationCommand<{
             .map(({ cmd }) => cmd.name)
             .sort();
         const msg = `Current commands: ${availableNames.join(', ')}`;
-        await interaction.reply({ content: msg, ephemeral: true });
+        await interaction.editReply({ content: msg });
     }
     else {
-        await interaction.reply({ content: 'No available commands.', ephemeral: true });
+        await interaction.editReply({ content: 'No available commands.' });
     }
 }
 
