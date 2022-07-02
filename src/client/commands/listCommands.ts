@@ -1,5 +1,5 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
-import { Guild, ApplicationCommandPermissionData, CommandInteraction, GuildMember, ApplicationCommand, GuildResolvable, Collection } from 'discord.js';
+import { Guild, CommandInteraction, GuildMember, ApplicationCommand, GuildResolvable, Collection } from 'discord.js';
 import type { ClientInstance } from '../../client.js';
 import type { Command } from '../command.js';
 
@@ -8,9 +8,6 @@ class ListCommandsCommand implements Command {
         builder
             .setName('commands')
             .setDescription('Lists all available commands that I recognize. Usage is case-sensitive.');
-    }
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    async getPermissions(_guild: Guild, _permissions: ApplicationCommandPermissionData[]): Promise<void> {
     }
     async execute(interaction: CommandInteraction, _client: ClientInstance): Promise<void> {
         await interaction.deferReply({ ephemeral: true });
