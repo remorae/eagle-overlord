@@ -184,7 +184,7 @@ async function runCompilation(interaction: ModalSubmitInteraction, client: Clien
     }
     catch (error) {
         client.reportError(error);
-        await reply.reply({ content: 'Something went wrong' });
+        await reply.reply({ content: 'Something went wrong!' });
     }
 }
 
