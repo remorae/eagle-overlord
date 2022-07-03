@@ -7,7 +7,7 @@ import type { Terminal } from './terminal.js';
 import { getCachedChannel } from './utils.js';
 import { welcome } from './client/commands/welcome.js';
 
-import { Client, Message, PartialMessage, User, PartialUser, MessageReaction, PartialMessageReaction, GuildMember, TextChannel, Interaction, Collection, ApplicationCommandPermissionData, CommandInteraction, AutocompleteInteraction, ModalSubmitInteraction } from 'discord.js';
+import { Client, Message, PartialMessage, User, PartialUser, MessageReaction, PartialMessageReaction, GuildMember, TextChannel, Interaction, Collection, ApplicationCommandPermissionData, CommandInteraction, AutocompleteInteraction } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v9';
@@ -170,9 +170,6 @@ export class ClientInstance extends EventEmitter {
             case 'APPLICATION_COMMAND_AUTOCOMPLETE':
                 await this.handleAutocompleteInteraction(interaction as AutocompleteInteraction);
                 break;
-            case 'MODAL_SUBMIT':
-                await this.handleModalInteraction(interaction as ModalSubmitInteraction);
-                break;
             default:
                 break;
         }
@@ -204,27 +201,6 @@ export class ClientInstance extends EventEmitter {
         }
         catch (e) {
             await this.reportError(e, 'handleAutocompleteInteraction');
-        }
-    }
-    
-    private async handleModalInteraction(this: ClientInstance, interaction: ModalSubmitInteraction) {
-        try {
-            const source = interaction.message?.interaction;
-            if (source && 'commandName' in source) {
-                const command = this.commands.get(source.commandName);
-                if (command?.receiveModal) {
-                    await command.receiveModal(interaction, this);
-                }
-                else {
-                    await interaction.reply({ content: "Don't know how to handle modal submission; not implemented for command." });
-                }
-            }
-            else {
-                await interaction.reply({ content: "Don't know how to handle modal submission; could not get originating message command name." });
-            }
-        }
-        catch (e) {
-            await this.reportError(e, 'handleModalInteraction');
         }
     }
 
