@@ -31,7 +31,7 @@ class HelpCommand implements Command {
                 await sendCommandHelp(command, interaction, client);
             }
             else {
-                await interaction.reply({ content: 'Unrecognized command. Slash commands may still be deploying.' });
+                await interaction.followUp({ content: 'Unrecognized command. Slash commands may still be deploying.' });
             }
         }
         else {
@@ -71,7 +71,7 @@ async function sendCommandHelp(cmd: ApplicationCommand<{ guild?: GuildResolvable
     const msg =
 `Usage: ${usage}
 Info: ${cmd.description}`;
-    await interaction.reply({ content: msg });
+    await interaction.followUp({ content: msg });
 }
 
 async function sendGeneralHelp(interaction: CommandInteraction): Promise<void> {
