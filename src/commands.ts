@@ -41,7 +41,7 @@ export async function handleCommand(givenCommand: CommandSettings, message: Mess
 async function allowCommand(givenCommand: CommandSettings, message: Message) {
     const authorMember = getAuthorMember(message);
     if (!authorMember) {
-        await message.reply('the given command requires a guild. Please make sure you aren\'t using this command in a private message.');
+        await message.reply("the given command requires a guild. Please make sure you aren't using this command in a private message.");
         return false;
     }
 
