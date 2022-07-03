@@ -5,7 +5,14 @@ import { Command, getCommandsOnDisk } from '../command.js';
 
 class HelpCommand implements Command {
     async build(builder: SlashCommandBuilder): Promise<void> {
-        const otherCommands = (await getCommandsOnDisk(false)).filter(c => !(c instanceof HelpCommand));
+        const otherCommands = await Promise.all(
+            (await getCommandsOnDisk(false))
+                .filter(c => !(c instanceof HelpCommand))
+                .map(async (command) => {
+                    const otherBuilder = new SlashCommandBuilder();
+                    await command.build(otherBuilder);
+                    return { name: otherBuilder.name, value: otherBuilder.name };
+                }));
         builder
             .setName('help')
             .setDescription('Displays helpful information about command usage.')
@@ -13,22 +20,18 @@ class HelpCommand implements Command {
                 option
                     .setName('command')
                     .setDescription('The command to get information about.')
-                    .addChoices(...otherCommands.map(command => {
-                        const otherBuilder = new SlashCommandBuilder();
-                        command.build(otherBuilder);
-                        return { name: otherBuilder.name, value: otherBuilder.name };
-                    }))
-            );
+                    .addChoices(...otherCommands));
     }
     async execute(interaction: CommandInteraction, client: ClientInstance): Promise<void> {
         const specifiedCommand = interaction.options.getString('command', false);
         if (specifiedCommand) {
+            interaction.deferReply({ ephemeral: true });
             const command = await getDeployedCommand(interaction, specifiedCommand);
             if (command) {
                 await sendCommandHelp(command, interaction, client);
             }
             else {
-                await interaction.reply({ content: 'Unrecognized command. Slash commands may still be deploying.', ephemeral: true });
+                await interaction.reply({ content: 'Unrecognized command. Slash commands may still be deploying.' });
             }
         }
         else {
@@ -39,11 +42,11 @@ class HelpCommand implements Command {
 
 export const command: Command = new HelpCommand();
 
-function getRequiredOptions(cmd: ApplicationCommand, client: ClientInstance): string[] {
+async function getRequiredOptions(cmd: ApplicationCommand, client: ClientInstance): Promise<string[]> {
     const cachedCommand = client.getCachedCommands().get(cmd.name);
     const builder = (cachedCommand) ? new SlashCommandBuilder() : undefined;
     if (builder) {
-        cachedCommand?.build(builder);
+        await cachedCommand?.build(builder);
     }
     const builtOptions = builder?.options.map((o) => o.toJSON());
     return cmd.options.map(o => o.name).filter((name) => {
@@ -56,7 +59,7 @@ function getRequiredOptions(cmd: ApplicationCommand, client: ClientInstance): st
 }
 
 async function sendCommandHelp(cmd: ApplicationCommand<{ guild?: GuildResolvable; }>, interaction: CommandInteraction, client: ClientInstance): Promise<void> {
-    const requiredOptions = getRequiredOptions(cmd, client);
+    const requiredOptions = await getRequiredOptions(cmd, client);
     let usage = `\`/${cmd.name}`;
     for (const option of cmd.options) {
         usage += ` ${(requiredOptions.includes(option.name)) ? `<${option.name}>` : `[${option.name}]`}`;
@@ -68,7 +71,7 @@ async function sendCommandHelp(cmd: ApplicationCommand<{ guild?: GuildResolvable
     const msg =
 `Usage: ${usage}
 Info: ${cmd.description}`;
-    await interaction.reply({ content: msg, ephemeral: true });
+    await interaction.reply({ content: msg });
 }
 
 async function sendGeneralHelp(interaction: CommandInteraction): Promise<void> {

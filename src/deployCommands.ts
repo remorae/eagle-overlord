@@ -5,9 +5,9 @@ import { getCommandsOnDisk } from './client/command.js';
 import config from './config.js';
 
 async function main() {
-    const commands = (await getCommandsOnDisk()).map(command => {
+    const commands = (await getCommandsOnDisk()).map(async (command) => {
         const builder = new SlashCommandBuilder();
-        command.build(builder);
+        await command.build(builder);
         return builder.toJSON();
     });
 

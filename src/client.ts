@@ -33,9 +33,9 @@ export class ClientInstance extends EventEmitter {
         const readCommands = await getCommandsOnDisk();
         const builtCommands = await Promise.all(
             readCommands
-                .map((command) => {
+                .map(async (command) => {
                     const builder = new SlashCommandBuilder();
-                    command.build(builder);
+                    await command.build(builder);
                     return { builder, command };
                 }));
         for (const { builder, command } of builtCommands) {
