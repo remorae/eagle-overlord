@@ -36,10 +36,8 @@ export function parseCachedChannel(message: Message, arg: string): GuildChannel 
     if (!ch) {
         ch = message.guild?.channels.cache.find(c => c.name === arg);
     }
-    if (!ch && arg.length > 2 &&
-        arg[0] === arg[arg.length - 1] &&
-        (arg[0] === '"' || arg[0] === '\'' || arg[0] === '`')) {
-        ch = message.guild?.channels.cache.find(c => c.name === arg.substr(1, arg.length - 2));
+    if (!ch && isQuoteDelimited(arg)) {
+        ch = message.guild?.channels.cache.find(c => c.name === arg.slice(1, -1));
     }
     return ch ? ch : null;
 }
