@@ -4,58 +4,52 @@ import type { ErrorFunc } from './error.js';
 import type { NonVoiceChannel } from './types.js';
 import bent from 'bent';
 import { findServer } from './settings.js';
-
-const millisPerSecond = 1000;
-const secondsPerMinute = 60;
-const minutesPerHour = 60;
-const hoursPerDay = 24;
-const daysPerWeek = 7;
-const secondsPerHour = secondsPerMinute * minutesPerHour;
+import { DAYS_PER_WEEK, HOURS_PER_DAY, MILLIS_PER_SECOND, MINUTE_PER_HOUR, SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from './constants.js';
 
 function getEasternTime(): Date {
     const utc = new Date();
-    const estOffset = -5;
-    return new Date(utc.getTime() + (estOffset * secondsPerHour * millisPerSecond)); // -5 hours
+    const EST_OFFSET_FROM_UTC = -5;
+    return new Date(utc.getTime() + (EST_OFFSET_FROM_UTC * SECONDS_PER_HOUR * MILLIS_PER_SECOND)); // -5 hours
 }
 
 const enum Months {
-    november = 10,
-    december
+    NOVEMBER = 10,
+    DECEMBER
 }
-const christmasDayNum = 25;
+const CHRISTMAS_DAY_OF_MONTH = 25;
 
 export async function linkCurrentAdventOfCodePage(channel: NonVoiceChannel): Promise<void> {
     const eastern = getEasternTime();
     const day = eastern.getDate();
-    if (eastern.getMonth() === Months.december && day <= christmasDayNum) { // December 1-25
+    if (eastern.getMonth() === Months.DECEMBER && day <= CHRISTMAS_DAY_OF_MONTH) { // December 1-25
         await channel.send(`https://adventofcode.com/${eastern.getFullYear()}/day/${day}`);
     }
 }
 
 function nextAdventOfCodeWithin24Hours(now: Date): boolean {
-    const lastDayOfNovember = 30;
-    return (now.getMonth() === Months.november && now.getDate() === lastDayOfNovember) // November 30
-        || (now.getMonth() === Months.december && now.getDate() < christmasDayNum); // December 1-24
+    const LAST_DAY_OF_NOVEMBER = 30;
+    return (now.getMonth() === Months.NOVEMBER && now.getDate() === LAST_DAY_OF_NOVEMBER) // November 30
+        || (now.getMonth() === Months.DECEMBER && now.getDate() < CHRISTMAS_DAY_OF_MONTH); // December 1-24
 }
 
 function extractRemainingTime(millis: number) {
-    const seconds = millis / millisPerSecond;
-    const minutes = seconds / secondsPerMinute;
-    const hours = minutes / minutesPerHour;
-    const days = hours / hoursPerDay;
-    const weeks = days / daysPerWeek;
+    const seconds = millis / MILLIS_PER_SECOND;
+    const minutes = seconds / SECONDS_PER_MINUTE;
+    const hours = minutes / MINUTE_PER_HOUR;
+    const days = hours / HOURS_PER_DAY;
+    const weeks = days / DAYS_PER_WEEK;
     return {
         weeks: Math.floor(weeks),
-        days: Math.floor(days) % daysPerWeek,
-        hours: Math.floor(hours) % hoursPerDay,
-        minutes: Math.floor(minutes) % minutesPerHour,
-        seconds: Math.floor(seconds) % secondsPerMinute
+        days: Math.floor(days) % DAYS_PER_WEEK,
+        hours: Math.floor(hours) % HOURS_PER_DAY,
+        minutes: Math.floor(minutes) % MINUTE_PER_HOUR,
+        seconds: Math.floor(seconds) % SECONDS_PER_MINUTE
     };
 }
 
 export async function displayNextUnlock(channel: NonVoiceChannel): Promise<void> {
     const eastern = getEasternTime();
-    const nextDay = new Date(Date.UTC(eastern.getUTCFullYear(), Months.december, ((eastern.getUTCMonth() < Months.december) ? 1 : eastern.getUTCDate() + 1), 0));
+    const nextDay = new Date(Date.UTC(eastern.getUTCFullYear(), Months.DECEMBER, ((eastern.getUTCMonth() < Months.DECEMBER) ? 1 : eastern.getUTCDate() + 1), 0));
     const difference = nextDay.getTime() - eastern.getTime();
     const remaining = extractRemainingTime(difference);
     await channel.send(`Until next unlock: ${remaining.weeks}w ${remaining.days}d ${remaining.hours}h ${remaining.minutes}m ${remaining.seconds}s`);
@@ -95,7 +89,7 @@ interface AOCResponse {
 }
 
 async function getAdventOfCodeResponse(url: string, session: string): Promise<AOCResponse> {
-    const request = bent('GET', 'json', StatusCodes.ok);
+    const request = bent('GET', 'json', StatusCodes.OK);
     const body = await request(url, undefined, {
         'content-type': 'application/json',
         'cookie': `session=${session}`
@@ -111,8 +105,8 @@ async function sendLeaderboardEmbed(members: AOCMember[], year: string, channel:
     const now = new Date().toLocaleString('en-US', {
         timeZone: 'America/Los_Angeles'
     });
-    const red = 0x990000;
-    const embed = createEmbed(`${year} Leaderboard - ${now} UTC`, red, msg);
+    const color = 0x990000;
+    const embed = createEmbed(`${year} Leaderboard - ${now} UTC`, color, msg);
     await channel.send({ embeds: [embed] });
 }
 
