@@ -5,7 +5,7 @@ export function getCachedChannel(guild: Guild, channel: string): GuildChannel | 
     return guild.channels.cache.get(channel) ?? null;
 }
 
-export function loadAtRuntime(path: string, reload: boolean) {
+export function loadAtRuntime(path: string, reload: boolean): any {
     if (reload) {
         delete require.cache[path];
     }
@@ -19,7 +19,7 @@ export function resolveRelativeToMain(relativePath: string): string | null {
     return null;
 }
 
-export function escapeCodeBlocks(input: string) {
+export function escapeCodeBlocks(input: string): string {
     let escaped = input.replace(/```/g, '\\`\\`\\`');
     if (escaped.endsWith('`')) {
         escaped += ' ';
