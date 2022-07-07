@@ -1,5 +1,5 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
-import { Guild, CommandInteraction, GuildMember, ApplicationCommand, GuildResolvable, Collection } from 'discord.js';
+import type { Guild, CommandInteraction, GuildMember, ApplicationCommand, GuildResolvable, Collection } from 'discord.js';
 import type { ClientInstance } from '../../client/client.js';
 import type { Command } from '../command.js';
 
@@ -32,11 +32,10 @@ class ListCommandsCommand implements Command {
 export const command: Command = new ListCommandsCommand();
 
 async function sendCommandList(commands: Collection<string, ApplicationCommand<{ guild?: GuildResolvable; }>>, interaction: CommandInteraction): Promise<void> {
-    const { guild, member } = interaction;
-    if (guild && member instanceof GuildMember) {
+    if (interaction.inCachedGuild()) {
         const commandPermissions = commands
             .map(async (cmd, _id) => {
-                return { cmd, allowed: hasRoleOrMemberPermission(cmd, guild, member) };
+                return { cmd, allowed: hasRoleOrMemberPermission(cmd, interaction.guild, interaction.member) };
             });
         const resolvedPermissions = await Promise.all(commandPermissions);
         const availableNames = resolvedPermissions

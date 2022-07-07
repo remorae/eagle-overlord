@@ -1,5 +1,5 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
-import { ApplicationCommandPermissionData, CommandInteraction, Guild, HexColorString, MessageActionRow, MessageEmbed, Modal, ModalActionRowComponent, ModalSubmitInteraction, Permissions, TextChannel, TextInputComponent, ThreadChannel } from 'discord.js';
+import { ApplicationCommandPermissionData, CommandInteraction, Guild, GuildTextBasedChannel, HexColorString, MessageActionRow, MessageEmbed, Modal, ModalActionRowComponent, ModalSubmitInteraction, Permissions, TextInputComponent } from 'discord.js';
 import type { ClientInstance } from '../../client/client.js';
 import { Command, commandRolePermission, rolesWithPermissions } from '../command.js';
 import { showTimedModal } from '../modal.js';
@@ -45,7 +45,7 @@ class EmbedCommand implements Command {
             return;
         }
         const channel = interaction.options.getChannel('channel', true);
-        if (!(channel instanceof TextChannel || channel instanceof ThreadChannel)) {
+        if (!('guild' in channel) || !channel.isText()) {
             await interaction.reply({ content: 'Channel is not a text/thread channel.', ephemeral: true });
             return;
         }
@@ -80,8 +80,6 @@ async function createEmbedFromOptions(interaction: CommandInteraction) {
         .setColor(color);
     return embed;
 }
-
-type GuildTextBasedChannel = TextChannel | ThreadChannel;
 
 async function askForEmbedDescription(interaction: CommandInteraction, client: ClientInstance, channel: GuildTextBasedChannel, editID: string | null, embed: MessageEmbed) {
     const modal = buildDescriptionModal();
