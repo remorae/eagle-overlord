@@ -8,6 +8,7 @@ import bent from 'bent';
 // https://github.com/highlightjs/highlight.js/blob/main/SUPPORTED_LANGUAGES.md
 import { languages as jdoodleLanguages } from './languages.json'; 
 import { MAX_CHOICES, MILLIS_PER_SECOND } from '../../constants.js';
+import { escapeCodeBlocks } from '../../utils.js';
 
 class CompileCommand implements Command {
     async build(builder: SlashCommandBuilder): Promise<void> {
@@ -165,14 +166,6 @@ async function processRunInput(interaction: ModalSubmitInteraction, client: Clie
     else {
         await interaction.followUp({ content: 'Input cannot be empty.', ephemeral: true });
     }
-}
-
-function escapeCodeBlocks(input: string) {
-    let escaped = input.replace(/```/g, '\\`\\`\\`');
-    if (escaped.endsWith('`')) {
-        escaped += ' ';
-    }
-    return escaped;
 }
 
 async function runCompilation(interaction: ModalSubmitInteraction, client: ClientInstance, lang: CompileLanguage, input: string, version: number) {

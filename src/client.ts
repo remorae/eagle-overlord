@@ -1,12 +1,9 @@
 import { Command, getCommandsOnDisk } from './client/command.js';
-import { handleCommand, handleNonCommand } from './commands.js';
 import config from './config.js';
-import { handleReaction } from './reactions.js';
-import { CommandSettings, findServer } from './settings.js';
 import type { Terminal } from './terminal.js';
 import { welcome } from './client/commands/welcome.js';
 
-import { Client, Message, PartialMessage, User, PartialUser, MessageReaction, PartialMessageReaction, GuildMember, Interaction, Collection, ApplicationCommandPermissionData, CommandInteraction, AutocompleteInteraction } from 'discord.js';
+import { Client, Message, PartialMessage, GuildMember, Interaction, Collection, ApplicationCommandPermissionData, CommandInteraction, AutocompleteInteraction } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v9';
@@ -120,8 +117,6 @@ export class ClientInstance extends EventEmitter {
         this.client.on('error', async (error: Error) => this.reportError(error, '`error` event'));
         this.client.on('guildMemberAdd', async (member: GuildMember) => this.onGuildMemberAdd(member));
         this.client.on('messageCreate', async (message: Message) => this.processMessage(message));
-        this.client.on('messageReactionAdd', async (reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) => this.onReactionToggled(reaction, user, true));
-        this.client.on('messageReactionRemove', async (reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) => this.onReactionToggled(reaction, user, false));
         this.client.on('messageUpdate', async (_oldMessage: Message | PartialMessage, newMessage: Message | PartialMessage) => {
             try {
                 if (newMessage.author?.bot) {
@@ -210,24 +205,6 @@ export class ClientInstance extends EventEmitter {
         await welcome(member, async (msg) => this.reportError(msg, 'onGuildMemberAdd'));
     }
 
-    private async onReactionToggled(this: ClientInstance, reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser, added: boolean): Promise<void> {
-        if (!this.shouldRespond) {
-            return;
-        }
-        try {
-            const fullReaction = await reaction.fetch();
-            const {guild} = fullReaction.message;
-            if (!guild || !guild.available)
-                return;
-            const fullUser = await user.fetch();
-            const member = await guild.members.fetch(fullUser);
-            handleReaction(fullReaction, member, added, (msg) => this.reportError(msg, 'handleReaction'));
-        }
-        catch (err) {
-            this.reportError(err, 'onReactionToggled');
-        }
-    }
-
     private async onReady(this: ClientInstance) {
         console.log('Pushing commands to Discord (dev guild)...');
         await this.deployCommands();
@@ -242,36 +219,11 @@ export class ClientInstance extends EventEmitter {
             if (ignoreMessage(this, message)) {
                 return;
             }
-            const server = findServer(message.guild);
-            if (server && hasCommandPrefix(message, server)) {
-                await this.processCommandMessage(message, server);
-            }
-            else {
-                await handleNonCommand(message);
-            }
+            await lookForSubreddits(message);
         }
         catch (e) {
             this.reportError(e, 'processMessage');
         }
-    }
-
-    private async processCommandMessage(message: Message, server: { commands: CommandSettings[] }) {
-        const messageCommandText = message.content.slice(1, message.content.indexOf(' '));
-        const serverCommand = server.commands.find((c) => c.symbol === messageCommandText);
-        if (serverCommand) {
-            await handleCommand(serverCommand, message, (err) => this.reportError(err, 'handleCommand'));
-        }
-        else {
-            await giveCaseWarning(message, messageCommandText, server);
-        }
-    }
-}
-
-async function giveCaseWarning(message: Message, messageCommandText: string, server: { commands: CommandSettings[] }): Promise<void> {
-    const similar = server.commands.filter(c => c.symbol.toLowerCase() === messageCommandText.toLowerCase());
-    if (similar.length > 0) {
-        const msg = `did you mean ${similar.length > 1 ? `any of ${similar}` : `"${similar.at(0)}"`}? Commands are cASe-SeNsiTIvE.`;
-        await message.reply(msg);
     }
 }
 
@@ -285,10 +237,11 @@ function ignoreMessage(client: ClientInstance, message: Message) {
     return false;
 }
 
-function hasCommandPrefix(message: Message, server: { commandPrefix: string; }) {
-    if (!server) {
-        return false;
+async function lookForSubreddits(message: Message): Promise<void> {
+    const matches = message.content.match(/(?:^|[^\w]+)\/r\/\w+/i);
+    if (matches) {
+        const url = matches[0]?.trim().toLowerCase();
+        await message.channel.send(`<http://www.reddit.com${url}>`);
     }
-    return message.content.startsWith(server.commandPrefix);
 }
 
