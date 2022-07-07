@@ -59,7 +59,12 @@
         "default-case": "error",
         "default-case-last": "error",
         "default-param-last": "error",
-        "dot-notation": "error",
+        "dot-notation": [
+            "error",
+            {
+                "allowIndexSignaturePropertyAccess": true
+            }
+        ],
         "eqeqeq": "error",
         "func-names": "error",
         "grouped-accessor-pairs": "error",
