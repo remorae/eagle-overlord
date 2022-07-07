@@ -34,4 +34,4 @@ jobs:
         CONFIG_JSON_CONTENTS: ${{ secrets.CONFIG_JSON_CONTENTS }}
       run: echo "$CONFIG_JSON_CONTENTS" > src/config.json
     - run: npm run build --if-present
-    - run: npm test
+    #- run: npm test
