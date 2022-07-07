@@ -181,6 +181,7 @@ export class ClientInstance extends EventEmitter {
     }
 
     private async onReady(this: ClientInstance) {
+        console.log('Client HTTP options: ', this.client.options.http);
         console.log('Pushing commands to Discord (dev guild)...');
         await this.deployCommands();
         console.log('Ready!');
