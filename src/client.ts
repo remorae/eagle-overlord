@@ -4,10 +4,9 @@ import config from './config.js';
 import { handleReaction } from './reactions.js';
 import { CommandSettings, findServer } from './settings.js';
 import type { Terminal } from './terminal.js';
-import { getCachedChannel } from './utils.js';
 import { welcome } from './client/commands/welcome.js';
 
-import { Client, Message, PartialMessage, User, PartialUser, MessageReaction, PartialMessageReaction, GuildMember, TextChannel, Interaction, Collection, ApplicationCommandPermissionData, CommandInteraction, AutocompleteInteraction } from 'discord.js';
+import { Client, Message, PartialMessage, User, PartialUser, MessageReaction, PartialMessageReaction, GuildMember, Interaction, Collection, ApplicationCommandPermissionData, CommandInteraction, AutocompleteInteraction } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v9';
@@ -229,44 +228,7 @@ export class ClientInstance extends EventEmitter {
         }
     }
 
-    private async setupServers(this: ClientInstance) {
-        await this.client.guilds.fetch();
-        const serversWithGuilds = config.legacy.servers
-            .map((server) => {
-                const guild = this.client.guilds.cache.get(server.id);
-                return { server, guild };
-            });
-        const pendingServers = serversWithGuilds
-            .map(async ({ server, guild }) => {
-                if (!guild) {
-                    return;
-                }
-                await guild.channels.fetch();
-                const messagesWithChannels = server.messagesToCache
-                    .map((msg) => {
-                        const channel = getCachedChannel(guild, msg.channelID) as TextChannel;
-                        return { msg, channel };
-                    });
-                const pendingFetches = messagesWithChannels
-                    .map(async ({ msg, channel }) => {
-                        if (!channel || msg.messageID.length === 0) {
-                            return;
-                        }
-                        try {
-                            await channel.messages.fetch(msg.messageID);
-                        }
-                        catch (err) {
-                            this.reportError(err, 'setupServers');
-                        }
-                    });
-                await Promise.all(pendingFetches);
-            });
-        await Promise.all(pendingServers);
-    }
-
     private async onReady(this: ClientInstance) {
-        console.log('Setting up servers...');
-        await this.setupServers();
         console.log('Pushing commands to Discord (dev guild)...');
         await this.deployCommands();
         console.log('Setting command permissions...');
