@@ -1,6 +1,7 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
-import { CommandInteraction, GuildMember } from 'discord.js';
+import type { CommandInteraction, Guild } from 'discord.js';
 import type { ClientInstance } from '../../client/client.js';
+import { findServerRole } from '../../client/settings.js';
 import type { Command } from '../command.js';
 import { addRoleToOther, addRoleToSelf, removeRoleFromOther, removeRoleFromSelf } from './role.js';
 
@@ -36,7 +37,7 @@ class CscCommand implements Command {
             );
     }
     async execute(interaction: CommandInteraction, _client: ClientInstance): Promise<void> {
-        if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
+        if (!interaction.inCachedGuild()) {
             await interaction.reply({ content: 'You must be in a guild to use this command.', ephemeral: true });
             return;
         }
@@ -60,12 +61,9 @@ class CscCommand implements Command {
 
 export const command: Command = new CscCommand();
 
-export const cscMemberRoleId = '497912984958402580';
-export const cscCompetitionRoleId = '507354887655522347';
-
 async function sendCscInfo(interaction: CommandInteraction) {
     try {
-        const cscGeneralChannel = await interaction.guild?.channels.fetch('497914273373224960');
+        const cscGeneralChannel = await interaction.guild?.channels.fetch('');
         await interaction.reply(`CSC stands for Cyber Security Club.${cscGeneralChannel ? `See ${cscGeneralChannel} for more info.` : ''}`);
     }
     catch (err) {
@@ -73,8 +71,8 @@ async function sendCscInfo(interaction: CommandInteraction) {
     }
 }
 
-async function leaveCsc(interaction: CommandInteraction): Promise<void> {
-    const cscMemberRole = await interaction.guild?.roles.fetch(cscMemberRoleId);
+async function leaveCsc(interaction: CommandInteraction & { guild: Guild }): Promise<void> {
+    const cscMemberRole = await findCscMemberRole(interaction.guild);
     if (cscMemberRole) {
         if (interaction.options.getMember('member')) {
             await removeRoleFromOther(interaction, cscMemberRole);
@@ -88,8 +86,12 @@ async function leaveCsc(interaction: CommandInteraction): Promise<void> {
     }
 }
 
-async function joinCsc(interaction: CommandInteraction): Promise<void> {
-    const cscMemberRole = await interaction.guild?.roles.fetch(cscMemberRoleId);
+async function findCscMemberRole(guild: Guild) {
+    return await findServerRole(guild, "cscMember");
+}
+
+async function joinCsc(interaction: CommandInteraction & { guild: Guild; }): Promise<void> {
+    const cscMemberRole = await findCscMemberRole(interaction.guild);
     if (cscMemberRole) {
         if (interaction.options.getMember('member')) {
             await addRoleToOther(interaction, cscMemberRole);

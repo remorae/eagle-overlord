@@ -1,8 +1,8 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
 import { Guild, CommandInteraction, GuildMember, Role, Permissions } from 'discord.js';
 import type { ClientInstance } from '../../client/client.js';
+import { findServerRole } from '../../client/settings.js';
 import type { Command } from '../command.js';
-import { acmMemberRoleId } from './acm.js';
 
 class RoleCommand implements Command {
     // eslint-disable-next-line max-lines-per-function
@@ -100,7 +100,7 @@ class RoleCommand implements Command {
             );
     }
     async execute(interaction: CommandInteraction, _client: ClientInstance): Promise<void> {
-        if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
+        if (!interaction.inCachedGuild()) {
             await interaction.reply({ content: 'You must be in a guild to use this command.', ephemeral: true });
             return;
         }
@@ -125,7 +125,7 @@ class RoleCommand implements Command {
 }
 
 export async function removeRole(interaction: CommandInteraction, role: Role): Promise<void> {
-    if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
+    if (!interaction.inCachedGuild()) {
         return;
     }
     if (interaction.member.permissions.has(role.permissions)) {
@@ -151,7 +151,7 @@ export async function removeRole(interaction: CommandInteraction, role: Role): P
 }
 
 async function removeRoleFromAll(interaction: CommandInteraction, role: Role): Promise<void> {
-    if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
+        if (!interaction.inCachedGuild()) {
         return;
     }
     if (await hasPermissionToManageRole(interaction.member, role, true)) {
@@ -185,7 +185,7 @@ async function deferredBatchRemove(interaction: CommandInteraction, guild: Guild
 }
 
 export async function removeRoleFromOther(interaction: CommandInteraction, role: Role): Promise<void> {
-    if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
+    if (!interaction.inCachedGuild()) {
         return;
     }
     if (await hasPermissionToManageRole(interaction.member, role, false)) {
@@ -222,7 +222,7 @@ async function removeMemberRole(interaction: CommandInteraction, member: GuildMe
 }
 
 export async function removeRoleFromSelf(interaction: CommandInteraction, role: Role): Promise<void> {
-    if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
+    if (!interaction.inCachedGuild()) {
         return;
     }
     if (interaction.member.roles.cache.has(role.id)) {
@@ -234,7 +234,7 @@ export async function removeRoleFromSelf(interaction: CommandInteraction, role: 
 }
 
 async function addRole(interaction: CommandInteraction, role: Role): Promise<void> {
-    if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
+    if (!interaction.inCachedGuild()) {
         return;
     }
     if (interaction.member.permissions.has(role.permissions)) {
@@ -260,7 +260,7 @@ async function addRole(interaction: CommandInteraction, role: Role): Promise<voi
 }
 
 async function addRoleToAll(interaction: CommandInteraction, role: Role): Promise<void> {
-    if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
+    if (!interaction.inCachedGuild()) {
         return;
     }
     if (await hasPermissionToManageRole(interaction.member, role, true)) {
@@ -295,7 +295,7 @@ async function deferredBatchAdd(interaction: CommandInteraction, guild: Guild, r
 }
 
 export async function addRoleToOther(interaction: CommandInteraction, role: Role): Promise<void> {
-    if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
+    if (!interaction.inCachedGuild()) {
         return;
     }
     if (await hasPermissionToManageRole(interaction.member, role, false)) {
@@ -332,7 +332,7 @@ async function addMemberRole(interaction: CommandInteraction, member: GuildMembe
 }
 
 export async function addRoleToSelf(interaction: CommandInteraction, role: Role): Promise<void> {
-    if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
+    if (!interaction.inCachedGuild()) {
         return;
     }
     if (interaction.member.roles.cache.has(role.id)) {
@@ -369,17 +369,18 @@ async function hasPermissionToManageSpecificRole(member: GuildMember, role: Role
 export const command: Command = new RoleCommand();
 
 async function allowAcmManagement(member: GuildMember, role: Role): Promise<boolean> {
-    const acmLeaderRole = await member.guild.roles.fetch('360928722095702019');
-    if (acmLeaderRole && member.roles.cache.has(acmLeaderRole.id) && role.id === acmMemberRoleId) {
+    const acmLeaderRole = await findServerRole(member.guild, "acmLeader");
+    const acmMemberRole = await findServerRole(member.guild, "acmMember");
+    if (acmLeaderRole && acmMemberRole && member.roles.cache.has(acmLeaderRole.id) && role.id === acmMemberRole.id) {
         return true;
     }
     return false;
 }
 
 async function allowCscManagement(member: GuildMember, role: Role): Promise<boolean> {
-    const cscLeaderRole = await member.guild.roles.fetch('497912789059371009');
-    const cscMemberRoleId = '497912984958402580';
-    if (cscLeaderRole && member.roles.cache.has(cscLeaderRole.id) && role.id === cscMemberRoleId) {
+    const cscLeaderRole = await findServerRole(member.guild, "cscLeader");
+    const cscMemberRole = await findServerRole(member.guild, "cscMember");
+    if (cscLeaderRole && cscMemberRole && member.roles.cache.has(cscLeaderRole.id) && role.id === cscMemberRole.id) {
         return true;
     }
     return false;
