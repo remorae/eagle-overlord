@@ -34,7 +34,7 @@ export function rolesWithPermissions(guild: Guild, permissions: PermissionResolv
 }
 
 export async function getCommandsOnDisk(reload = true): Promise<Command[]> {
-    const commandsDir = resolveRelativeToMain('client/commands');
+    const commandsDir = resolveRelativeToMain('lib/commands');
     if (!commandsDir) {
         return Promise.reject(new Error('Could not find commands directory.'));
     }
