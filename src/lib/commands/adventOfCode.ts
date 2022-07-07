@@ -1,7 +1,7 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
 import type { CommandInteraction } from 'discord.js';
 import type { ClientInstance } from '../../client/client.js';
-import { SECONDS_PER_HOUR, MILLIS_PER_SECOND, SECONDS_PER_MINUTE, MINUTE_PER_HOUR, HOURS_PER_DAY, DAYS_PER_WEEK } from '../timeConstants.js';
+import { extractRemainingTime, Months, CHRISTMAS_DAY_OF_MONTH, RemainingTimeInYear, getEasternTime } from '../timeUtils.js';
 import type { Command } from '../command.js';
 
 class AdventOfCodeCommand implements Command {
@@ -52,12 +52,6 @@ async function handleInfoCommand(interaction: CommandInteraction, client: Client
     }
 }
 
-const enum Months {
-    NOVEMBER = 10,
-    DECEMBER
-}
-const CHRISTMAS_DAY_OF_MONTH = 25;
-
 async function linkCurrentAdventOfCodePage(interaction: CommandInteraction): Promise<void> {
     const eastern = getEasternTime();
     const day = eastern.getDate();
@@ -65,20 +59,6 @@ async function linkCurrentAdventOfCodePage(interaction: CommandInteraction): Pro
         const msg = `https://adventofcode.com/${eastern.getFullYear()}/day/${day}`;
         await interaction.reply({ content: msg });
     }
-}
-
-function getEasternTime(): Date {
-    const utc = new Date();
-    const EST_OFFSET_FROM_UTC = -5;
-    return new Date(utc.getTime() + (EST_OFFSET_FROM_UTC * SECONDS_PER_HOUR * MILLIS_PER_SECOND)); // -5 hours
-}
-
-interface RemainingTimeInYear {
-    weeks: number;
-    days: number;
-    hours: number;
-    minutes: number;
-    seconds: number;
 }
 
 async function displayNextUnlock(interaction: CommandInteraction): Promise<void> {
@@ -101,21 +81,6 @@ async function displaySoonLink(interaction: CommandInteraction, eastern: Date, r
         const soonLinkmsg = `Soon: https://adventofcode.com/${eastern.getFullYear()}/day/${eastern.getDate() + 1}`;
         await interaction.followUp({ content: soonLinkmsg });
     }
-}
-
-function extractRemainingTime(millis: number) {
-    const seconds = millis / MILLIS_PER_SECOND;
-    const minutes = seconds / SECONDS_PER_MINUTE;
-    const hours = minutes / MINUTE_PER_HOUR;
-    const days = hours / HOURS_PER_DAY;
-    const weeks = days / DAYS_PER_WEEK;
-    return {
-        weeks: Math.floor(weeks),
-        days: Math.floor(days) % DAYS_PER_WEEK,
-        hours: Math.floor(hours) % HOURS_PER_DAY,
-        minutes: Math.floor(minutes) % MINUTE_PER_HOUR,
-        seconds: Math.floor(seconds) % SECONDS_PER_MINUTE
-    };
 }
 
 function nextAdventOfCodeWithin24Hours(now: Date): boolean {
