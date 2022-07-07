@@ -12,4 +12,8 @@ jobs:
       steps:
         - uses: actions/checkout@v2
         - uses: superfly/flyctl-actions/setup-flyctl@master
+        - shell: bash
+          env:
+            CONFIG_JSON_CONTENTS: ${{ secrets.CONFIG_JSON_CONTENTS }}
+          run: echo "$CONFIG_JSON_CONTENTS" > src/config.json
         - run: flyctl deploy --remote-only
