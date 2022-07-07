@@ -7,8 +7,8 @@ import bent from 'bent';
 // https://docs.jdoodle.com/compiler-api/compiler-api#what-languages-and-versions-are-supported
 // https://github.com/highlightjs/highlight.js/blob/main/SUPPORTED_LANGUAGES.md
 import { languages as jdoodleLanguages } from './languages.json'; 
-import { MILLIS_PER_SECOND } from '../timeConstants.js';
 import { escapeCodeBlocks } from '../utils.js';
+import { showTimedModal } from '../modal.js';
 
 class CompileCommand implements Command {
     async build(builder: SlashCommandBuilder): Promise<void> {
@@ -121,21 +121,8 @@ async function handleRunCommand(interaction: CommandInteraction, client: ClientI
 }
 
 async function askForRunInput(interaction: CommandInteraction, client: ClientInstance, validLang: CompileLanguage, version: number) {
-    const TIMEOUT_SECONDS = 60;
-    await interaction.showModal(buildRunModal(validLang));
-    let submission: ModalSubmitInteraction | null = null;
-    try {
-        submission = await interaction.awaitModalSubmit({
-            filter: async (i: ModalSubmitInteraction) => {
-                await i.deferUpdate();
-                return i.user.id === interaction.user.id;
-            },
-            time: TIMEOUT_SECONDS * MILLIS_PER_SECOND
-        });
-    }
-    catch (err) {
-        await interaction.followUp({ content: `Timed out waiting for reply after ${TIMEOUT_SECONDS} seconds.`, ephemeral: true });
-    }
+    const modal = buildRunModal(validLang);
+    const submission = await showTimedModal(interaction, modal);
     if (submission) {
         await processRunInput(submission, client, validLang, version);
     }

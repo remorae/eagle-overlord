@@ -1,8 +1,8 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
 import { ApplicationCommandPermissionData, CommandInteraction, Guild, HexColorString, MessageActionRow, MessageEmbed, Modal, ModalActionRowComponent, ModalSubmitInteraction, Permissions, TextChannel, TextInputComponent, ThreadChannel } from 'discord.js';
 import type { ClientInstance } from '../../client/client.js';
-import { MILLIS_PER_SECOND } from '../timeConstants.js';
 import { Command, commandRolePermission, rolesWithPermissions } from '../command.js';
+import { showTimedModal } from '../modal.js';
 
 class EmbedCommand implements Command {
     async build(builder: SlashCommandBuilder): Promise<void> {
@@ -84,21 +84,8 @@ async function createEmbedFromOptions(interaction: CommandInteraction) {
 type GuildTextBasedChannel = TextChannel | ThreadChannel;
 
 async function askForEmbedDescription(interaction: CommandInteraction, client: ClientInstance, channel: GuildTextBasedChannel, editID: string | null, embed: MessageEmbed) {
-    const TIMEOUT_SECONDS = 60;
-    await interaction.showModal(buildDescriptionModal());
-    let submission: ModalSubmitInteraction | null = null;
-    try {
-        submission = await interaction.awaitModalSubmit({
-            filter: async (i: ModalSubmitInteraction) => {
-                await i.deferUpdate();
-                return i.user.id === interaction.user.id;
-            },
-            time: TIMEOUT_SECONDS * MILLIS_PER_SECOND
-        });
-    }
-    catch (err) {
-        await interaction.followUp({ content: `Timed out waiting for reply after ${TIMEOUT_SECONDS} seconds.`, ephemeral: true });
-    }
+    const modal = buildDescriptionModal();
+    const submission = await showTimedModal(interaction, modal);
     if (submission) {
         embed.setDescription(submission.fields.getTextInputValue('description'));
         await sendEmbed(submission, client, channel, editID, embed);
