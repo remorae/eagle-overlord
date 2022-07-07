@@ -1,13 +1,15 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
-import { ApplicationCommandPermissionData, Channel, CommandInteraction, Guild, Permissions, Role, User } from 'discord.js';
+import { Channel, CommandInteraction, Permissions, Role, User } from 'discord.js';
 import type { ClientInstance } from '../../client/client.js';
-import { Command, commandRolePermission, rolesWithPermissions } from '../command.js';
+import type { Command } from '../command.js';
 
 class GetIdCommand implements Command {
     async build(builder: SlashCommandBuilder): Promise<void> {
         builder
             .setName('get_id')
             .setDescription('Get the dev ID for the given role, user, or channel.')
+            .setDefaultMemberPermissions(Permissions.FLAGS.MANAGE_CHANNELS | Permissions.FLAGS.MANAGE_ROLES)
+            .setDMPermission(true)
             .addSubcommand(command =>
                 command
                     .setName('role')
@@ -40,12 +42,7 @@ class GetIdCommand implements Command {
                             .setDescription('The channel to get the ID of.')
                             .setRequired(true)
                     )
-            );
-    }
-    async getPermissions(guild: Guild, permissions: ApplicationCommandPermissionData[]): Promise<void> {
-        for (const role of rolesWithPermissions(guild, [Permissions.FLAGS.MANAGE_CHANNELS, Permissions.FLAGS.MANAGE_ROLES])) {
-            permissions.push(commandRolePermission(role.id, true));
-        }
+            )
     }
     async execute(interaction: CommandInteraction, _client: ClientInstance): Promise<void> {
         if (!interaction.inCachedGuild()) {

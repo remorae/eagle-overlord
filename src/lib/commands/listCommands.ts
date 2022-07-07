@@ -7,7 +7,8 @@ class ListCommandsCommand implements Command {
     async build(builder: SlashCommandBuilder): Promise<void> {
         builder
             .setName('commands')
-            .setDescription('Lists all available commands that I recognize. Usage is case-sensitive.');
+            .setDescription('Lists all available commands that I recognize. Usage is case-sensitive.')
+            .setDMPermission(true)
     }
     async execute(interaction: CommandInteraction, _client: ClientInstance): Promise<void> {
         await interaction.deferReply({ ephemeral: true });

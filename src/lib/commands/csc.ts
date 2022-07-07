@@ -10,6 +10,8 @@ class CscCommand implements Command {
         builder
             .setName('csc')
             .setDescription('Manage or display CSC information.')
+            .setDefaultMemberPermissions('0')
+            .setDMPermission(false)
             .addSubcommand(command =>
                 command
                     .setName('join')

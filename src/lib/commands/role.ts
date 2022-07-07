@@ -10,6 +10,8 @@ class RoleCommand implements Command {
         builder
             .setName('role')
             .setDescription('Manage user roles.')
+            .setDefaultMemberPermissions(Permissions.FLAGS.MANAGE_ROLES)
+            .setDMPermission(false)
             .addSubcommandGroup(group =>
                 group
                     .setName('add')
@@ -97,7 +99,7 @@ class RoleCommand implements Command {
                                     .setRequired(true)
                             )
                     )
-            );
+            )
     }
     async execute(interaction: CommandInteraction, _client: ClientInstance): Promise<void> {
         if (!interaction.inCachedGuild()) {

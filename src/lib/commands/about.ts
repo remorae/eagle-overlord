@@ -9,7 +9,8 @@ class AboutCommand implements Command {
     async build(builder: SlashCommandBuilder): Promise<void> {
         builder
             .setName('about')
-            .setDescription('Displays information about, well, me.');
+            .setDescription('Displays information about, well, me.')
+            .setDMPermission(true)
     }
     async execute(interaction: CommandInteraction, _client: ClientInstance): Promise<void> {
         if (config && packageJson) {

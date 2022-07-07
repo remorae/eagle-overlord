@@ -9,6 +9,7 @@ class AdventOfCodeCommand implements Command {
         builder
             .setName('aoc')
             .setDescription('Display information about Advent of Code.')
+            .setDMPermission(true)
             .addSubcommand((cmd) =>
                 cmd
                     .setName('info')

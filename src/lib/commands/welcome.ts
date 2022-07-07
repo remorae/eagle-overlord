@@ -1,6 +1,6 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
-import { ApplicationCommandPermissionData, CommandInteraction, Guild, GuildMember, Permissions } from 'discord.js';
-import { Command, commandRolePermission, rolesWithPermissions } from '../command.js';
+import { CommandInteraction, GuildMember, Permissions } from 'discord.js';
+import type { Command } from '../command.js';
 import type { ClientInstance } from '../../client/client.js';
 import { findServer, findServerChannel, ServerSettings } from '../../client/settings.js';
 
@@ -9,18 +9,14 @@ class WelcomeCommand implements Command {
         builder
             .setName('welcome')
             .setDescription('Simulates a welcome event for the given user.')
-            .setDefaultPermission(false)
+            .setDefaultMemberPermissions(Permissions.FLAGS.MANAGE_CHANNELS)
+            .setDMPermission(false)
             .addUserOption((option) =>
                 option
                     .setName('user')
                     .setDescription('The user to welcome.')
                     .setRequired(true)
-            );
-    }
-    async getPermissions(guild: Guild, permissions: ApplicationCommandPermissionData[]) {
-        for (const role of rolesWithPermissions(guild, Permissions.FLAGS.MANAGE_CHANNELS)) {
-            permissions.push(commandRolePermission(role.id, true));
-        }
+            )
     }
     async execute(interaction: CommandInteraction, client: ClientInstance) {
         if (!interaction.inCachedGuild()) {

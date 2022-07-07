@@ -15,6 +15,7 @@ class CompileCommand implements Command {
         builder
             .setName('compile')
             .setDescription('Compile code.')
+            .setDMPermission(true)
             .addSubcommand((command) =>
                 command
                     .setName('languages')

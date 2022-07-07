@@ -10,6 +10,8 @@ class AcmCommand implements Command {
         builder
             .setName('acm')
             .setDescription('Manage or display ACM information.')
+            .setDefaultMemberPermissions('0')
+            .setDMPermission(false)
             .addSubcommand(command =>
                 command
                     .setName('join')
@@ -34,7 +36,7 @@ class AcmCommand implements Command {
                 command
                     .setName('info')
                     .setDescription('Get information about ACM.')
-            );
+            )
     }
     async execute(interaction: CommandInteraction, _client: ClientInstance): Promise<void> {
         if (!interaction.inCachedGuild()) {
