@@ -1,7 +1,7 @@
 {
   "name": "eagle-overlord",
   "type": "commonjs",
-  "version": "0.7.2",
+  "version": "0.8.0",
   "description": "Your friendly neighborhood killer avian robot",
   "exports": {
     "node": "./src/main.js"
