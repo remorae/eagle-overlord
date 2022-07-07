@@ -1,7 +1,6 @@
-import { Message, TextChannel, PermissionString, ThreadChannel, VoiceChannel, NewsChannel } from 'discord.js';
+import type { Message, PermissionString } from 'discord.js';
 import { getAuthorMember } from './utils.js';
 import type { CommandSettings } from './settings.js';
-import { displayLeaderboard, linkCurrentAdventOfCodePage, displayNextUnlock } from './adventOfCode.js';
 import { handleEmbed } from './embed.js';
 import type { ErrorFunc } from './error.js';
 
@@ -26,9 +25,6 @@ export async function handleCommand(givenCommand: CommandSettings, message: Mess
     args.shift();
 
     switch (givenCommand.name) {
-        case 'adventOfCodeCommand':
-            await handleAdventOfCodeCommand(message, args, reportError);
-            break;
         case 'embedCommand':
             await handleEmbed(message, args, reportError);
             break;
@@ -52,35 +48,4 @@ async function allowCommand(givenCommand: CommandSettings, message: Message) {
     }
     await message.reply('you do not have permission to use this command.');
     return false;
-}
-
-async function handleAdventOfCodeCommand(message: Message, args: string[], reportError: ErrorFunc) {
-    switch (args[0]) {
-        case 'leaderboard': {
-            if (!message.guild) {
-                return;
-            }
-            const year = args[1] ?? new Date().getFullYear().toString();
-            await displayLeaderboard(message.channel as (TextChannel | ThreadChannel), year, reportError);
-            break;
-        }
-        case null:
-            await displayAdventOfCodeInfo(message, reportError);
-            break;
-        default:
-            break;
-    }
-}
-
-async function displayAdventOfCodeInfo(message: Message, reportError: ErrorFunc) {
-    try {
-        const fullChannel = await message.channel.fetch();
-        if (!(fullChannel instanceof VoiceChannel) && !(fullChannel instanceof NewsChannel)) {
-            await linkCurrentAdventOfCodePage(fullChannel);
-            await displayNextUnlock(fullChannel);
-        }
-    }
-    catch (e) {
-        await reportError(e);
-    }
 }
