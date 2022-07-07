@@ -1,14 +1,14 @@
 import { codeBlock, SlashCommandBuilder } from '@discordjs/builders';
 import { AutocompleteFocusedOption, AutocompleteInteraction, CommandInteraction, Message, MessageActionRow, Modal, ModalActionRowComponent, ModalSubmitInteraction, TextInputComponent } from 'discord.js';
-import type { Command } from '../command.js';
-import type { ClientInstance } from '../../client.js';
+import { Command, MAX_CHOICES } from '../command.js';
+import type { ClientInstance } from '../../client/client.js';
 import config from '../../config.js';
 import bent from 'bent';
 // https://docs.jdoodle.com/compiler-api/compiler-api#what-languages-and-versions-are-supported
 // https://github.com/highlightjs/highlight.js/blob/main/SUPPORTED_LANGUAGES.md
 import { languages as jdoodleLanguages } from './languages.json'; 
-import { MAX_CHOICES, MILLIS_PER_SECOND } from '../../constants.js';
-import { escapeCodeBlocks } from '../../utils.js';
+import { MILLIS_PER_SECOND } from '../timeConstants.js';
+import { escapeCodeBlocks } from '../utils.js';
 
 class CompileCommand implements Command {
     async build(builder: SlashCommandBuilder): Promise<void> {

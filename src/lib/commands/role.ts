@@ -1,6 +1,6 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
 import { Guild, CommandInteraction, GuildMember, Role, Permissions } from 'discord.js';
-import type { ClientInstance } from '../../client.js';
+import type { ClientInstance } from '../../client/client.js';
 import type { Command } from '../command.js';
 import { acmMemberRoleId } from './acm.js';
 

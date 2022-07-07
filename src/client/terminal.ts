@@ -1,7 +1,7 @@
 import { Interface, createInterface } from 'readline';
 import type { ClientInstance } from './client.js';
 import type { ActivityType } from 'discord.js';
-import type { UnionProperties } from './types.js';
+import type { UnionProperties } from '../lib/types.js';
 
 export class Terminal {
     private readonly cli: Interface;

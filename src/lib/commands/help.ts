@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import type { ApplicationCommand, CommandInteraction, GuildResolvable } from 'discord.js';
-import type { ClientInstance } from '../../client.js';
+import type { ClientInstance } from '../../client/client.js';
 import { Command, getCommandsOnDisk } from '../command.js';
 
 class HelpCommand implements Command {

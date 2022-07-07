@@ -1,1 +1,0 @@
-export type ErrorFunc = (error: Error | string | unknown) => Promise<void>;

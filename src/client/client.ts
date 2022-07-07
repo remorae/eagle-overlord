@@ -1,7 +1,7 @@
-import { Command, getCommandsOnDisk } from './client/command.js';
-import config from './config.js';
+import { Command, getCommandsOnDisk } from '../lib/command.js';
+import config from '../config.js';
 import type { Terminal } from './terminal.js';
-import { welcome } from './client/commands/welcome.js';
+import { welcome } from '../lib/commands/welcome.js';
 
 import { Client, Message, PartialMessage, GuildMember, Interaction, Collection, ApplicationCommandPermissionData, CommandInteraction, AutocompleteInteraction } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
@@ -29,7 +29,7 @@ export class ClientInstance extends EventEmitter {
         const readCommands = await getCommandsOnDisk();
         const builtCommands = await Promise.all(
             readCommands
-                .map(async (command) => {
+                .map(async (command: Command) => {
                     const builder = new SlashCommandBuilder();
                     await command.build(builder);
                     return { builder, command };
@@ -202,7 +202,7 @@ export class ClientInstance extends EventEmitter {
         if (!this.shouldRespond) {
             return;
         }
-        await welcome(member, async (msg) => this.reportError(msg, 'onGuildMemberAdd'));
+        await welcome(member, this);
     }
 
     private async onReady(this: ClientInstance) {
