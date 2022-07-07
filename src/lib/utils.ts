@@ -1,9 +1,4 @@
-import type { Guild, GuildChannel, ThreadChannel } from 'discord.js';
 import Path from 'path';
-
-export function getCachedChannel(guild: Guild, channel: string): GuildChannel | ThreadChannel | null {
-    return guild.channels.cache.get(channel) ?? null;
-}
 
 export function loadAtRuntime(path: string, reload: boolean): any {
     if (reload) {

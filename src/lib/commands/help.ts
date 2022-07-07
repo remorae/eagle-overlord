@@ -1,6 +1,7 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import type { ApplicationCommand, CommandInteraction, GuildResolvable } from 'discord.js';
 import type { ClientInstance } from '../../client/client.js';
+import { findServerChannel } from '../../client/settings.js';
 import { Command, getCommandsOnDisk } from '../command.js';
 
 class HelpCommand implements Command {
@@ -75,7 +76,7 @@ Info: ${cmd.description}`;
 }
 
 async function sendGeneralHelp(interaction: CommandInteraction): Promise<void> {
-    const helpChannel = interaction.guild?.channels.cache.get('273687752392966155');
+    const helpChannel = interaction.guild ? findServerChannel(interaction.guild, 'help') : null;
     let msg =
 `If you'd like help with specific command syntax, please use \`/help <commandName>\`.
 If you'd like to see available commands, please use \`/commands\`.`;

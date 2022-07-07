@@ -1,6 +1,7 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
-import { CommandInteraction, GuildMember } from 'discord.js';
+import type { CommandInteraction, Guild } from 'discord.js';
 import type { ClientInstance } from '../../client/client.js';
+import { findServer, findServerRole } from '../../client/settings.js';
 import type { Command } from '../command.js';
 import { addRoleToOther, addRoleToSelf, removeRoleFromOther, removeRoleFromSelf } from './role.js';
 
@@ -36,7 +37,7 @@ class AcmCommand implements Command {
             );
     }
     async execute(interaction: CommandInteraction, _client: ClientInstance): Promise<void> {
-        if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
+        if (!interaction.inCachedGuild()) {
             await interaction.reply({ content: 'You must be in a guild to use this command.', ephemeral: true });
             return;
         }
@@ -60,11 +61,10 @@ class AcmCommand implements Command {
 
 export const command: Command = new AcmCommand();
 
-export const acmMemberRoleId = '360930752730234880';
-
-async function sendAcmInfo(interaction: CommandInteraction) {
+async function sendAcmInfo(interaction: CommandInteraction & { guild: Guild }) {
     try {
-        const acmGeneralChannel = await interaction.guild?.channels.fetch('360933694443094016');
+        const server = findServer(interaction.guild);
+        const acmGeneralChannel = server?.channels.find((channel) => channel.name === "acmGeneral");
         await interaction.reply(`ACM stands for Association for Computing Machinery.${acmGeneralChannel ? `See ${acmGeneralChannel} for more info.` : ''}`);
     }
     catch (err) {
@@ -72,8 +72,8 @@ async function sendAcmInfo(interaction: CommandInteraction) {
     }
 }
 
-async function leaveAcm(interaction: CommandInteraction): Promise<void> {
-    const acmMemberRole = await interaction.guild?.roles.fetch(acmMemberRoleId);
+async function leaveAcm(interaction: CommandInteraction & { guild: Guild; }): Promise<void> {
+    const acmMemberRole = await findAcmMemberRole(interaction.guild);
     if (acmMemberRole) {
         if (interaction.options.getMember('member')) {
             await removeRoleFromOther(interaction, acmMemberRole);
@@ -87,8 +87,12 @@ async function leaveAcm(interaction: CommandInteraction): Promise<void> {
     }
 }
 
-async function joinAcm(interaction: CommandInteraction): Promise<void> {
-    const acmMemberRole = await interaction.guild?.roles.fetch(acmMemberRoleId);
+async function findAcmMemberRole(guild: Guild) {
+    return await findServerRole(guild, "acmMember");
+}
+
+async function joinAcm(interaction: CommandInteraction & { guild: Guild; }): Promise<void> {
+    const acmMemberRole = await findAcmMemberRole(interaction.guild);
     if (acmMemberRole) {
         if (interaction.options.getMember('member')) {
             await addRoleToOther(interaction, acmMemberRole);
