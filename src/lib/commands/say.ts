@@ -1,13 +1,15 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
-import { ApplicationCommandPermissionData, Channel, CommandInteraction, Guild, GuildChannel, PartialDMChannel, Permissions, TextChannel, ThreadChannel } from 'discord.js';
+import { Channel, CommandInteraction, GuildChannel, PartialDMChannel, Permissions, TextChannel, ThreadChannel } from 'discord.js';
 import type { ClientInstance } from '../../client/client.js';
-import { Command, commandRolePermission, rolesWithPermissions } from '../command.js';
+import type { Command } from '../command.js';
 
 class SayCommand implements Command {
     async build(builder: SlashCommandBuilder): Promise<void> {
         builder
             .setName('say')
             .setDescription('Send a message to the current or specified channel.')
+            .setDefaultMemberPermissions(Permissions.FLAGS.MANAGE_CHANNELS)
+            .setDMPermission(false)
             .addStringOption((option) =>
                 option
                     .setName('message')
@@ -17,12 +19,6 @@ class SayCommand implements Command {
                 option
                     .setName('channel')
                     .setDescription('The text channel to send the message to.'))
-            .setDefaultPermission(false);
-    }
-    async getPermissions(guild: Guild, permissions: ApplicationCommandPermissionData[]) {
-        for (const role of rolesWithPermissions(guild, Permissions.FLAGS.MANAGE_CHANNELS)) {
-            permissions.push(commandRolePermission(role.id, true));
-        }
     }
     async execute(interaction: CommandInteraction, _client: ClientInstance) {
         const message = interaction.options.getString('message', true);

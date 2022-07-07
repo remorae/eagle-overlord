@@ -8,7 +8,7 @@ class StuCommand implements Command {
         builder
             .setName('stu')
             .setDescription('Stu.')
-            .setDefaultPermission(false);
+            .setDMPermission(true)
     }
     async execute(interaction: CommandInteraction) {
         if (interaction.user.id === config.client.stuID) {

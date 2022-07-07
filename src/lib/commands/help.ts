@@ -17,6 +17,7 @@ class HelpCommand implements Command {
         builder
             .setName('help')
             .setDescription('Displays helpful information about command usage.')
+            .setDMPermission(true)
             .addStringOption((option) =>
                 option
                     .setName('command')

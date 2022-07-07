@@ -108,8 +108,6 @@ export class Terminal {
         await this.instance.setupCommands();
         console.log('Pushing commands to Discord...');
         await this.instance.deployCommands(global);
-        console.log('Setting command permissions...');
-        await this.instance.setCommandPermissions();
         console.log('Refreshed commands.');
     }
 

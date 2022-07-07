@@ -1,7 +1,7 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
-import { ApplicationCommandPermissionData, CommandInteraction, Guild, GuildTextBasedChannel, HexColorString, MessageActionRow, MessageEmbed, Modal, ModalActionRowComponent, ModalSubmitInteraction, Permissions, TextInputComponent } from 'discord.js';
+import { CommandInteraction, GuildTextBasedChannel, HexColorString, MessageActionRow, MessageEmbed, Modal, ModalActionRowComponent, ModalSubmitInteraction, Permissions, TextInputComponent } from 'discord.js';
 import type { ClientInstance } from '../../client/client.js';
-import { Command, commandRolePermission, rolesWithPermissions } from '../command.js';
+import type { Command } from '../command.js';
 import { showTimedModal } from '../modal.js';
 
 class EmbedCommand implements Command {
@@ -9,6 +9,8 @@ class EmbedCommand implements Command {
         builder
             .setName('embed')
             .setDescription('Embed the given info in a new message in the given channel.')
+            .setDefaultMemberPermissions(Permissions.FLAGS.MANAGE_CHANNELS)
+            .setDMPermission(false)
             .addChannelOption((option) =>
                 option
                     .setName('channel')
@@ -32,12 +34,6 @@ class EmbedCommand implements Command {
                     .setName('edit_id')
                     .setDescription('The ID of the message to edit.')
             )
-            .setDefaultPermission(false);
-    }
-    async getPermissions(guild: Guild, permissions: ApplicationCommandPermissionData[]) {
-        for (const role of rolesWithPermissions(guild, Permissions.FLAGS.MANAGE_CHANNELS)) {
-            permissions.push(commandRolePermission(role.id, true));
-        }
     }
     async execute(interaction: CommandInteraction, client: ClientInstance) {
         if (!interaction.inGuild()) {

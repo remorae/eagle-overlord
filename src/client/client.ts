@@ -64,31 +64,6 @@ export class ClientInstance extends EventEmitter {
         }
     }
 
-    public async setCommandPermissions(this: ClientInstance) {
-        /* TODO Discord API prevents permissions.set from working w/o bearer token instead of bot token.
-            No Discord.js API for setting default command permissions yet (which would be sufficient for current use cases)
-            https://github.com/discordjs/discord.js/issues/7856
-            https://discord.com/developers/docs/topics/oauth2#client-credentials-grant
-            https://discord.com/developers/docs/interactions/application-commands#application-command-permissions-object-using-default-permissions
-        */
-
-        // await this.client.guilds.fetch();
-        // for (const guild of this.client.guilds.cache.values()) {
-        //     await guild.commands.fetch();
-        //     await guild.roles.fetch();
-        //     await guild.members.fetch();
-        //     for (const [name, command] of this.commands) {
-        //         const permissions: ApplicationCommandPermissionData[] = [];
-        //         await command.getPermissions(guild, permissions);
-        //         if (permissions.length == 0) {
-        //             continue;
-        //         }
-        //         const guildCommand = guild.commands.cache.find(c => c.applicationId == this.client.application?.id && c.name == name);
-        //         await guildCommand?.permissions.set({ permissions });
-        //     }
-        // }
-    }
-
     public async reportError(this: ClientInstance, reason: Error | string | unknown, context?: string): Promise<void> {
         let message = ''; 
         if (reason instanceof Error) {
@@ -208,8 +183,6 @@ export class ClientInstance extends EventEmitter {
     private async onReady(this: ClientInstance) {
         console.log('Pushing commands to Discord (dev guild)...');
         await this.deployCommands();
-        console.log('Setting command permissions...');
-        await this.setCommandPermissions();
         console.log('Ready!');
         this.terminal?.prompt();
     }
