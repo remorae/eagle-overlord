@@ -1,5 +1,5 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
-import { ApplicationCommandPermissionData, Channel, CommandInteraction, Guild, GuildMember, Permissions, Role, User } from 'discord.js';
+import { ApplicationCommandPermissionData, Channel, CommandInteraction, Guild, Permissions, Role, User } from 'discord.js';
 import type { ClientInstance } from '../../client/client.js';
 import { Command, commandRolePermission, rolesWithPermissions } from '../command.js';
 
@@ -48,7 +48,7 @@ class GetIdCommand implements Command {
         }
     }
     async execute(interaction: CommandInteraction, _client: ClientInstance): Promise<void> {
-        if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
+        if (!interaction.inCachedGuild()) {
             await interaction.reply({ content: 'You must be in a guild to use this command.', ephemeral: true });
             return;
         }

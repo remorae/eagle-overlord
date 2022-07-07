@@ -140,7 +140,7 @@ export class ClientInstance extends EventEmitter {
                 return permissions.some((perm) => {
                     switch (perm.type) {
                         case 'ROLE':
-                            if (!(interaction.member instanceof GuildMember) || !interaction.guild) {
+                            if (!interaction.inCachedGuild()) {
                                 return false;
                             }
                             return interaction.member.roles.cache.has(perm.id);
