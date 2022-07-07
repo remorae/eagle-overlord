@@ -146,6 +146,7 @@ export class ClientInstance extends EventEmitter {
 
     private async handleCommandInteraction(this: ClientInstance, interaction: CommandInteraction) {
         try {
+            console.log(`Received command: ${interaction.commandName}`)
             const command = this.commands.get(interaction.commandName);
             if (command && !this.allowInteraction(interaction, command)) {
                 await interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
@@ -181,7 +182,6 @@ export class ClientInstance extends EventEmitter {
     }
 
     private async onReady(this: ClientInstance) {
-        console.log('Client HTTP options: ', this.client.options.http);
         console.log('Pushing commands to Discord (dev guild)...');
         await this.deployCommands();
         console.log('Ready!');
