@@ -1,6 +1,6 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
 import { ApplicationCommandPermissionData, Channel, CommandInteraction, Guild, GuildChannel, PartialDMChannel, Permissions, TextChannel, ThreadChannel } from 'discord.js';
-import type { ClientInstance } from '../../client.js';
+import type { ClientInstance } from '../../client/client.js';
 import { Command, commandRolePermission, rolesWithPermissions } from '../command.js';
 
 class SayCommand implements Command {

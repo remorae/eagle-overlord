@@ -1,6 +1,6 @@
 import { Client, Intents } from 'discord.js';
-import { ClientInstance } from './client.js';
-import { Terminal } from './terminal.js';
+import { ClientInstance } from './client/client.js';
+import { Terminal } from './client/terminal.js';
 import config from './config.js';
 
 async function main() {

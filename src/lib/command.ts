@@ -2,8 +2,8 @@ import type { SlashCommandBuilder } from '@discordjs/builders';
 import type { ApplicationCommandPermissionData, AutocompleteInteraction, CommandInteraction, Guild, ModalSubmitInteraction, PermissionResolvable, Role } from 'discord.js';
 import path from 'path';
 import { readdir } from 'fs/promises';
-import type { ClientInstance } from '../client.js';
-import { loadAtRuntime, resolveRelativeToMain } from '../utils.js';
+import type { ClientInstance } from '../client/client.js';
+import { loadAtRuntime, resolveRelativeToMain } from '../lib/utils.js';
 
 export interface Command {
     build(builder: SlashCommandBuilder): Promise<void>,
@@ -44,3 +44,5 @@ export async function getCommandsOnDisk(reload = true): Promise<Command[]> {
         return loadAtRuntime(commandPath, reload).command as Command;
     });
 }
+
+export const MAX_CHOICES = 25;

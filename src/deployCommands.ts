@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v9';
-import { getCommandsOnDisk } from './client/command.js';
+import { getCommandsOnDisk } from './lib/command.js';
 import config from './config.js';
 
 async function main() {

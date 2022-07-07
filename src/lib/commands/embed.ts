@@ -1,7 +1,7 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
 import { ApplicationCommandPermissionData, CommandInteraction, Guild, HexColorString, MessageActionRow, MessageEmbed, Modal, ModalActionRowComponent, ModalSubmitInteraction, Permissions, TextChannel, TextInputComponent, ThreadChannel } from 'discord.js';
-import type { ClientInstance } from '../../client.js';
-import { MILLIS_PER_SECOND } from '../../constants.js';
+import type { ClientInstance } from '../../client/client.js';
+import { MILLIS_PER_SECOND } from '../timeConstants.js';
 import { Command, commandRolePermission, rolesWithPermissions } from '../command.js';
 
 class EmbedCommand implements Command {

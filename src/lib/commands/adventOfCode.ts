@@ -1,7 +1,7 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
 import type { CommandInteraction } from 'discord.js';
-import type { ClientInstance } from '../../client.js';
-import { SECONDS_PER_HOUR, MILLIS_PER_SECOND, SECONDS_PER_MINUTE, MINUTE_PER_HOUR, HOURS_PER_DAY, DAYS_PER_WEEK } from '../../constants.js';
+import type { ClientInstance } from '../../client/client.js';
+import { SECONDS_PER_HOUR, MILLIS_PER_SECOND, SECONDS_PER_MINUTE, MINUTE_PER_HOUR, HOURS_PER_DAY, DAYS_PER_WEEK } from '../timeConstants.js';
 import type { Command } from '../command.js';
 
 class AdventOfCodeCommand implements Command {

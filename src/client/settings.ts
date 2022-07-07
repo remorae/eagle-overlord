@@ -1,5 +1,5 @@
 import type { Guild } from 'discord.js';
-import config from './config.js';
+import config from '../config.js';
 
 export interface CommandSettings {
     name: string;

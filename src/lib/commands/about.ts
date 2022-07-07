@@ -1,6 +1,6 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
 import type { CommandInteraction } from 'discord.js';
-import type { ClientInstance } from '../../client.js';
+import type { ClientInstance } from '../../client/client.js';
 import config from '../../config.js';
 import packageJson from '../../../package.json';
 import type { Command } from '../command.js';

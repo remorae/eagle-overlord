@@ -1,10 +1,9 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
 import { ApplicationCommandPermissionData, CommandInteraction, Guild, GuildMember, Permissions, TextChannel } from 'discord.js';
 import { Command, commandRolePermission, rolesWithPermissions } from '../command.js';
-import { getCachedChannel } from '../../utils.js';
-import type { ErrorFunc } from '../../error.js';
-import type { ClientInstance } from '../../client.js';
-import { findServer } from '../../settings.js';
+import { getCachedChannel } from '../utils.js';
+import type { ClientInstance } from '../../client/client.js';
+import { findServer } from '../../client/settings.js';
 
 class WelcomeCommand implements Command {
     async build(builder: SlashCommandBuilder): Promise<void> {
@@ -43,7 +42,7 @@ export const command: Command = new WelcomeCommand();
 async function deferredWelcome(interaction: CommandInteraction, client: ClientInstance, member: GuildMember) {
     await interaction.deferReply({ ephemeral: true });
     try {
-        const success = await welcome(member, async (msg) => client.reportError(msg, 'WelcomeCommand.execute'));
+        const success = await welcome(member, client);
         if (success) {
             await interaction.editReply({ content: 'Done!' });
         }
@@ -57,13 +56,13 @@ async function deferredWelcome(interaction: CommandInteraction, client: ClientIn
     }
 }
 
-export async function welcome(member: GuildMember, reportError: ErrorFunc): Promise<boolean> {
+export async function welcome(member: GuildMember, client: ClientInstance): Promise<boolean> {
     const server = findServer(member.guild);
     if (!server) {
         return false;
     }
-    let success = await sendWelcomeMessage(member, server, reportError);
-    success &&= await addDefaultRoles(member, server, reportError);
+    let success = await sendWelcomeMessage(member, server, client);
+    success &&= await addDefaultRoles(member, server, client);
     return success;
 }
 
@@ -73,7 +72,7 @@ interface ServerSettings {
     defaultRoles: string[];
 }
 
-async function sendWelcomeMessage(member: GuildMember, server: ServerSettings, reportError: ErrorFunc) {
+async function sendWelcomeMessage(member: GuildMember, server: ServerSettings, client: ClientInstance) {
     const welcomeChannel = getCachedChannel(member.guild, server.welcomeChannel) as TextChannel;
     const generalChannel = getCachedChannel(member.guild, server.generalChannel) as TextChannel;
     if (!welcomeChannel || !generalChannel) {
@@ -88,12 +87,12 @@ Please take a look at ${welcomeChannel} before you get started.`;
         return true;
     }
     catch (err) {
-        reportError(err);
+        await client.reportError(err, 'sendWelcomeMessage');
         return false;
     }
 }
 
-async function addDefaultRoles(member: GuildMember, server: ServerSettings, reportError: ErrorFunc) {
+async function addDefaultRoles(member: GuildMember, server: ServerSettings, client: ClientInstance) {
     try {
         const serverRoles = await member.guild.roles.fetch();
         const pendingAdds = server.defaultRoles
@@ -106,7 +105,7 @@ async function addDefaultRoles(member: GuildMember, server: ServerSettings, repo
         return true;
     }
     catch (err) {
-        reportError(err);
+        await client.reportError(err, 'sendWelcomeMessage');
         return false;
     }
 }
