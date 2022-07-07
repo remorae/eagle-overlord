@@ -47,7 +47,8 @@ async function sendCommandList(commands: Collection<string, ApplicationCommand<{
         await interaction.editReply({ content: msg });
     }
     else {
-        await interaction.editReply({ content: 'No available commands.' });
+        const msg = `Current commands: ${commands.map((c) => c.name).join(', ')}`;
+        await interaction.editReply({ content: msg });
     }
 }
 
