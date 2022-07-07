@@ -4,7 +4,7 @@ A Discord bot created for my old college CS Majors server.
 
 I created, hosted, and used this bot over the course of many years starting in April 2017. Since I am long since graduated, responsibility is currently shifting to active students.
 
-History does not reflect origin commit dates; it was altered when I moved accounts.
+History may not reflect origin commit dates; it was altered when I moved accounts.
 
 # Architecture
 
@@ -36,4 +36,4 @@ export class ClientInstance extends EventEmitter {
 // ...
 ```
 
-This file stores obvious secrets, specific Discord ids, and legacy command information that is being phased out.
+This file stores obvious secrets and specific Discord ids.
