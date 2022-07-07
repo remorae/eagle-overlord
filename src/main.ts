@@ -14,10 +14,7 @@ async function main() {
         ],
         partials: [
             'CHANNEL' // Necessary to cache DM Channels in order to receive DMs
-        ],
-        http: {
-            host: '0.0.0.0'
-        }
+        ]
     });
     const instance = new ClientInstance(client);
     await instance.setupCommands();
