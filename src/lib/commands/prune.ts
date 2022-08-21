@@ -1,5 +1,5 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
-import { Guild, CommandInteraction, Permissions, Modal, MessageActionRow, ModalActionRowComponent, TextInputComponent, ModalSubmitInteraction } from 'discord.js';
+import { Guild, CommandInteraction, Permissions, Modal, MessageActionRow, ModalActionRowComponent, TextInputComponent, ModalSubmitInteraction, Role } from 'discord.js';
 import type { ClientInstance } from '../../client/client.js';
 import type { Command } from '../command.js';
 import { showTimedModal } from '../modal.js';
@@ -61,7 +61,15 @@ async function processPrune(interaction: CommandInteraction & { guild: Guild; },
     try {
         const roles = submission?.fields.getTextInputValue("roles")
             .split('\n')
-            .filter((r) => interaction.guild.roles.cache.has(r)) ?? [];
+            .map((line) => {
+                return interaction.guild.roles.cache.find((r) => {
+                    return r.name === line
+                        || (line.length > 0 && line.at(0) === '@' && r.name === line.substring(1))
+                        || r.id === line;
+                });
+            })
+            .filter((r) => r)
+            .map((r) => r as Role) ?? [];
         const pruned = await interaction.guild.members.prune({
             days: interaction.options.getInteger("days", false) ?? 7,
             dry: interaction.options.getBoolean("dry", false) ?? false,
