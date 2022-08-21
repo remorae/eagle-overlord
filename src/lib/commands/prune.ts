@@ -59,15 +59,16 @@ function buildRolesModal() {
 
 async function processPrune(interaction: CommandInteraction & { guild: Guild; }, submission: ModalSubmitInteraction | null, client: ClientInstance) {
     try {
+        const roles = submission?.fields.getTextInputValue("roles")
+            .split('\n')
+            .filter((r) => interaction.guild.roles.cache.has(r)) ?? [];
         const pruned = await interaction.guild.members.prune({
             days: interaction.options.getInteger("days", false) ?? 7,
             dry: interaction.options.getBoolean("dry", false) ?? false,
             count: interaction.options.getBoolean("count", false) ?? false,
-            roles: submission?.fields.getTextInputValue("roles")
-                .split('\n')
-                .filter((r) => interaction.guild.roles.cache.has(r)) ?? [],
+            roles,
         });
-        await interaction.followUp(`Pruned ${pruned} members.`);
+        await interaction.followUp({ content: `Pruned ${pruned} members with roles: ${roles}.`, allowedMentions: { users: [], roles: [] } });
     }
     catch (e) {
         await client.reportError(e);
