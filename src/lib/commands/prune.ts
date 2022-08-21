@@ -66,7 +66,6 @@ async function processPrune(interaction: CommandInteraction & { guild: Guild; },
             roles: submission?.fields.getTextInputValue("roles")
                 .split('\n')
                 .filter((r) => interaction.guild.roles.cache.has(r)) ?? [],
-            reason: interaction.options.getString("reason", false) ?? "",
         });
         await interaction.editReply(`Pruned ${pruned} members.`);
     }
