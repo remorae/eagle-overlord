@@ -50,7 +50,7 @@ function buildRolesModal() {
                     new TextInputComponent()
                         .setCustomId('roles')
                         .setLabel('Roles')
-                        .setPlaceholder('Optional list of roles to bypass the "...and no roles" constraint when pruning')
+                        .setPlaceholder('Optional list of roles to allow when pruning, e.g.\n@RoleName\nRoleName\n<role id>')
                         .setStyle('PARAGRAPH')
                         .setRequired(false)
                 )
