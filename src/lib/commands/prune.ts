@@ -71,7 +71,7 @@ async function processPrune(interaction: CommandInteraction & { guild: Guild; },
     }
     catch (e) {
         await client.reportError(e);
-        await interaction.editReply(`Something went wrong!`);
+        await interaction.followUp({ content: 'Something went wrong! The bot might lack permission to prune.', ephemeral: true });
     }
 }
 
