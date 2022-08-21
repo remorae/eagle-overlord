@@ -197,7 +197,7 @@ async function deferredBatchRemove(interaction: CommandInteraction, guild: Guild
         const pendingRemoves = members
             .map(async (member, _id) => {
                 if (member.roles.cache.has(role.id)) {
-                    await member.roles.remove(role, `command entered by ${interaction.member}`);
+                    await member.roles.remove(role, `command entered by ${interaction.member?.user.username}`);
                     return true;
                 }
                 return false;
@@ -221,7 +221,7 @@ async function deferredDelete(interaction: CommandInteraction, guild: Guild, rol
                 return member.roles.cache.has(role.id);
             })
             .size;
-            await guild.roles.delete(role, `command entered by ${interaction.member}`);
+        await guild.roles.delete(role, `command entered by ${interaction.member?.user.username}`);
         await interaction.editReply({ content: `Removed role ${role} from ${numRemoved} users and deleted it.`, allowedMentions: { users: [], roles: [] } });
     }
     catch (err) {
@@ -252,7 +252,7 @@ export async function removeRoleFromOther(interaction: CommandInteraction, role:
 
 async function removeMemberRole(interaction: CommandInteraction, member: GuildMember, role: Role) {
     try {
-        await member.roles.remove(role, `command entered by ${interaction.member}`);
+        await member.roles.remove(role, `command entered by ${interaction.member?.user.username}`);
         if (member === interaction.member) {
             await interaction.reply({ content: `Removed role ${role}.`, allowedMentions: { roles: [] } });
         }
@@ -323,7 +323,7 @@ async function deferredBatchAdd(interaction: CommandInteraction, guild: Guild, r
         const pendingAdds = members
             .map(async (member, _id) => {
                 if (!member.roles.cache.has(role.id)) {
-                    await member.roles.add(role, `command entered by ${interaction.member}`);
+                    await member.roles.add(role, `command entered by ${interaction.member?.user.username}`);
                     return true;
                 }
                 return false;
@@ -362,7 +362,7 @@ export async function addRoleToOther(interaction: CommandInteraction, role: Role
 
 async function addMemberRole(interaction: CommandInteraction, member: GuildMember, role: Role) {
     try {
-        await member.roles.add(role, `command entered by ${interaction.member}`);
+        await member.roles.add(role, `command entered by ${interaction.member?.user.username}`);
         if (member === interaction.member) {
             await interaction.reply({ content: `Added role ${role}.`, allowedMentions: { roles: [] } });
         }
