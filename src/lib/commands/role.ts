@@ -98,6 +98,17 @@ class RoleCommand implements Command {
                                     .setDescription('The role to remove.')
                                     .setRequired(true)
                             )
+                )
+                    .addSubcommand(command =>
+                        command
+                            .setName('role')
+                            .setDescription('Delete the role.')
+                            .addRoleOption(option =>
+                                option
+                                    .setName('role')
+                                    .setDescription('The role to remove.')
+                                    .setRequired(true)
+                            )
                     )
             )
     }
@@ -142,6 +153,9 @@ export async function removeRole(interaction: CommandInteraction, role: Role): P
             case 'all':
                 await removeRoleFromAll(interaction, role);
                 break;
+            case 'role':
+                await deleteRole(interaction, role);
+                break;
             default:
                 await interaction.reply({ content: 'Invalid subcommand.', ephemeral: true });
                 break;
@@ -164,6 +178,18 @@ async function removeRoleFromAll(interaction: CommandInteraction, role: Role): P
     }
 }
 
+async function deleteRole(interaction: CommandInteraction, role: Role): Promise<void> {
+    if (!interaction.inCachedGuild()) {
+        return;
+    }
+    if (await hasPermissionToManageRole(interaction.member, role, true)) {
+        await deferredDelete(interaction, interaction.guild, role);
+    }
+    else {
+        await interaction.reply('You do not have permission to delete roles.');
+    }
+}
+
 async function deferredBatchRemove(interaction: CommandInteraction, guild: Guild, role: Role) {
     await interaction.deferReply({ ephemeral: true });
     try {
@@ -171,7 +197,7 @@ async function deferredBatchRemove(interaction: CommandInteraction, guild: Guild
         const pendingRemoves = members
             .map(async (member, _id) => {
                 if (member.roles.cache.has(role.id)) {
-                    await member.roles.remove(role);
+                    await member.roles.remove(role, `command entered by ${interaction.member}`);
                     return true;
                 }
                 return false;
@@ -180,6 +206,23 @@ async function deferredBatchRemove(interaction: CommandInteraction, guild: Guild
             .filter(removed => removed)
             .length;
         await interaction.editReply({ content: `Removed role ${role} from ${numRemoved} users.`, allowedMentions: { users: [], roles: [] } });
+    }
+    catch (err) {
+        await interaction.editReply({ content: 'Something went wrong! The bot might lack permission to remove the role.' });
+    }
+}
+
+async function deferredDelete(interaction: CommandInteraction, guild: Guild, role: Role) {
+    await interaction.deferReply({ ephemeral: true });
+    try {
+        const members = await guild.members.fetch();
+        const numRemoved = members
+            .filter((member, _id) => {
+                return member.roles.cache.has(role.id);
+            })
+            .size;
+            await guild.roles.delete(role, `command entered by ${interaction.member}`);
+        await interaction.editReply({ content: `Removed role ${role} from ${numRemoved} users and deleted it.`, allowedMentions: { users: [], roles: [] } });
     }
     catch (err) {
         await interaction.editReply({ content: 'Something went wrong! The bot might lack permission to remove the role.' });
@@ -209,7 +252,7 @@ export async function removeRoleFromOther(interaction: CommandInteraction, role:
 
 async function removeMemberRole(interaction: CommandInteraction, member: GuildMember, role: Role) {
     try {
-        await member.roles.remove(role);
+        await member.roles.remove(role, `command entered by ${interaction.member}`);
         if (member === interaction.member) {
             await interaction.reply({ content: `Removed role ${role}.`, allowedMentions: { roles: [] } });
         }
@@ -280,7 +323,7 @@ async function deferredBatchAdd(interaction: CommandInteraction, guild: Guild, r
         const pendingAdds = members
             .map(async (member, _id) => {
                 if (!member.roles.cache.has(role.id)) {
-                    await member.roles.add(role);
+                    await member.roles.add(role, `command entered by ${interaction.member}`);
                     return true;
                 }
                 return false;
@@ -319,7 +362,7 @@ export async function addRoleToOther(interaction: CommandInteraction, role: Role
 
 async function addMemberRole(interaction: CommandInteraction, member: GuildMember, role: Role) {
     try {
-        await member.roles.add(role);
+        await member.roles.add(role, `command entered by ${interaction.member}`);
         if (member === interaction.member) {
             await interaction.reply({ content: `Added role ${role}.`, allowedMentions: { roles: [] } });
         }
