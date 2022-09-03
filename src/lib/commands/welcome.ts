@@ -1,15 +1,15 @@
 import type { SlashCommandBuilder } from '@discordjs/builders';
-import { CommandInteraction, GuildMember, Permissions } from 'discord.js';
+import { CommandInteraction, GuildMember } from 'discord.js';
 import type { Command } from '../command.js';
 import type { ClientInstance } from '../../client/client.js';
-import { findServer, findServerChannel, ServerSettings } from '../../client/settings.js';
+import { findServer, /*findServerChannel,*/ ServerSettings } from '../../client/settings.js';
 
 class WelcomeCommand implements Command {
     async build(builder: SlashCommandBuilder): Promise<void> {
         builder
             .setName('welcome')
             .setDescription('Simulates a welcome event for the given user.')
-            .setDefaultMemberPermissions(Permissions.FLAGS.MANAGE_CHANNELS)
+            .setDefaultMemberPermissions('0')
             .setDMPermission(false)
             .addUserOption((option) =>
                 option
@@ -56,33 +56,33 @@ export async function welcome(member: GuildMember, client: ClientInstance): Prom
     if (!server) {
         return false;
     }
-    let success = await sendWelcomeMessage(member, client);
+    let success = true;//await sendWelcomeMessage(member, client);
     success &&= await addDefaultRoles(member, server, client);
     return success;
 }
 
-async function sendWelcomeMessage(member: GuildMember, client: ClientInstance) {
-    const welcomeChannel = await findServerChannel(member.guild, "welcome");
-    const generalChannel = await findServerChannel(member.guild, "general");
-    if (!welcomeChannel) {
-        return false;
-    }
-    if (!generalChannel?.isText()) {
-        return false;
-    }
+// async function sendWelcomeMessage(member: GuildMember, client: ClientInstance) {
+//     const welcomeChannel = await findServerChannel(member.guild, "welcome");
+//     const generalChannel = await findServerChannel(member.guild, "general");
+//     if (!welcomeChannel) {
+//         return false;
+//     }
+//     if (!generalChannel?.isText()) {
+//         return false;
+//     }
 
-    try {
-        const msg =
-        `${member.user} has logged on!
-Please take a look at ${welcomeChannel} before you get started.`;
-        await generalChannel.send({ content: msg });
-        return true;
-    }
-    catch (err) {
-        await client.reportError(err, 'sendWelcomeMessage');
-        return false;
-    }
-}
+//     try {
+//         const msg =
+//         `${member.user} has logged on!
+// Please take a look at ${welcomeChannel} before you get started.`;
+//         await generalChannel.send({ content: msg });
+//         return true;
+//     }
+//     catch (err) {
+//         await client.reportError(err, 'sendWelcomeMessage');
+//         return false;
+//     }
+// }
 
 async function addDefaultRoles(member: GuildMember, server: ServerSettings, client: ClientInstance) {
     try {
@@ -98,7 +98,7 @@ async function addDefaultRoles(member: GuildMember, server: ServerSettings, clie
         return true;
     }
     catch (err) {
-        await client.reportError(err, 'sendWelcomeMessage');
+        await client.reportError(err, 'addDefaultRoles');
         return false;
     }
 }
