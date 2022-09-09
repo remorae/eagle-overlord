@@ -1,5 +1,5 @@
-import type { SlashCommandBuilder } from '@discordjs/builders';
-import type { CommandInteraction } from 'discord.js';
+import type { SlashCommandBuilder } from 'discord.js';
+import type { ChatInputCommandInteraction, CommandInteraction } from 'discord.js';
 import type { ClientInstance } from '../../client/client.js';
 import { extractRemainingTime, Months, CHRISTMAS_DAY_OF_MONTH, RemainingTimeInYear, getEasternTime } from '../timeUtils.js';
 import type { Command } from '../command.js';
@@ -17,7 +17,7 @@ class AdventOfCodeCommand implements Command {
                     .setDescription("Link today's Advent of Code page and/or display a count down to the next day.")
             )
     }
-    async execute(interaction: CommandInteraction, client: ClientInstance) {
+    async execute(interaction: ChatInputCommandInteraction, client: ClientInstance) {
         const cmd = interaction.options.getSubcommand(true);
         switch (cmd) {
             case 'info':

@@ -1,5 +1,5 @@
-import type { SlashCommandBuilder } from '@discordjs/builders';
-import { CommandInteraction, GuildTextBasedChannel, HexColorString, MessageActionRow, MessageEmbed, Modal, ModalActionRowComponent, ModalSubmitInteraction, Permissions, TextInputComponent } from 'discord.js';
+import type { SlashCommandBuilder } from 'discord.js';
+import { CommandInteraction, GuildTextBasedChannel, HexColorString, ActionRowBuilder, ModalBuilder, ModalSubmitInteraction, ChatInputCommandInteraction, ChannelType, EmbedBuilder, ModalActionRowComponentBuilder, TextInputBuilder, TextInputStyle, PermissionsBitField } from 'discord.js';
 import type { ClientInstance } from '../../client/client.js';
 import type { Command } from '../command.js';
 import { showTimedModal } from '../modal.js';
@@ -9,7 +9,7 @@ class EmbedCommand implements Command {
         builder
             .setName('embed')
             .setDescription('Embed the given info in a new message in the given channel.')
-            .setDefaultMemberPermissions(Permissions.FLAGS.MANAGE_CHANNELS)
+            .setDefaultMemberPermissions(PermissionsBitField.Flags.ManageChannels)
             .setDMPermission(false)
             .addChannelOption((option) =>
                 option
@@ -35,14 +35,14 @@ class EmbedCommand implements Command {
                     .setDescription('The ID of the message to edit.')
             )
     }
-    async execute(interaction: CommandInteraction, client: ClientInstance) {
+    async execute(interaction: ChatInputCommandInteraction, client: ClientInstance) {
         if (!interaction.inGuild()) {
             await interaction.reply({ content: 'This command can only be used in a server.', ephemeral: true });
             return;
         }
         const channel = interaction.options.getChannel('channel', true);
-        if (!('guild' in channel) || !channel.isText()) {
-            await interaction.reply({ content: 'Channel is not a text/thread channel.', ephemeral: true });
+        if (!('guild' in channel) || !(channel.type === ChannelType.GuildText)) {
+            await interaction.reply({ content: 'Channel is not a text channel.', ephemeral: true });
             return;
         }
         const embed = await createEmbedFromOptions(interaction);
@@ -55,7 +55,7 @@ class EmbedCommand implements Command {
 
 export const command: Command = new EmbedCommand();
 
-async function createEmbedFromOptions(interaction: CommandInteraction) {
+async function createEmbedFromOptions(interaction: ChatInputCommandInteraction) {
     const title = interaction.options.getString('title', true);
     const colorStr = interaction.options.getString('color', true);
     let color = null;
@@ -71,13 +71,13 @@ async function createEmbedFromOptions(interaction: CommandInteraction) {
         return null;
     }
 
-    const embed = new MessageEmbed()
+    const embed = new EmbedBuilder()
         .setTitle(title)
         .setColor(color);
     return embed;
 }
 
-async function askForEmbedDescription(interaction: CommandInteraction, client: ClientInstance, channel: GuildTextBasedChannel, editID: string | null, embed: MessageEmbed) {
+async function askForEmbedDescription(interaction: CommandInteraction, client: ClientInstance, channel: GuildTextBasedChannel, editID: string | null, embed: EmbedBuilder) {
     const modal = buildDescriptionModal();
     const submission = await showTimedModal(interaction, modal);
     if (submission) {
@@ -87,23 +87,23 @@ async function askForEmbedDescription(interaction: CommandInteraction, client: C
 }
 
 function buildDescriptionModal() {
-    return new Modal()
+    return new ModalBuilder()
         .setCustomId('embedDescriptionModal')
         .setTitle(`Embed`)
         .addComponents(
-            new MessageActionRow<ModalActionRowComponent>()
+            new ActionRowBuilder<ModalActionRowComponentBuilder>()
                 .addComponents(
-                    new TextInputComponent()
+                    new TextInputBuilder()
                         .setCustomId('description')
                         .setLabel('Description')
                         .setPlaceholder('Please enter the embed description...')
-                        .setStyle('PARAGRAPH')
+                        .setStyle(TextInputStyle.Paragraph)
                         .setRequired(true)
                 )
         );
 }
 
-async function sendEmbed(interaction: ModalSubmitInteraction, client: ClientInstance, channel: GuildTextBasedChannel, editID: string | null, embed: MessageEmbed) {
+async function sendEmbed(interaction: ModalSubmitInteraction, client: ClientInstance, channel: GuildTextBasedChannel, editID: string | null, embed: EmbedBuilder) {
     try {
         if (editID) {
             await editMessageWithEmbed(interaction, client, channel, editID, embed);
@@ -119,7 +119,7 @@ async function sendEmbed(interaction: ModalSubmitInteraction, client: ClientInst
     }
 }
 
-async function editMessageWithEmbed(interaction: ModalSubmitInteraction, client: ClientInstance, channel: GuildTextBasedChannel, editID: string, embed: MessageEmbed) {
+async function editMessageWithEmbed(interaction: ModalSubmitInteraction, client: ClientInstance, channel: GuildTextBasedChannel, editID: string, embed: EmbedBuilder) {
     let messageToEdit = null;
     try {
         messageToEdit = await channel.messages.fetch(editID);

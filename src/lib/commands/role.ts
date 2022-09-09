@@ -1,5 +1,5 @@
-import type { SlashCommandBuilder } from '@discordjs/builders';
-import { Guild, CommandInteraction, GuildMember, Role, Permissions } from 'discord.js';
+import type { SlashCommandBuilder } from 'discord.js';
+import { Guild, CommandInteraction, GuildMember, Role, ChatInputCommandInteraction, PermissionsBitField } from 'discord.js';
 import type { ClientInstance } from '../../client/client.js';
 import { findServerRole } from '../../client/settings.js';
 import type { Command } from '../command.js';
@@ -10,7 +10,7 @@ class RoleCommand implements Command {
         builder
             .setName('role')
             .setDescription('Manage user roles.')
-            .setDefaultMemberPermissions(Permissions.FLAGS.MANAGE_ROLES)
+            .setDefaultMemberPermissions(PermissionsBitField.Flags.ManageRoles)
             .setDMPermission(false)
             .addSubcommandGroup(group =>
                 group
@@ -112,7 +112,7 @@ class RoleCommand implements Command {
                     )
             )
     }
-    async execute(interaction: CommandInteraction, _client: ClientInstance): Promise<void> {
+    async execute(interaction: ChatInputCommandInteraction, _client: ClientInstance): Promise<void> {
         if (!interaction.inCachedGuild()) {
             await interaction.reply({ content: 'You must be in a guild to use this command.', ephemeral: true });
             return;
@@ -137,7 +137,7 @@ class RoleCommand implements Command {
     }
 }
 
-export async function removeRole(interaction: CommandInteraction, role: Role): Promise<void> {
+export async function removeRole(interaction: ChatInputCommandInteraction, role: Role): Promise<void> {
     if (!interaction.inCachedGuild()) {
         return;
     }
@@ -278,7 +278,7 @@ export async function removeRoleFromSelf(interaction: CommandInteraction, role: 
     }
 }
 
-async function addRole(interaction: CommandInteraction, role: Role): Promise<void> {
+async function addRole(interaction: ChatInputCommandInteraction, role: Role): Promise<void> {
     if (!interaction.inCachedGuild()) {
         return;
     }
@@ -392,7 +392,7 @@ async function hasPermissionToManageRole(member: GuildMember, role: Role, forAll
     if (!member.permissions.has(role.permissions)) {
         return false;
     }
-    if (member.permissions.has(Permissions.FLAGS.MANAGE_ROLES)) {
+    if (member.permissions.has(PermissionsBitField.Flags.ManageRoles)) {
         return true;
     }
     if (forAll) {

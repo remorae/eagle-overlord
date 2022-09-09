@@ -1,4 +1,4 @@
-import type { SlashCommandBuilder } from '@discordjs/builders';
+import type { SlashCommandBuilder } from 'discord.js';
 import type { Guild, CommandInteraction, GuildMember, ApplicationCommand, GuildResolvable, Collection } from 'discord.js';
 import type { ClientInstance } from '../../client/client.js';
 import type { Command } from '../command.js';

@@ -1,5 +1,5 @@
-import { codeBlock, SlashCommandBuilder } from '@discordjs/builders';
-import { AutocompleteFocusedOption, AutocompleteInteraction, CommandInteraction, Message, MessageActionRow, Modal, ModalActionRowComponent, ModalSubmitInteraction, TextInputComponent } from 'discord.js';
+import { codeBlock, SlashCommandBuilder } from 'discord.js';
+import { AutocompleteFocusedOption, AutocompleteInteraction, ChatInputCommandInteraction, CommandInteraction, Message, ActionRowBuilder, ModalBuilder, ModalSubmitInteraction, TextInputBuilder, ModalActionRowComponentBuilder, TextInputStyle } from 'discord.js';
 import { Command, MAX_CHOICES } from '../command.js';
 import type { ClientInstance } from '../../client/client.js';
 import config from '../../config.js';
@@ -40,7 +40,7 @@ class CompileCommand implements Command {
                     )
             );
     }
-    async execute(interaction: CommandInteraction, client: ClientInstance) {
+    async execute(interaction: ChatInputCommandInteraction, client: ClientInstance) {
         const subcommand = interaction.options.getSubcommand(true);
         switch (subcommand) {
             case 'languages':
@@ -130,17 +130,17 @@ async function askForRunInput(interaction: CommandInteraction, client: ClientIns
 }
 
 function buildRunModal(validLang: CompileLanguage) {
-    return new Modal()
+    return new ModalBuilder()
         .setCustomId('compileRunModal')
         .setTitle(`Compile ${validLang.full}`)
         .addComponents(
-            new MessageActionRow<ModalActionRowComponent>()
+            new ActionRowBuilder<ModalActionRowComponentBuilder>()
                 .addComponents(
-                    new TextInputComponent()
+                    new TextInputBuilder()
                         .setCustomId('input')
                         .setLabel('Input')
                         .setPlaceholder('Please enter some code to compile...')
-                        .setStyle('PARAGRAPH')
+                        .setStyle(TextInputStyle.Paragraph)
                         .setRequired(true)
                 )
         );
