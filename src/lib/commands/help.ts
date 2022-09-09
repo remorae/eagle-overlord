@@ -1,5 +1,5 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
-import type { ApplicationCommand, CommandInteraction, GuildResolvable } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
+import type { ApplicationCommand, ChatInputCommandInteraction, CommandInteraction, GuildResolvable } from 'discord.js';
 import type { ClientInstance } from '../../client/client.js';
 import { findServerChannel } from '../../client/settings.js';
 import { Command, getCommandsOnDisk } from '../command.js';
@@ -24,7 +24,7 @@ class HelpCommand implements Command {
                     .setDescription('The command to get information about.')
                     .addChoices(...otherCommands));
     }
-    async execute(interaction: CommandInteraction, client: ClientInstance): Promise<void> {
+    async execute(interaction: ChatInputCommandInteraction, client: ClientInstance): Promise<void> {
         const specifiedCommand = interaction.options.getString('command', false);
         if (specifiedCommand) {
             interaction.deferReply({ ephemeral: true });

@@ -3,10 +3,9 @@ import config from '../config.js';
 import type { Terminal } from './terminal.js';
 //import { welcome } from '../lib/commands/welcome.js';
 
-import { Client, Message, PartialMessage, GuildMember, Interaction, Collection, ApplicationCommandPermissionData, CommandInteraction, AutocompleteInteraction } from 'discord.js';
-import { SlashCommandBuilder } from '@discordjs/builders';
+import { Client, Message, PartialMessage, GuildMember, Interaction, Collection, ApplicationCommandPermissionType, ApplicationCommandPermissions, CommandInteraction, AutocompleteInteraction, InteractionType, ChatInputCommandInteraction } from 'discord.js';
+import { SlashCommandBuilder, Routes } from 'discord.js';
 import { REST } from '@discordjs/rest';
-import { Routes } from 'discord-api-types/v9';
 import { EventEmitter } from 'node:events';
 
 export interface ClientInstanceEvents {
@@ -16,7 +15,7 @@ export interface ClientInstanceEvents {
 export class ClientInstance extends EventEmitter {
     public shouldRespond = true;
     private commands: Collection<string, Command> = new Collection();
-    private rest = new REST({ version: '9' }).setToken(config.client.token);
+    private rest = new REST({ version: '10' }).setToken(config.client.token);
     public terminal: Terminal | null = null;
 
     public constructor(public client: Client) {
@@ -110,16 +109,16 @@ export class ClientInstance extends EventEmitter {
     private async allowInteraction(interaction: CommandInteraction, command: Command): Promise<boolean> {
         if (interaction.guild) {
             if (command.getPermissions) {
-                const permissions: ApplicationCommandPermissionData[] = [];
+                const permissions: ApplicationCommandPermissions[] = [];
                 await command.getPermissions(interaction.guild, permissions);
                 return permissions.some((perm) => {
                     switch (perm.type) {
-                        case 'ROLE':
+                        case ApplicationCommandPermissionType.Role:
                             if (!interaction.inCachedGuild()) {
                                 return false;
                             }
                             return interaction.member.roles.cache.has(perm.id);
-                        case 'USER':
+                        case ApplicationCommandPermissionType.User:
                             return interaction.user.id === perm.id;
                         default:
                             break;
@@ -133,10 +132,10 @@ export class ClientInstance extends EventEmitter {
 
     private async handleInteraction(this: ClientInstance, interaction: Interaction) {
         switch (interaction.type) {
-            case 'APPLICATION_COMMAND':
-                await this.handleCommandInteraction(interaction as CommandInteraction);
+            case InteractionType.ApplicationCommand:
+                await this.handleCommandInteraction(interaction as ChatInputCommandInteraction);
                 break;
-            case 'APPLICATION_COMMAND_AUTOCOMPLETE':
+            case InteractionType.ApplicationCommandAutocomplete:
                 await this.handleAutocompleteInteraction(interaction as AutocompleteInteraction);
                 break;
             default:
@@ -144,7 +143,7 @@ export class ClientInstance extends EventEmitter {
         }
     }
 
-    private async handleCommandInteraction(this: ClientInstance, interaction: CommandInteraction) {
+    private async handleCommandInteraction(this: ClientInstance, interaction: ChatInputCommandInteraction) {
         try {
             console.log(`Received command: ${interaction.commandName}`)
             const command = this.commands.get(interaction.commandName);

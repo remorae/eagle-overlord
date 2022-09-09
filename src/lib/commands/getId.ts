@@ -1,5 +1,5 @@
-import type { SlashCommandBuilder } from '@discordjs/builders';
-import { Channel, CommandInteraction, Permissions, Role, User } from 'discord.js';
+import type { SlashCommandBuilder } from 'discord.js';
+import { ChatInputCommandInteraction, PermissionsBitField, Role, User } from 'discord.js';
 import type { ClientInstance } from '../../client/client.js';
 import type { Command } from '../command.js';
 
@@ -8,7 +8,7 @@ class GetIdCommand implements Command {
         builder
             .setName('get_id')
             .setDescription('Get the dev ID for the given role, user, or channel.')
-            .setDefaultMemberPermissions(Permissions.FLAGS.MANAGE_CHANNELS | Permissions.FLAGS.MANAGE_ROLES)
+            .setDefaultMemberPermissions(PermissionsBitField.Flags.ManageChannels | PermissionsBitField.Flags.ManageRoles)
             .setDMPermission(true)
             .addSubcommand(command =>
                 command
@@ -44,7 +44,7 @@ class GetIdCommand implements Command {
                     )
             )
     }
-    async execute(interaction: CommandInteraction, _client: ClientInstance): Promise<void> {
+    async execute(interaction: ChatInputCommandInteraction, _client: ClientInstance): Promise<void> {
         if (!interaction.inCachedGuild()) {
             await interaction.reply({ content: 'You must be in a guild to use this command.', ephemeral: true });
             return;
@@ -69,7 +69,7 @@ class GetIdCommand implements Command {
 
 export const command: Command = new GetIdCommand();
 
-async function getRoleId(interaction: CommandInteraction) {
+async function getRoleId(interaction: ChatInputCommandInteraction) {
     const role = interaction.options.getRole('role');
     if (!(role instanceof Role)) {
         await interaction.reply({ content: 'Invalid role.', ephemeral: true });
@@ -78,7 +78,7 @@ async function getRoleId(interaction: CommandInteraction) {
     await interaction.reply({ content: role.id, ephemeral: true });
 }
 
-async function getUserId(interaction: CommandInteraction) {
+async function getUserId(interaction: ChatInputCommandInteraction) {
     const user = interaction.options.getUser('user');
     if (!(user instanceof User)) {
         await interaction.reply({ content: 'Invalid user.', ephemeral: true });
@@ -87,9 +87,9 @@ async function getUserId(interaction: CommandInteraction) {
     await interaction.reply({ content: user.id, ephemeral: true });
 }
 
-async function getChannelId(interaction: CommandInteraction) {
+async function getChannelId(interaction: ChatInputCommandInteraction) {
     const channel = interaction.options.getChannel('channel');
-    if (!(channel instanceof Channel)) {
+    if (!channel) {
         await interaction.reply({ content: 'Invalid channel.', ephemeral: true });
         return;
     }

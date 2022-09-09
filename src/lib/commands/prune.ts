@@ -1,5 +1,5 @@
-import type { SlashCommandBuilder } from '@discordjs/builders';
-import { Guild, CommandInteraction, Permissions, Modal, MessageActionRow, ModalActionRowComponent, TextInputComponent, ModalSubmitInteraction, Role } from 'discord.js';
+import type { SlashCommandBuilder } from 'discord.js';
+import { Guild, ModalSubmitInteraction, Role, ActionRowBuilder, TextInputStyle, TextInputBuilder, ModalActionRowComponentBuilder, ChatInputCommandInteraction, PermissionsBitField, ModalBuilder } from 'discord.js';
 import type { ClientInstance } from '../../client/client.js';
 import type { Command } from '../command.js';
 import { showTimedModal } from '../modal.js';
@@ -9,7 +9,7 @@ class PruneCommand implements Command {
         builder
             .setName('prune')
             .setDescription('Prune members.')
-            .setDefaultMemberPermissions(Permissions.FLAGS.KICK_MEMBERS)
+            .setDefaultMemberPermissions(PermissionsBitField.Flags.KickMembers)
             .setDMPermission(false)
             .addIntegerOption((option) =>
                 option
@@ -29,7 +29,7 @@ class PruneCommand implements Command {
                     .setDescription("Whether of not to return the number of users that have been kicked")
                     .setRequired(false));
     }
-    async execute(interaction: CommandInteraction, client: ClientInstance): Promise<void> {
+    async execute(interaction: ChatInputCommandInteraction, client: ClientInstance): Promise<void> {
         if (!interaction.inCachedGuild()) {
             await interaction.reply({ content: 'You must be in a guild to use this command.', ephemeral: true });
             return;
@@ -41,23 +41,23 @@ class PruneCommand implements Command {
 }
 
 function buildRolesModal() {
-    return new Modal()
+    return new ModalBuilder()
         .setCustomId('pruneRolesModal')
         .setTitle(`Prune Members`)
         .addComponents(
-            new MessageActionRow<ModalActionRowComponent>()
+            new ActionRowBuilder<ModalActionRowComponentBuilder>()
                 .addComponents(
-                    new TextInputComponent()
+                    new TextInputBuilder()
                         .setCustomId('roles')
                         .setLabel('Roles')
                         .setPlaceholder('Optional list of roles to allow when pruning, e.g.\n@RoleName\nRoleName\n<role id>')
-                        .setStyle('PARAGRAPH')
+                        .setStyle(TextInputStyle.Paragraph)
                         .setRequired(false)
                 )
         );
 }
 
-async function processPrune(interaction: CommandInteraction & { guild: Guild; }, submission: ModalSubmitInteraction | null, client: ClientInstance) {
+async function processPrune(interaction: ChatInputCommandInteraction & { guild: Guild; }, submission: ModalSubmitInteraction | null, client: ClientInstance) {
     try {
         const roles = submission?.fields.getTextInputValue("roles")
             .split('\n')

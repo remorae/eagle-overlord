@@ -1,4 +1,4 @@
-import type { SlashCommandBuilder } from '@discordjs/builders';
+import type { SlashCommandBuilder } from 'discord.js';
 import { CommandInteraction, GuildMember } from 'discord.js';
 import type { Command } from '../command.js';
 import type { ClientInstance } from '../../client/client.js';
@@ -23,7 +23,7 @@ class WelcomeCommand implements Command {
             await interaction.reply({ content: 'You must be in a guild to use this command.', ephemeral: true });
             return;
         }
-        const member = interaction.options.getMember('user', true);
+        const member = interaction.options.getMember('user');
         if (!(member instanceof GuildMember)) {
             await interaction.reply({ content: 'Invalid user.', ephemeral: true });
             return;

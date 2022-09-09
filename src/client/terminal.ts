@@ -1,7 +1,6 @@
 import { Interface, createInterface } from 'readline';
 import type { ClientInstance } from './client.js';
-import type { ActivityType } from 'discord.js';
-import type { UnionProperties } from '../lib/types.js';
+import { ActivityType } from 'discord.js';
 
 export class Terminal {
     private readonly cli: Interface;
@@ -63,17 +62,10 @@ export class Terminal {
     }
 
     private setActivity(typeArg: string, name: string) {
-        const type = typeArg.toUpperCase();
-        const validTypes: UnionProperties<Exclude<ActivityType, 'CUSTOM'>> = {
-            PLAYING: undefined,
-            STREAMING: undefined,
-            LISTENING: undefined,
-            WATCHING: undefined,
-            COMPETING: undefined,
-        };
-        if (type in validTypes) {
+        const type = typeArg.at(0)!.toUpperCase + typeArg.substring(1).toLowerCase();
+        if (type in ActivityType && type !== ActivityType[ActivityType.Custom]) {
             const presence = this.instance.client.user?.setActivity(name, {
-                type: type as Exclude<ActivityType, 'CUSTOM'>
+                type: ActivityType[type as keyof typeof ActivityType] as Exclude<ActivityType, ActivityType.Custom>
             });
             console.log('Activity set to ', presence);
         }

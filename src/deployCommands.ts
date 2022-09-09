@@ -1,6 +1,5 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
+import { SlashCommandBuilder, Routes } from 'discord.js';
 import { REST } from '@discordjs/rest';
-import { Routes } from 'discord-api-types/v9';
 import { getCommandsOnDisk } from './lib/command.js';
 import config from './config.js';
 
@@ -12,7 +11,7 @@ async function main() {
     });
 
     try {
-        const rest = new REST({ version: '9' }).setToken(config.client.token);
+        const rest = new REST({ version: '10' }).setToken(config.client.token);
         const route = Routes.applicationGuildCommands(config.client.id, config.client.devGuildId);
         //const route = Routes.applicationCommands(config.client.id);
         await rest.put(route, { body: commands });

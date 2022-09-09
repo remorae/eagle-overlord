@@ -1,5 +1,5 @@
-import type { SlashCommandBuilder } from '@discordjs/builders';
-import type { ApplicationCommandPermissionData, AutocompleteInteraction, CommandInteraction, Guild, ModalSubmitInteraction, PermissionResolvable, Role } from 'discord.js';
+import type { SlashCommandBuilder } from 'discord.js';
+import { ApplicationCommandPermissions, ApplicationCommandPermissionType, AutocompleteInteraction, ChatInputCommandInteraction, Guild, ModalSubmitInteraction, PermissionResolvable, Role } from 'discord.js';
 import path from 'path';
 import { readdir } from 'fs/promises';
 import type { ClientInstance } from '../client/client.js';
@@ -7,24 +7,24 @@ import { loadAtRuntime, resolveRelativeToMain } from '../lib/utils.js';
 
 export interface Command {
     build(builder: SlashCommandBuilder): Promise<void>,
-    getPermissions?(guild: Guild, permissions: ApplicationCommandPermissionData[]): Promise<void>,
-    execute(interaction: CommandInteraction, client: ClientInstance): Promise<void>;
+    getPermissions?(guild: Guild, permissions: ApplicationCommandPermissions[]): Promise<void>,
+    execute(interaction: ChatInputCommandInteraction, client: ClientInstance): Promise<void>;
     autocomplete?(interaction: AutocompleteInteraction, client: ClientInstance): Promise<void>;
     receiveModal?(interaction: ModalSubmitInteraction, client: ClientInstance): Promise<void>;
 }
 
-export function commandRolePermission(role: string, allow: boolean): ApplicationCommandPermissionData {
+export function commandRolePermission(role: string, allow: boolean): ApplicationCommandPermissions {
     return {
         id: role,
-        type: 'ROLE',
+        type: ApplicationCommandPermissionType.Role,
         permission: allow,
     };
 }
 
-export function commandUserPermission(user: string, allow: boolean): ApplicationCommandPermissionData {
+export function commandUserPermission(user: string, allow: boolean): ApplicationCommandPermissions {
     return {
         id: user,
-        type: 'USER',
+        type: ApplicationCommandPermissionType.User,
         permission: allow,
     };
 }

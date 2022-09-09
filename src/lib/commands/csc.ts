@@ -1,5 +1,5 @@
-import type { SlashCommandBuilder } from '@discordjs/builders';
-import type { CommandInteraction, Guild } from 'discord.js';
+import type { SlashCommandBuilder } from 'discord.js';
+import type { ChatInputCommandInteraction, CommandInteraction, Guild } from 'discord.js';
 import type { ClientInstance } from '../../client/client.js';
 import { findServerRole } from '../../client/settings.js';
 import type { Command } from '../command.js';
@@ -38,7 +38,7 @@ class CscCommand implements Command {
                     .setDescription('Get information about CSC.')
             );
     }
-    async execute(interaction: CommandInteraction, _client: ClientInstance): Promise<void> {
+    async execute(interaction: ChatInputCommandInteraction, _client: ClientInstance): Promise<void> {
         if (!interaction.inCachedGuild()) {
             await interaction.reply({ content: 'You must be in a guild to use this command.', ephemeral: true });
             return;

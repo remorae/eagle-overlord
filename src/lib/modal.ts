@@ -1,7 +1,7 @@
-import type { CommandInteraction, Modal, ModalSubmitInteraction } from 'discord.js';
+import type { CommandInteraction, ModalBuilder, ModalSubmitInteraction } from 'discord.js';
 import { MILLIS_PER_SECOND } from './timeUtils.js';
 
-export async function showTimedModal(interaction: CommandInteraction, modal: Modal): Promise<ModalSubmitInteraction | null> {
+export async function showTimedModal(interaction: CommandInteraction, modal: ModalBuilder): Promise<ModalSubmitInteraction | null> {
     const TIMEOUT_SECONDS = 60;
     await interaction.showModal(modal);
     try {
