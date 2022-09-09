@@ -13,9 +13,11 @@ class ListCommandsCommand implements Command {
     async execute(interaction: CommandInteraction, _client: ClientInstance): Promise<void> {
         await interaction.deferReply({ ephemeral: true });
         try {
-            const commands = (interaction.guild)
-                ? await interaction.guild.commands.fetch()
-                : await interaction.client.application?.commands.fetch();
+            let commands = await interaction.client.application?.commands.fetch();
+            if (interaction.guild) {
+                const guildCommands = await interaction.guild.commands.fetch();
+                commands = (commands) ? commands.concat(guildCommands) : guildCommands;
+            }
             if (!commands) {
                 await interaction.editReply({ content: 'No commands found. Slash commands may still be deploying.' });
                 return;
