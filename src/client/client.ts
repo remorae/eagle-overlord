@@ -1,7 +1,7 @@
 import { Command, getCommandsOnDisk } from '../lib/command.js';
 import config from '../config.js';
 import type { Terminal } from './terminal.js';
-//import { welcome } from '../lib/commands/welcome.js';
+import { welcome } from '../lib/commands/welcome.js';
 
 import { Client, Message, PartialMessage, GuildMember, Interaction, Collection, ApplicationCommandPermissionType, ApplicationCommandPermissions, CommandInteraction, AutocompleteInteraction, InteractionType, ChatInputCommandInteraction } from 'discord.js';
 import { SlashCommandBuilder, Routes } from 'discord.js';
@@ -173,11 +173,11 @@ export class ClientInstance extends EventEmitter {
         }
     }
 
-    private async onGuildMemberAdd(this: ClientInstance, _member: GuildMember): Promise<void> {
+    private async onGuildMemberAdd(this: ClientInstance, member: GuildMember): Promise<void> {
         if (!this.shouldRespond) {
             return;
         }
-        //await welcome(member, this);
+        await welcome(member, this);
     }
 
     private async onReady(this: ClientInstance) {

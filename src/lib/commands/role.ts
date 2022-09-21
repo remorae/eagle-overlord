@@ -137,12 +137,41 @@ class RoleCommand implements Command {
     }
 }
 
+async function replyWithError(interaction: CommandInteraction, status: PermissionStatus, edit: boolean) {
+    let msg = "Something went wrong!";
+    let ephemeral = true;
+    switch (status) {
+        case PermissionStatus.Ok:
+            ephemeral = false;
+            break;
+        case PermissionStatus.InsufficientAppPermissions:
+            msg = "Insufficient application permissions.";
+            break;
+        case PermissionStatus.InsufficientMemberPermissions:
+            msg = "Insufficient user permissions.";
+            break;
+        case PermissionStatus.CannotManageRoles:
+            msg = "Insufficient user permissions to manage roles.";
+            break;
+        case PermissionStatus.InsufficientRoleSpecificPermissions:
+            msg = "Insufficient role-specific permissions.";
+            break;
+    }
+    if (edit) {
+        await interaction.editReply({ content: msg });
+    }
+    else {
+        await interaction.reply({ content: msg, ephemeral });
+    }
+}
+
 export async function removeRole(interaction: ChatInputCommandInteraction, role: Role): Promise<void> {
     if (!interaction.inCachedGuild()) {
         return;
     }
-    if (interaction.member.permissions.has(role.permissions)) {
-        const subCommand = interaction.options.getSubcommand();
+    const subCommand = interaction.options.getSubcommand();
+    const status = await hasPermissionToManageRole(interaction.member, role, subCommand == 'all' || subCommand == 'role', interaction.appPermissions);
+    if (status == PermissionStatus.Ok) {
         switch (subCommand) {
             case 'self':
                 await removeRoleFromSelf(interaction, role);
@@ -162,7 +191,7 @@ export async function removeRole(interaction: ChatInputCommandInteraction, role:
         }
     }
     else {
-        await interaction.reply('You do not have permission to remove this role.');
+        await replyWithError(interaction, status, false);
     }
 }
 
@@ -170,11 +199,12 @@ async function removeRoleFromAll(interaction: CommandInteraction, role: Role): P
         if (!interaction.inCachedGuild()) {
         return;
     }
-    if (await hasPermissionToManageRole(interaction.member, role, true)) {
+    const status = await hasPermissionToManageRole(interaction.member, role, true, interaction.appPermissions);
+    if (status == PermissionStatus.Ok) {
         await deferredBatchRemove(interaction, interaction.guild, role);
     }
     else {
-        await interaction.reply('You do not have permission to remove roles from other users.');
+        await replyWithError(interaction, status, false);
     }
 }
 
@@ -182,11 +212,12 @@ async function deleteRole(interaction: CommandInteraction, role: Role): Promise<
     if (!interaction.inCachedGuild()) {
         return;
     }
-    if (await hasPermissionToManageRole(interaction.member, role, true)) {
+    const status = await hasPermissionToManageRole(interaction.member, role, true, interaction.appPermissions);
+    if (status == PermissionStatus.Ok) {
         await deferredDelete(interaction, interaction.guild, role);
     }
     else {
-        await interaction.reply('You do not have permission to delete roles.');
+        await replyWithError(interaction, status, false);
     }
 }
 
@@ -208,7 +239,7 @@ async function deferredBatchRemove(interaction: CommandInteraction, guild: Guild
         await interaction.editReply({ content: `Removed role ${role} from ${numRemoved} users.`, allowedMentions: { users: [], roles: [] } });
     }
     catch (err) {
-        await interaction.editReply({ content: 'Something went wrong! The bot might lack permission to remove the role.' });
+        await replyWithError(interaction, PermissionStatus.Ok, true);
     }
 }
 
@@ -225,7 +256,7 @@ async function deferredDelete(interaction: CommandInteraction, guild: Guild, rol
         await interaction.editReply({ content: `Removed role ${role} from ${numRemoved} users and deleted it.`, allowedMentions: { users: [], roles: [] } });
     }
     catch (err) {
-        await interaction.editReply({ content: 'Something went wrong! The bot might lack permission to remove the role.' });
+        await replyWithError(interaction, PermissionStatus.Ok, true);
     }
 }
 
@@ -233,7 +264,8 @@ export async function removeRoleFromOther(interaction: CommandInteraction, role:
     if (!interaction.inCachedGuild()) {
         return;
     }
-    if (await hasPermissionToManageRole(interaction.member, role, false)) {
+    const status = await hasPermissionToManageRole(interaction.member, role, false, interaction.appPermissions);
+    if (status == PermissionStatus.Ok) {
         const member = interaction.options.getMember('member');
         if (!(member instanceof GuildMember)) {
             await interaction.reply({ content: 'Invalid user.', ephemeral: true });
@@ -246,7 +278,7 @@ export async function removeRoleFromOther(interaction: CommandInteraction, role:
         }
     }
     else {
-        await interaction.reply('You do not have permission to remove roles from other users.');
+        await replyWithError(interaction, status, false);
     }
 }
 
@@ -261,7 +293,7 @@ async function removeMemberRole(interaction: CommandInteraction, member: GuildMe
         }
     }
     catch (err) {
-        await interaction.reply({ content: 'Something went wrong! The bot might lack permission to remove the role.' });
+        await replyWithError(interaction, PermissionStatus.Ok, false);
         throw err;
     }
 }
@@ -282,8 +314,9 @@ async function addRole(interaction: ChatInputCommandInteraction, role: Role): Pr
     if (!interaction.inCachedGuild()) {
         return;
     }
-    if (interaction.member.permissions.has(role.permissions)) {
-        const subCommand = interaction.options.getSubcommand();
+    const subCommand = interaction.options.getSubcommand();
+    const status = await hasPermissionToManageRole(interaction.member, role, subCommand == 'all', interaction.appPermissions);
+    if (status == PermissionStatus.Ok) {
         switch (subCommand) {
             case 'self':
                 await addRoleToSelf(interaction, role);
@@ -300,7 +333,7 @@ async function addRole(interaction: ChatInputCommandInteraction, role: Role): Pr
         }
     }
     else {
-        await interaction.reply('You do not have permission to add this role.');
+        await replyWithError(interaction, status, false);
     }
 }
 
@@ -308,11 +341,12 @@ async function addRoleToAll(interaction: CommandInteraction, role: Role): Promis
     if (!interaction.inCachedGuild()) {
         return;
     }
-    if (await hasPermissionToManageRole(interaction.member, role, true)) {
+    const status = await hasPermissionToManageRole(interaction.member, role, true, interaction.appPermissions);
+    if (status == PermissionStatus.Ok) {
         await deferredBatchAdd(interaction, interaction.guild, role);
     }
     else {
-        await interaction.reply('You do not have permission to add roles to other users.');
+        await replyWithError(interaction, status, false);
     }
 }
 
@@ -334,7 +368,7 @@ async function deferredBatchAdd(interaction: CommandInteraction, guild: Guild, r
         await interaction.editReply({ content: `Added role ${role} to ${numAdded} users.`, allowedMentions: { users: [], roles: [] } });
     }
     catch (err) {
-        await interaction.editReply({ content: 'Something went wrong! The bot might lack permission to add the role.' });
+        await replyWithError(interaction, PermissionStatus.Ok, true);
         throw err;
     }
 }
@@ -343,7 +377,8 @@ export async function addRoleToOther(interaction: CommandInteraction, role: Role
     if (!interaction.inCachedGuild()) {
         return;
     }
-    if (await hasPermissionToManageRole(interaction.member, role, false)) {
+    const status = await hasPermissionToManageRole(interaction.member, role, false, interaction.appPermissions);
+    if (status == PermissionStatus.Ok) {
         const member = interaction.options.getMember('member');
         if (!(member instanceof GuildMember)) {
             await interaction.reply({ content: 'Invalid user.', ephemeral: true });
@@ -356,7 +391,7 @@ export async function addRoleToOther(interaction: CommandInteraction, role: Role
         }
     }
     else {
-        await interaction.reply('You do not have permission to add roles to other users.');
+        await replyWithError(interaction, status, false);
     }
 }
 
@@ -371,7 +406,7 @@ async function addMemberRole(interaction: CommandInteraction, member: GuildMembe
         }
     }
     catch (err) {
-        await interaction.reply({ content: 'Something went wrong! The bot might lack permission to add the role.' });
+        await replyWithError(interaction, PermissionStatus.Ok, false);
         throw err;
     }
 }
@@ -388,27 +423,38 @@ export async function addRoleToSelf(interaction: CommandInteraction, role: Role)
     }
 }
 
-async function hasPermissionToManageRole(member: GuildMember, role: Role, forAll: boolean): Promise<boolean> {
+enum PermissionStatus {
+    Ok,
+    InsufficientAppPermissions,
+    InsufficientMemberPermissions,
+    CannotManageRoles,
+    InsufficientRoleSpecificPermissions,
+}
+
+async function hasPermissionToManageRole(member: GuildMember, role: Role, forAll: boolean, appPermissions: Readonly<PermissionsBitField> | null): Promise<PermissionStatus> {
+    if (!appPermissions?.has(role.permissions)) {
+        return PermissionStatus.InsufficientAppPermissions;
+    }
     if (!member.permissions.has(role.permissions)) {
-        return false;
+        return PermissionStatus.InsufficientMemberPermissions;
     }
     if (member.permissions.has(PermissionsBitField.Flags.ManageRoles)) {
-        return true;
+        return PermissionStatus.Ok;
     }
     if (forAll) {
-        return false;
+        return PermissionStatus.CannotManageRoles;
     }
     return hasPermissionToManageSpecificRole(member, role);
 }
 
-async function hasPermissionToManageSpecificRole(member: GuildMember, role: Role) {
+async function hasPermissionToManageSpecificRole(member: GuildMember, role: Role): Promise<PermissionStatus> {
     if (await allowAcmManagement(member, role)) {
-        return true;
+        return PermissionStatus.Ok;
     }
     if (await allowCscManagement(member, role)) {
-        return true;
+        return PermissionStatus.Ok;
     }
-    return false;
+    return PermissionStatus.InsufficientRoleSpecificPermissions;
 }
 
 export const command: Command = new RoleCommand();
