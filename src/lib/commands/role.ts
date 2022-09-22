@@ -170,7 +170,7 @@ export async function removeRole(interaction: ChatInputCommandInteraction, role:
         return;
     }
     const subCommand = interaction.options.getSubcommand();
-    const status = await hasPermissionToManageRole(interaction.member, role, subCommand == 'all' || subCommand == 'role', interaction.appPermissions);
+    const status = await hasPermissionToManageRole(interaction.member, role, getRoleCommandTarget(subCommand), interaction.appPermissions);
     if (status == PermissionStatus.Ok) {
         switch (subCommand) {
             case 'self':
@@ -199,7 +199,7 @@ async function removeRoleFromAll(interaction: CommandInteraction, role: Role): P
         if (!interaction.inCachedGuild()) {
         return;
     }
-    const status = await hasPermissionToManageRole(interaction.member, role, true, interaction.appPermissions);
+    const status = await hasPermissionToManageRole(interaction.member, role, RoleTarget.All, interaction.appPermissions);
     if (status == PermissionStatus.Ok) {
         await deferredBatchRemove(interaction, interaction.guild, role);
     }
@@ -212,7 +212,7 @@ async function deleteRole(interaction: CommandInteraction, role: Role): Promise<
     if (!interaction.inCachedGuild()) {
         return;
     }
-    const status = await hasPermissionToManageRole(interaction.member, role, true, interaction.appPermissions);
+    const status = await hasPermissionToManageRole(interaction.member, role, RoleTarget.All, interaction.appPermissions);
     if (status == PermissionStatus.Ok) {
         await deferredDelete(interaction, interaction.guild, role);
     }
@@ -264,7 +264,7 @@ export async function removeRoleFromOther(interaction: CommandInteraction, role:
     if (!interaction.inCachedGuild()) {
         return;
     }
-    const status = await hasPermissionToManageRole(interaction.member, role, false, interaction.appPermissions);
+    const status = await hasPermissionToManageRole(interaction.member, role, RoleTarget.Other, interaction.appPermissions);
     if (status == PermissionStatus.Ok) {
         const member = interaction.options.getMember('member');
         if (!(member instanceof GuildMember)) {
@@ -310,12 +310,26 @@ export async function removeRoleFromSelf(interaction: CommandInteraction, role: 
     }
 }
 
+function getRoleCommandTarget(subCommand: string): RoleTarget {
+    switch (subCommand) {
+        case 'self':
+            return RoleTarget.Self;
+        case 'other':
+            return RoleTarget.Other;
+        case 'all':
+        case 'role':
+            return RoleTarget.All;
+        default:
+            return RoleTarget.Self;
+    }
+}
+
 async function addRole(interaction: ChatInputCommandInteraction, role: Role): Promise<void> {
     if (!interaction.inCachedGuild()) {
         return;
     }
     const subCommand = interaction.options.getSubcommand();
-    const status = await hasPermissionToManageRole(interaction.member, role, subCommand == 'all', interaction.appPermissions);
+    const status = await hasPermissionToManageRole(interaction.member, role, getRoleCommandTarget(subCommand), interaction.appPermissions);
     if (status == PermissionStatus.Ok) {
         switch (subCommand) {
             case 'self':
@@ -341,7 +355,7 @@ async function addRoleToAll(interaction: CommandInteraction, role: Role): Promis
     if (!interaction.inCachedGuild()) {
         return;
     }
-    const status = await hasPermissionToManageRole(interaction.member, role, true, interaction.appPermissions);
+    const status = await hasPermissionToManageRole(interaction.member, role, RoleTarget.All, interaction.appPermissions);
     if (status == PermissionStatus.Ok) {
         await deferredBatchAdd(interaction, interaction.guild, role);
     }
@@ -377,7 +391,7 @@ export async function addRoleToOther(interaction: CommandInteraction, role: Role
     if (!interaction.inCachedGuild()) {
         return;
     }
-    const status = await hasPermissionToManageRole(interaction.member, role, false, interaction.appPermissions);
+    const status = await hasPermissionToManageRole(interaction.member, role, RoleTarget.Other, interaction.appPermissions);
     if (status == PermissionStatus.Ok) {
         const member = interaction.options.getMember('member');
         if (!(member instanceof GuildMember)) {
@@ -431,30 +445,39 @@ enum PermissionStatus {
     InsufficientRoleSpecificPermissions,
 }
 
-async function hasPermissionToManageRole(member: GuildMember, role: Role, forAll: boolean, appPermissions: Readonly<PermissionsBitField> | null): Promise<PermissionStatus> {
+enum RoleTarget {
+    Self,
+    Other,
+    All,
+}
+
+async function hasPermissionToManageRole(member: GuildMember, role: Role, target: RoleTarget, appPermissions: Readonly<PermissionsBitField> | null): Promise<PermissionStatus> {
     if (!appPermissions?.has(role.permissions)) {
         return PermissionStatus.InsufficientAppPermissions;
     }
     if (!member.permissions.has(role.permissions)) {
         return PermissionStatus.InsufficientMemberPermissions;
     }
+    if (target === RoleTarget.Self) {
+        return PermissionStatus.Ok;
+    }
     if (member.permissions.has(PermissionsBitField.Flags.ManageRoles)) {
         return PermissionStatus.Ok;
     }
-    if (forAll) {
+    if (target === RoleTarget.All) {
         return PermissionStatus.CannotManageRoles;
     }
     return hasPermissionToManageSpecificRole(member, role);
 }
 
 async function hasPermissionToManageSpecificRole(member: GuildMember, role: Role): Promise<PermissionStatus> {
-    if (!await allowAcmManagement(member, role)) {
-        return PermissionStatus.InsufficientRoleSpecificPermissions;
+    if (await allowAcmManagement(member, role)) {
+        return PermissionStatus.Ok;
     }
-    if (!await allowCscManagement(member, role)) {
-        return PermissionStatus.InsufficientRoleSpecificPermissions;
+    if (await allowCscManagement(member, role)) {
+        return PermissionStatus.Ok;
     }
-    return PermissionStatus.Ok;
+    return PermissionStatus.InsufficientRoleSpecificPermissions;
 }
 
 export const command: Command = new RoleCommand();
@@ -462,17 +485,17 @@ export const command: Command = new RoleCommand();
 async function allowAcmManagement(member: GuildMember, role: Role): Promise<boolean> {
     const acmLeaderRole = await findServerRole(member.guild, "acmLeader");
     const acmMemberRole = await findServerRole(member.guild, "acmMember");
-    if (acmLeaderRole && acmMemberRole && !member.roles.cache.has(acmLeaderRole.id) && role.id === acmMemberRole.id) {
-        return false;
+    if (acmLeaderRole && acmMemberRole && member.roles.cache.has(acmLeaderRole.id) && role.id === acmMemberRole.id) {
+        return true;
     }
-    return true;
+    return false;
 }
 
 async function allowCscManagement(member: GuildMember, role: Role): Promise<boolean> {
     const cscLeaderRole = await findServerRole(member.guild, "cscLeader");
     const cscMemberRole = await findServerRole(member.guild, "cscMember");
-    if (cscLeaderRole && cscMemberRole && !member.roles.cache.has(cscLeaderRole.id) && role.id === cscMemberRole.id) {
-        return false;
+    if (cscLeaderRole && cscMemberRole && member.roles.cache.has(cscLeaderRole.id) && role.id === cscMemberRole.id) {
+        return true;
     }
-    return true;
+    return false;
 }
