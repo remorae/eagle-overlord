@@ -448,13 +448,13 @@ async function hasPermissionToManageRole(member: GuildMember, role: Role, forAll
 }
 
 async function hasPermissionToManageSpecificRole(member: GuildMember, role: Role): Promise<PermissionStatus> {
-    if (await allowAcmManagement(member, role)) {
-        return PermissionStatus.Ok;
+    if (!await allowAcmManagement(member, role)) {
+        return PermissionStatus.InsufficientRoleSpecificPermissions;
     }
-    if (await allowCscManagement(member, role)) {
-        return PermissionStatus.Ok;
+    if (!await allowCscManagement(member, role)) {
+        return PermissionStatus.InsufficientRoleSpecificPermissions;
     }
-    return PermissionStatus.InsufficientRoleSpecificPermissions;
+    return PermissionStatus.Ok;
 }
 
 export const command: Command = new RoleCommand();
@@ -462,17 +462,17 @@ export const command: Command = new RoleCommand();
 async function allowAcmManagement(member: GuildMember, role: Role): Promise<boolean> {
     const acmLeaderRole = await findServerRole(member.guild, "acmLeader");
     const acmMemberRole = await findServerRole(member.guild, "acmMember");
-    if (acmLeaderRole && acmMemberRole && member.roles.cache.has(acmLeaderRole.id) && role.id === acmMemberRole.id) {
-        return true;
+    if (acmLeaderRole && acmMemberRole && !member.roles.cache.has(acmLeaderRole.id) && role.id === acmMemberRole.id) {
+        return false;
     }
-    return false;
+    return true;
 }
 
 async function allowCscManagement(member: GuildMember, role: Role): Promise<boolean> {
     const cscLeaderRole = await findServerRole(member.guild, "cscLeader");
     const cscMemberRole = await findServerRole(member.guild, "cscMember");
-    if (cscLeaderRole && cscMemberRole && member.roles.cache.has(cscLeaderRole.id) && role.id === cscMemberRole.id) {
-        return true;
+    if (cscLeaderRole && cscMemberRole && !member.roles.cache.has(cscLeaderRole.id) && role.id === cscMemberRole.id) {
+        return false;
     }
-    return false;
+    return true;
 }
