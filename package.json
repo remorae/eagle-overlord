@@ -10,8 +10,7 @@
   "scripts": {
     "build": "tsc"
   },
-  "author": "natrastellar",
-  "license": "MIT",
+  "author": "Mori",
   "dependencies": {
     "@discordjs/rest": "^1.1.0",
     "bent": "^7.3.12",
@@ -21,7 +20,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/natrastellar/eagle-overlord"
+    "url": "https://github.com/remorae/eagle-overlord"
   },
   "devDependencies": {
     "@tsconfig/node16-strictest": "^1.0.0",
