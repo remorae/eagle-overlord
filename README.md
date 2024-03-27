@@ -20,20 +20,19 @@ Discord IDs and sensitive credentials are stored in a JSON file that is excluded
 Various commands can be run both inside of Discord guilds (servers) and direct messages.
 These include: User/role management, arbitrary code compilation, information, and 'Advent of Code' event info/leaderboards.
 
+While in use, the bot was deployed automatically to a [Fly.io](https://fly.io) machine using GitHub Actions.
+
+# Build/Run Instructions
+
+```
+tsc
+node dist/src/main.js
+```
+
 ## Config
 
 You *must* create a file in the `src` directory named `config.json` in order to run the bot.
-
-Currently the expected interface of this is determined almost entirely by usage in locations where the file is read.
-See lines such as:
-```ts
-// client.ts
-import config from './config.json';
-// ...
-export class ClientInstance extends EventEmitter {
-    private rest = new REST({ version: '10' }).setToken(config.client.token);
-}
-// ...
-```
-
 This file stores obvious secrets and specific Discord ids.
+
+An example outlining the contents of this file, sans actual ids/tokens, can be found at `src/config-example.json`.
+

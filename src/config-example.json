@@ -1,0 +1,57 @@
+{
+    "client": {
+        "token": "",
+        "id": "",
+        "devGuildId": "",
+        "developerUserId": "",
+        "developerUserName": "",
+        "deployYear": "2024"
+    },
+    "jdoodle": {
+        "id": "",
+        "token": ""
+    },
+    "servers": [
+        {
+            "name": "",
+            "id": "",
+            "roles": [
+                {
+                    "name": "",
+                    "id": "",
+                    "default": false
+                },
+                {
+                    "name": "faculty admin",
+                    "id": "",
+                    "default": false
+                },
+                {
+                    "name": "moderator",
+                    "id": "",
+                    "default": false
+                },
+                {
+                    "name": "bot",
+                    "id": "",
+                    "default": false
+                },
+                {
+                    "name": "student",
+                    "id": "",
+                    "default": true
+                }
+            ],
+            "channels": [
+                {
+                    "name": "welcome",
+                    "id": ""
+                },
+                {
+                    "name": "help",
+                    "id": ""
+                }
+            ]
+        }
+    ]
+}
