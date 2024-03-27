@@ -25,6 +25,7 @@ While in use, the bot was deployed automatically to a [Fly.io](https://fly.io) m
 # Build/Run Instructions
 
 ```
+npm install
 tsc
 node dist/src/main.js
 ```
