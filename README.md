@@ -1,8 +1,8 @@
 # eagle-overlord
 
-A Discord bot created for my old college CS Majors server.
+A Discord bot application created for my old college CS Majors server.
 
-I created, hosted, and used this bot over the course of many years starting in April 2017. Since I am long since graduated, responsibility is currently shifting to active students.
+I created, hosted, and used this bot over the course of many years starting in April 2017. Since I am long since graduated, the bot is no longer being hosted and the server has since become the responsibility of active students.
 
 History may not reflect origin commit dates; it was altered when I moved accounts.
 
@@ -31,7 +31,7 @@ See lines such as:
 import config from './config.json';
 // ...
 export class ClientInstance extends EventEmitter {
-    private rest = new REST({ version: '9' }).setToken(config.client.token);
+    private rest = new REST({ version: '10' }).setToken(config.client.token);
 }
 // ...
 ```
